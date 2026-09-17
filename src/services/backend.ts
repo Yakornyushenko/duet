@@ -1,0 +1,243 @@
+import { Session } from '@supabase/supabase-js';
+
+import { supabase } from '@/lib/supabase';
+import { AppUser, Couple, DateEvent, DateEventInput } from '@/types/domain';
+
+const emailRedirectTo = 'duet://auth';
+
+type RemoteWorkspace = {
+  user: AppUser;
+  couple: Couple | null;
+  events: DateEvent[];
+};
+
+type CoupleRow = {
+  id: string;
+  relationship_started_at: string;
+  invite_code: string | null;
+  invite_expires_at: string | null;
+};
+
+type EventRow = {
+  id: string;
+  title: string;
+  event_date: string;
+  recurrence: DateEvent['recurrence'];
+  icon: DateEvent['icon'];
+};
+
+function getClient() {
+  if (!supabase) {
+    throw new Error('Supabase не настроен');
+  }
+  return supabase;
+}
+
+function mapEvent(row: EventRow): DateEvent {
+  return {
+    id: row.id,
+    title: row.title,
+    eventDate: row.event_date,
+    recurrence: row.recurrence,
+    icon: row.icon,
+  };
+}
+
+function getAuthTokens(url: string) {
+  const query = url.includes('?') ? url.split('?')[1].split('#')[0] : '';
+  const fragment = url.includes('#') ? url.split('#')[1] : '';
+  const params = new URLSearchParams(fragment || query);
+  const errorDescription = params.get('error_description');
+
+  if (errorDescription) {
+    throw new Error(errorDescription);
+  }
+
+  const accessToken = params.get('access_token');
+  const refreshToken = params.get('refresh_token');
+  return accessToken && refreshToken ? { accessToken, refreshToken } : null;
+}
+
+export async function signInRemote(email: string, password: string): Promise<void> {
+  const { error } = await getClient().auth.signInWithPassword({ email, password });
+  if (error) {
+    throw error;
+  }
+}
+
+export async function signUpRemote(displayName: string, email: string, password: string): Promise<boolean> {
+  const { data, error } = await getClient().auth.signUp({
+    email,
+    password,
+    options: {
+      data: { display_name: displayName },
+      emailRedirectTo,
+    },
+  });
+  if (error) {
+    throw error;
+  }
+  return Boolean(data.session);
+}
+
+export async function resendSignUpConfirmationRemote(email: string): Promise<void> {
+  const { error } = await getClient().auth.resend({
+    type: 'signup',
+    email,
+    options: { emailRedirectTo },
+  });
+  if (error) {
+    throw error;
+  }
+}
+
+export async function createSessionFromAuthUrl(url: string): Promise<void> {
+  const tokens = getAuthTokens(url);
+  if (!tokens) {
+    return;
+  }
+
+  const { error } = await getClient().auth.setSession({
+    access_token: tokens.accessToken,
+    refresh_token: tokens.refreshToken,
+  });
+  if (error) {
+    throw error;
+  }
+}
+
+export async function loadRemoteWorkspace(session: Session): Promise<RemoteWorkspace> {
+  const client = getClient();
+  const { data: profile, error: profileError } = await client
+    .from('profiles')
+    .select('display_name')
+    .eq('id', session.user.id)
+    .maybeSingle();
+  if (profileError) {
+    throw profileError;
+  }
+
+  const user: AppUser = {
+    id: session.user.id,
+    email: session.user.email ?? '',
+    displayName:
+      profile?.display_name ??
+      (typeof session.user.user_metadata.display_name === 'string'
+        ? session.user.user_metadata.display_name
+        : session.user.email?.split('@')[0] ?? 'Вы'),
+  };
+
+  const { data: membership, error: membershipError } = await client
+    .from('couple_members')
+    .select('couple_id, couples(id, relationship_started_at, invite_code, invite_expires_at)')
+    .eq('user_id', session.user.id)
+    .maybeSingle();
+  if (membershipError) {
+    throw membershipError;
+  }
+  if (!membership) {
+    return { user, couple: null, events: [] };
+  }
+
+  const rawCouple = membership.couples as unknown as CoupleRow | CoupleRow[] | null;
+  const coupleRow = Array.isArray(rawCouple) ? rawCouple[0] : rawCouple;
+  if (!coupleRow) {
+    return { user, couple: null, events: [] };
+  }
+
+  const [{ data: partnerMembership, error: partnerError }, { data: eventRows, error: eventError }] =
+    await Promise.all([
+      client
+        .from('couple_members')
+        .select('profiles(display_name)')
+        .eq('couple_id', coupleRow.id)
+        .neq('user_id', session.user.id)
+        .maybeSingle(),
+      client
+        .from('date_events')
+        .select('id, title, event_date, recurrence, icon')
+        .eq('couple_id', coupleRow.id),
+    ]);
+  if (partnerError) {
+    throw partnerError;
+  }
+  if (eventError) {
+    throw eventError;
+  }
+
+  const rawProfile = partnerMembership?.profiles as unknown as { display_name: string } | { display_name: string }[] | null;
+  const partnerProfile = Array.isArray(rawProfile) ? rawProfile[0] : rawProfile;
+
+  return {
+    user,
+    couple: {
+      id: coupleRow.id,
+      relationshipStartedAt: coupleRow.relationship_started_at,
+      inviteCode: coupleRow.invite_code,
+      inviteExpiresAt: coupleRow.invite_expires_at,
+      partnerName: partnerProfile?.display_name ?? null,
+    },
+    events: ((eventRows ?? []) as EventRow[]).map(mapEvent),
+  };
+}
+
+export async function createCoupleRemote(relationshipStartedAt: string): Promise<void> {
+  const { error } = await getClient().rpc('create_couple', {
+    p_relationship_started_at: relationshipStartedAt,
+  });
+  if (error) {
+    throw error;
+  }
+}
+
+export async function joinCoupleRemote(inviteCode: string): Promise<void> {
+  const { error } = await getClient().rpc('join_couple', {
+    p_invite_code: inviteCode.toUpperCase(),
+  });
+  if (error) {
+    throw error;
+  }
+}
+
+export async function addEventRemote(coupleId: string, input: DateEventInput): Promise<DateEvent> {
+  const { data, error } = await getClient()
+    .from('date_events')
+    .insert({
+      couple_id: coupleId,
+      title: input.title,
+      event_date: input.eventDate,
+      recurrence: input.recurrence,
+      icon: input.icon,
+    })
+    .select('id, title, event_date, recurrence, icon')
+    .single();
+  if (error) {
+    throw error;
+  }
+  return mapEvent(data as EventRow);
+}
+
+export async function updateEventRemote(id: string, input: DateEventInput): Promise<DateEvent> {
+  const { data, error } = await getClient()
+    .from('date_events')
+    .update({
+      title: input.title,
+      event_date: input.eventDate,
+      recurrence: input.recurrence,
+      icon: input.icon,
+    })
+    .eq('id', id)
+    .select('id, title, event_date, recurrence, icon')
+    .single();
+  if (error) {
+    throw error;
+  }
+  return mapEvent(data as EventRow);
+}
+
+export async function deleteEventRemote(id: string): Promise<void> {
+  const { error } = await getClient().from('date_events').delete().eq('id', id);
+  if (error) {
+    throw error;
+  }
+}

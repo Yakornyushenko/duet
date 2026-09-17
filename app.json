@@ -1,0 +1,49 @@
+{
+  "expo": {
+    "name": "Duet",
+    "slug": "duet",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/duet-app-icon.png",
+    "userInterfaceStyle": "light",
+    "scheme": "duet",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/duet-icon-foreground.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#FFF8F3"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "app.duet.mobile"
+    },
+    "android": {
+      "package": "app.duet.mobile",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/duet-icon-foreground.png",
+        "backgroundColor": "#FFF8F3"
+      },
+      "edgeToEdgeEnabled": true,
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/duet-icon-foreground.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#FFF8F3",
+          "image": "./assets/duet-icon-foreground.png",
+          "imageWidth": 220,
+          "resizeMode": "contain"
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
