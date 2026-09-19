@@ -6,11 +6,14 @@ import { AppButton } from '@/components/AppButton';
 import { AppScreen } from '@/components/AppScreen';
 import { DateCard } from '@/components/DateCard';
 import { useApp } from '@/context/AppContext';
+import { useReminders } from '@/context/ReminderContext';
+import { getPlannedReminderLabel } from '@/services/reminders';
 import { colors, radii, spacing, typography } from '@/theme/tokens';
 import { getUpcomingEvents, sortByNextOccurrence } from '@/utils/dates';
 
 export default function DatesScreen() {
   const { events } = useApp();
+  const { plannedReminders } = useReminders();
   const upcoming = getUpcomingEvents(events);
   const past = sortByNextOccurrence(events.filter((event) => !upcoming.some((item) => item.id === event.id)));
 
@@ -49,6 +52,7 @@ export default function DatesScreen() {
                 <DateCard
                   key={event.id}
                   event={event}
+                  reminderLabel={getPlannedReminderLabel(plannedReminders, event.id)}
                   onPress={() => router.push({ pathname: '/date-form', params: { id: event.id } })}
                 />
               ))}
@@ -62,6 +66,7 @@ export default function DatesScreen() {
                   <DateCard
                     key={event.id}
                     event={event}
+                    reminderLabel={getPlannedReminderLabel(plannedReminders, event.id)}
                     onPress={() => router.push({ pathname: '/date-form', params: { id: event.id } })}
                   />
                 ))}

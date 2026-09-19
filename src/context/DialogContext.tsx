@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { ComponentProps, createContext, PropsWithChildren, useCallback, useContext, useMemo, useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppButton, ButtonVariant } from '@/components/AppButton';
 import { colors, radii, shadow, spacing, typography } from '@/theme/tokens';
@@ -65,7 +66,7 @@ export function DialogProvider({ children }: PropsWithChildren) {
           }
         }}
       >
-        <View style={styles.backdrop}>
+        <SafeAreaView style={styles.backdrop}>
           {dialog?.dismissible !== false ? (
             <Pressable
               accessibilityRole="button"
@@ -96,7 +97,7 @@ export function DialogProvider({ children }: PropsWithChildren) {
               ))}
             </View>
           </View>
-        </View>
+        </SafeAreaView>
       </Modal>
     </DialogContext.Provider>
   );

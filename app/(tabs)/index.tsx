@@ -1,19 +1,23 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { AppButton } from '@/components/AppButton';
 import { AppScreen } from '@/components/AppScreen';
 import { DateCard } from '@/components/DateCard';
 import { PairAvatars } from '@/components/PairAvatars';
+import { RelationshipDateEditor } from '@/components/RelationshipDateEditor';
 import { useApp } from '@/context/AppContext';
-import { useDialog } from '@/context/DialogContext';
+import { useReminders } from '@/context/ReminderContext';
+import { getPlannedReminderLabel } from '@/services/reminders';
 import { colors, radii, shadow, spacing, typography } from '@/theme/tokens';
-import { getDaysTogether, getUpcomingEvents, formatRelationshipDate } from '@/utils/dates';
+import { formatRelationshipDate, getDaysTogether, getUpcomingEvents } from '@/utils/dates';
 
 export default function HomeScreen() {
   const { user, couple, events } = useApp();
-  const { showDialog } = useDialog();
+  const { plannedReminders } = useReminders();
+  const [relationshipDateEditorVisible, setRelationshipDateEditorVisible] = useState(false);
   const upcomingEvents = getUpcomingEvents(events);
   const nextEvent = upcomingEvents[0];
   const otherEvents = upcomingEvents.slice(1, 3);
@@ -35,12 +39,7 @@ export default function HomeScreen() {
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Уведомления"
-          onPress={() =>
-            showDialog({
-              title: 'Скоро',
-              message: 'Напоминания о важных датах добавим на следующем этапе.',
-            })
-          }
+          onPress={() => router.push('/reminders')}
           style={styles.iconButton}
         >
           <Ionicons name="notifications-outline" size={22} color={colors.secondary} />
@@ -49,10 +48,22 @@ export default function HomeScreen() {
 
       <View style={styles.hero}>
         <Text style={styles.eyebrow}>Мы вместе уже</Text>
-        <Text style={styles.dayCount}>{getDaysTogether(couple.relationshipStartedAt)}</Text>
-        <Text style={styles.dayLabel}>дней</Text>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Изменить дату начала отношений"
+          onPress={() => setRelationshipDateEditorVisible(true)}
+          style={({ pressed }) => pressed && styles.pressed}
+        >
+          <Text style={styles.dayCount}>{getDaysTogether(couple.relationshipStartedAt)}</Text>
+          <Text style={styles.dayLabel}>дней</Text>
+        </Pressable>
         <Text style={styles.heroDate}>С {formatRelationshipDate(couple.relationshipStartedAt)}</Text>
       </View>
+
+      <RelationshipDateEditor
+        visible={relationshipDateEditorVisible}
+        onClose={() => setRelationshipDateEditorVisible(false)}
+      />
 
       {nextEvent ? (
         <DateCard
@@ -74,7 +85,7 @@ export default function HomeScreen() {
       {otherEvents.length ? (
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Скоро</Text>
+            <Text style={styles.sectionTitle}>Ближайшие</Text>
             <Pressable accessibilityRole="button" onPress={() => router.push('/(tabs)/dates')}>
               <Text style={styles.link}>Все даты</Text>
             </Pressable>
@@ -84,6 +95,7 @@ export default function HomeScreen() {
               <DateCard
                 key={event.id}
                 event={event}
+                reminderLabel={getPlannedReminderLabel(plannedReminders, event.id)}
                 onPress={() => router.push({ pathname: '/date-form', params: { id: event.id } })}
               />
             ))}
@@ -163,6 +175,9 @@ const styles = StyleSheet.create({
   },
   eventList: {
     gap: spacing.md,
+  },
+  pressed: {
+    opacity: 0.68,
   },
   emptyCard: {
     ...shadow,

@@ -1,35 +1,30 @@
-import { ComponentProps } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import { colors, radii, spacing, typography } from '@/theme/tokens';
-import { DateEvent, DateEventIcon } from '@/types/domain';
+import { DateEvent } from '@/types/domain';
 import { formatEventDate, getDaysUntil, pluralizeDays } from '@/utils/dates';
-
-type IoniconName = ComponentProps<typeof Ionicons>['name'];
-
-const icons: Record<DateEventIcon, IoniconName> = {
-  heart: 'heart-outline',
-  sparkles: 'sparkles-outline',
-  gift: 'gift-outline',
-  cake: 'calendar-outline',
-  plane: 'airplane-outline',
-};
+import { eventIcons } from '@/utils/eventIcons';
 
 type DateCardProps = {
   event: DateEvent;
   highlighted?: boolean;
+  reminderLabel?: string;
   onPress?: () => void;
 };
 
-export function DateCard({ event, highlighted = false, onPress }: DateCardProps) {
+export function DateCard({ event, highlighted = false, reminderLabel, onPress }: DateCardProps) {
   const days = getDaysUntil(event);
   const absoluteDays = Math.abs(days);
   const content = (
     <View style={styles.row}>
-      <View style={[styles.icon, highlighted && styles.highlightedIcon]}>
-        <Ionicons name={icons[event.icon]} size={21} color={highlighted ? colors.white : colors.primary} />
+      <View style={[
+        styles.icon,
+        reminderLabel && !highlighted && styles.reminderEventIcon,
+        highlighted && styles.highlightedIcon,
+      ]}>
+        <Ionicons name={eventIcons[event.icon]} size={21} color={highlighted ? colors.white : colors.primary} />
       </View>
       <View style={styles.main}>
         {highlighted ? <Text style={styles.eyebrow}>Следующая дата</Text> : null}
@@ -37,6 +32,18 @@ export function DateCard({ event, highlighted = false, onPress }: DateCardProps)
           {event.title}
         </Text>
         <Text style={[styles.date, highlighted && styles.highlightedSecondary]}>{formatEventDate(event)}</Text>
+        {reminderLabel ? (
+          <View style={styles.reminderStatus}>
+            <Ionicons
+              name="notifications-outline"
+              size={15}
+              color={highlighted ? colors.white : colors.primary}
+            />
+            <Text style={[styles.reminderLabel, highlighted && styles.highlightedSecondary]}>
+              {reminderLabel}
+            </Text>
+          </View>
+        ) : null}
       </View>
       <View style={styles.counter}>
         <Text style={[styles.days, highlighted && styles.highlightedText]}>
@@ -76,7 +83,11 @@ export function DateCard({ event, highlighted = false, onPress }: DateCardProps)
       accessibilityRole={onPress ? 'button' : undefined}
       onPress={onPress}
       disabled={!onPress}
-      style={({ pressed }) => [styles.card, pressed && styles.pressed]}
+      style={({ pressed }) => [
+        styles.card,
+        reminderLabel && styles.cardWithReminder,
+        pressed && styles.pressed,
+      ]}
     >
       {content}
     </Pressable>
@@ -88,6 +99,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderRadius: radii.lg,
     padding: spacing.lg,
+  },
+  cardWithReminder: {
+    backgroundColor: colors.softRose,
   },
   highlightedCard: {
     borderRadius: radii.lg,
@@ -108,6 +122,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: colors.softRose,
   },
+  reminderEventIcon: {
+    backgroundColor: colors.surface,
+  },
   highlightedIcon: {
     backgroundColor: 'rgba(255, 255, 255, 0.18)',
   },
@@ -127,6 +144,17 @@ const styles = StyleSheet.create({
   date: {
     ...typography.caption,
     color: colors.muted,
+  },
+  reminderStatus: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginTop: spacing.xs,
+  },
+  reminderLabel: {
+    ...typography.caption,
+    color: colors.primary,
+    fontWeight: '500',
   },
   counter: {
     alignItems: 'flex-end',

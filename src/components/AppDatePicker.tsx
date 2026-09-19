@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useEffect, useMemo, useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppButton } from '@/components/AppButton';
 import { colors, radii, shadow, spacing, typography } from '@/theme/tokens';
@@ -94,7 +95,7 @@ export function AppDatePicker({
 
   return (
     <Modal transparent animationType="fade" visible={visible} statusBarTranslucent onRequestClose={onClose}>
-      <View style={styles.backdrop}>
+      <SafeAreaView style={styles.backdrop}>
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Закрыть календарь"
@@ -184,7 +185,7 @@ export function AppDatePicker({
             <AppButton label="Отмена" variant="ghost" onPress={onClose} />
           </View>
         </View>
-      </View>
+      </SafeAreaView>
     </Modal>
   );
 }

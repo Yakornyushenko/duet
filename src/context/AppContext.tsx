@@ -13,7 +13,9 @@ import {
   resendSignUpConfirmationRemote,
   signInRemote,
   signUpRemote,
+  updateDisplayNameRemote,
   updateEventRemote,
+  updateRelationshipDateRemote,
 } from '@/services/backend';
 import { AppUser, Couple, DateEvent, DateEventInput } from '@/types/domain';
 
@@ -30,10 +32,12 @@ type AppContextValue = AppState & {
   resendSignUpConfirmation: (email: string) => Promise<void>;
   signOut: () => Promise<void>;
   createCouple: (relationshipStartedAt: string) => Promise<void>;
+  updateRelationshipDate: (relationshipStartedAt: string) => Promise<void>;
+  updateDisplayName: (displayName: string) => Promise<void>;
   joinCouple: (code: string) => Promise<void>;
   refreshWorkspace: () => Promise<void>;
-  addEvent: (input: DateEventInput) => Promise<void>;
-  updateEvent: (id: string, input: DateEventInput) => Promise<void>;
+  addEvent: (input: DateEventInput) => Promise<DateEvent>;
+  updateEvent: (id: string, input: DateEventInput) => Promise<DateEvent>;
   deleteEvent: (id: string) => Promise<void>;
 };
 
@@ -159,6 +163,16 @@ export function AppProvider({ children }: PropsWithChildren) {
         { event: '*', schema: 'public', table: 'couple_members', filter: `couple_id=eq.${couple.id}` },
         () => void refreshWorkspace(),
       )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'couples', filter: `id=eq.${couple.id}` },
+        () => void refreshWorkspace(),
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'profiles' },
+        () => void refreshWorkspace(),
+      )
       .subscribe();
 
     return () => {
@@ -194,6 +208,17 @@ export function AppProvider({ children }: PropsWithChildren) {
         await createCoupleRemote(relationshipStartedAt);
         await refreshWorkspace();
       },
+      updateRelationshipDate: async (relationshipStartedAt) => {
+        await updateRelationshipDateRemote(relationshipStartedAt);
+        setCouple((current) => current ? { ...current, relationshipStartedAt } : current);
+      },
+      updateDisplayName: async (displayName) => {
+        if (!user) {
+          throw new Error('Сначала войдите в аккаунт');
+        }
+        const updatedDisplayName = await updateDisplayNameRemote(user.id, displayName.trim());
+        setUser((current) => current ? { ...current, displayName: updatedDisplayName } : current);
+      },
       joinCouple: async (code) => {
         await joinCoupleRemote(code);
         await refreshWorkspace();
@@ -205,10 +230,12 @@ export function AppProvider({ children }: PropsWithChildren) {
         }
         const created = await addEventRemote(couple.id, input);
         setEvents((current) => [...current, created]);
+        return created;
       },
       updateEvent: async (id, input) => {
         const updated = await updateEventRemote(id, input);
         setEvents((current) => current.map((event) => (event.id === id ? updated : event)));
+        return updated;
       },
       deleteEvent: async (id) => {
         await deleteEventRemote(id);

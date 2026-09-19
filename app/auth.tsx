@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppButton } from '@/components/AppButton';
 import { AppInput } from '@/components/AppInput';
@@ -148,7 +149,7 @@ export default function AuthScreen() {
         statusBarTranslucent
         onRequestClose={() => setConfirmationVisible(false)}
       >
-        <View style={styles.modalBackdrop}>
+        <SafeAreaView style={styles.modalBackdrop}>
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Закрыть окно подтверждения"
@@ -183,7 +184,7 @@ export default function AuthScreen() {
               <AppButton label="Закрыть" variant="ghost" onPress={() => setConfirmationVisible(false)} />
             </View>
           </View>
-        </View>
+        </SafeAreaView>
       </Modal>
     </AppScreen>
   );

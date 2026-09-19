@@ -26,6 +26,11 @@
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
     },
+    "androidNavigationBar": {
+      "backgroundColor": "#FFF8F3",
+      "barStyle": "dark-content",
+      "visible": "sticky-immersive"
+    },
     "web": {
       "favicon": "./assets/duet-icon-foreground.png",
       "bundler": "metro"
@@ -39,6 +44,22 @@
           "image": "./assets/duet-icon-foreground.png",
           "imageWidth": 220,
           "resizeMode": "contain"
+        }
+      ],
+      [
+        "expo-navigation-bar",
+        {
+          "visibility": "hidden",
+          "behavior": "overlay-swipe",
+          "position": "absolute",
+          "legacyVisible": "sticky-immersive"
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#E85D75",
+          "defaultChannel": "date-reminders"
         }
       ]
     ],

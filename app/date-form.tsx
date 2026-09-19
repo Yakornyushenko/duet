@@ -1,8 +1,8 @@
-import { ComponentProps, useState } from 'react';
+import { ComponentProps, useEffect, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { router, useLocalSearchParams } from 'expo-router';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 
 import { AppButton } from '@/components/AppButton';
 import { AppDatePicker } from '@/components/AppDatePicker';
@@ -11,6 +11,8 @@ import { AppScreen } from '@/components/AppScreen';
 import { SegmentedControl } from '@/components/SegmentedControl';
 import { useApp } from '@/context/AppContext';
 import { useDialog } from '@/context/DialogContext';
+import { useReminders } from '@/context/ReminderContext';
+import { ReminderOffset } from '@/services/reminders';
 import { colors, radii, spacing, typography } from '@/theme/tokens';
 import { DateEventIcon, DateRecurrence } from '@/types/domain';
 import { formatRelationshipDate, toDateOnly } from '@/utils/dates';
@@ -30,6 +32,14 @@ export default function DateFormScreen() {
   const eventId = Array.isArray(params.id) ? params.id[0] : params.id;
   const { events, addEvent, updateEvent, deleteEvent } = useApp();
   const { showDialog } = useDialog();
+  const {
+    initializing: remindersInitializing,
+    getEventSettings,
+    setEnabled: setRemindersEnabled,
+    saveEventSettings,
+    removeEventSettings,
+    openSystemSettings,
+  } = useReminders();
   const existingEvent = events.find((event) => event.id === eventId);
   const [title, setTitle] = useState(existingEvent?.title ?? '');
   const [eventDate, setEventDate] = useState(existingEvent?.eventDate ?? toDateOnly(new Date()));
@@ -37,6 +47,52 @@ export default function DateFormScreen() {
   const [icon, setIcon] = useState<DateEventIcon>(existingEvent?.icon ?? 'heart');
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [reminderEnabled, setReminderEnabled] = useState(false);
+  const [reminderOffsets, setReminderOffsets] = useState<ReminderOffset[]>([7, 0]);
+  const [reminderTime, setReminderTime] = useState('10:00');
+
+  useEffect(() => {
+    if (remindersInitializing) {
+      return;
+    }
+    const settings = getEventSettings(existingEvent?.id);
+    setReminderEnabled(settings.enabled);
+    setReminderOffsets(settings.offsets);
+    setReminderTime(settings.time);
+  }, [existingEvent?.id, remindersInitializing]);
+
+  const showNotificationSettingsDialog = () => {
+    showDialog({
+      title: 'Разрешите уведомления',
+      message: 'Включите уведомления для Duet в настройках телефона.',
+      tone: 'warning',
+      actions: [
+        { label: 'Открыть настройки', onPress: openSystemSettings },
+        { label: 'Отмена', variant: 'ghost' },
+      ],
+    });
+  };
+
+  const changeReminderEnabled = async (enabled: boolean) => {
+    if (!enabled) {
+      setReminderEnabled(false);
+      return;
+    }
+
+    const permissionGranted = await setRemindersEnabled(true);
+    if (permissionGranted) {
+      setReminderEnabled(true);
+    } else {
+      showNotificationSettingsDialog();
+    }
+  };
+
+  const toggleReminderOffset = (offset: ReminderOffset) => {
+    setReminderOffsets((current) => current.includes(offset)
+      ? current.filter((value) => value !== offset)
+      : [...current, offset]);
+    void Haptics.selectionAsync();
+  };
 
   const save = async () => {
     if (title.trim().length < 2 || !/^\d{4}-\d{2}-\d{2}$/.test(eventDate)) {
@@ -47,15 +103,34 @@ export default function DateFormScreen() {
       });
       return;
     }
+    if (reminderEnabled && reminderOffsets.length === 0) {
+      showDialog({
+        title: 'Когда напомнить?',
+        message: 'Выберите хотя бы один вариант напоминания.',
+        tone: 'warning',
+      });
+      return;
+    }
+    if (reminderEnabled && !/^([01]\d|2[0-3]):[0-5]\d$/.test(reminderTime)) {
+      showDialog({
+        title: 'Проверьте время',
+        message: 'Укажите время в формате 10:00.',
+        tone: 'warning',
+      });
+      return;
+    }
 
     try {
       setLoading(true);
       const input = { title: title.trim(), eventDate, recurrence, icon };
-      if (existingEvent) {
-        await updateEvent(existingEvent.id, input);
-      } else {
-        await addEvent(input);
-      }
+      const savedEvent = existingEvent
+        ? await updateEvent(existingEvent.id, input)
+        : await addEvent(input);
+      await saveEventSettings(savedEvent.id, {
+        enabled: reminderEnabled,
+        offsets: reminderOffsets,
+        time: reminderTime,
+      });
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       router.back();
     } catch (error) {
@@ -84,6 +159,7 @@ export default function DateFormScreen() {
           onPress: async () => {
             try {
               await deleteEvent(existingEvent.id);
+              await removeEventSettings(existingEvent.id);
               router.back();
             } catch (error) {
               showDialog({
@@ -175,7 +251,80 @@ export default function DateFormScreen() {
           </View>
         </View>
 
-        <AppButton label={existingEvent ? 'Сохранить изменения' : 'Добавить дату'} onPress={() => void save()} loading={loading} />
+        <View style={styles.field}>
+          <Text style={styles.label}>Напоминания</Text>
+          <View style={styles.reminderCard}>
+            <View style={styles.reminderHeader}>
+              <View style={styles.reminderIcon}>
+                <Ionicons name="notifications-outline" size={21} color={colors.primary} />
+              </View>
+              <View style={styles.reminderCopy}>
+                <Text style={styles.reminderTitle}>Напомнить об этой дате</Text>
+                <Text style={styles.reminderSubtitle}>Уведомления придут на это устройство</Text>
+              </View>
+              <Switch
+                accessibilityLabel="Напомнить об этой дате"
+                value={reminderEnabled}
+                disabled={remindersInitializing}
+                onValueChange={(value) => void changeReminderEnabled(value)}
+                trackColor={{ false: colors.border, true: colors.primary }}
+                thumbColor={colors.white}
+              />
+            </View>
+
+            {reminderEnabled ? (
+              <View style={styles.reminderOptions}>
+                <Text style={styles.reminderOptionsLabel}>Когда напомнить</Text>
+                <View style={styles.offsets}>
+                  {([
+                    { value: 7 as const, label: 'За неделю' },
+                    { value: 1 as const, label: 'За день' },
+                    { value: 0 as const, label: 'В день события' },
+                  ]).map((option) => {
+                    const selected = reminderOffsets.includes(option.value);
+                    return (
+                      <Pressable
+                        key={option.value}
+                        accessibilityRole="checkbox"
+                        accessibilityState={{ checked: selected }}
+                        onPress={() => toggleReminderOffset(option.value)}
+                        style={({ pressed }) => [
+                          styles.offsetOption,
+                          selected && styles.offsetOptionSelected,
+                          pressed && styles.pressed,
+                        ]}
+                      >
+                        <Ionicons
+                          name={selected ? 'checkmark-circle' : 'ellipse-outline'}
+                          size={20}
+                          color={selected ? colors.primary : colors.muted}
+                        />
+                        <Text style={[styles.offsetLabel, selected && styles.offsetLabelSelected]}>
+                          {option.label}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+                <AppInput
+                  label="Время"
+                  value={reminderTime}
+                  onChangeText={setReminderTime}
+                  placeholder="10:00"
+                  maxLength={5}
+                  keyboardType="numbers-and-punctuation"
+                />
+              </View>
+            ) : null}
+          </View>
+        </View>
+
+        <AppButton
+          label={existingEvent ? 'Сохранить изменения' : 'Добавить дату'}
+          onPress={() => void save()}
+          loading={loading}
+          disabled={remindersInitializing}
+        />
         {existingEvent ? <AppButton label="Удалить дату" variant="danger" onPress={confirmDelete} /> : null}
       </View>
     </AppScreen>
@@ -229,6 +378,71 @@ const styles = StyleSheet.create({
   },
   iconChoiceSelected: {
     backgroundColor: colors.primary,
+  },
+  reminderCard: {
+    overflow: 'hidden',
+    borderRadius: radii.lg,
+    backgroundColor: colors.surface,
+  },
+  reminderHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    padding: spacing.lg,
+  },
+  reminderIcon: {
+    width: 42,
+    height: 42,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: radii.sm,
+    backgroundColor: colors.softRose,
+  },
+  reminderCopy: {
+    flex: 1,
+    gap: 2,
+  },
+  reminderTitle: {
+    ...typography.body,
+    color: colors.text,
+  },
+  reminderSubtitle: {
+    ...typography.caption,
+    color: colors.muted,
+  },
+  reminderOptions: {
+    gap: spacing.md,
+    padding: spacing.lg,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  reminderOptionsLabel: {
+    ...typography.label,
+    color: colors.text,
+  },
+  offsets: {
+    gap: spacing.sm,
+  },
+  offsetOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    minHeight: 44,
+    paddingHorizontal: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radii.md,
+  },
+  offsetOptionSelected: {
+    borderColor: colors.primary,
+    backgroundColor: colors.softRose,
+  },
+  offsetLabel: {
+    ...typography.body,
+    color: colors.muted,
+  },
+  offsetLabelSelected: {
+    color: colors.text,
   },
   pressed: {
     opacity: 0.76,

@@ -190,6 +190,28 @@ export async function createCoupleRemote(relationshipStartedAt: string): Promise
   }
 }
 
+export async function updateRelationshipDateRemote(relationshipStartedAt: string): Promise<void> {
+  const { error } = await getClient().rpc('update_relationship_started_at', {
+    p_relationship_started_at: relationshipStartedAt,
+  });
+  if (error) {
+    throw error;
+  }
+}
+
+export async function updateDisplayNameRemote(userId: string, displayName: string): Promise<string> {
+  const { data, error } = await getClient()
+    .from('profiles')
+    .update({ display_name: displayName })
+    .eq('id', userId)
+    .select('display_name')
+    .single();
+  if (error) {
+    throw error;
+  }
+  return data.display_name;
+}
+
 export async function joinCoupleRemote(inviteCode: string): Promise<void> {
   const { error } = await getClient().rpc('join_couple', {
     p_invite_code: inviteCode.toUpperCase(),
