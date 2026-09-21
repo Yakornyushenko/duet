@@ -5,6 +5,7 @@ export type AppUser = {
 };
 
 export type Couple = {
+  createdBy: string;
   id: string;
   relationshipStartedAt: string;
   inviteCode: string | null;
@@ -14,6 +15,15 @@ export type Couple = {
 
 export type DateRecurrence = 'none' | 'yearly';
 
+export const dateCategories = [
+  { value: 'important', label: 'Важные даты' },
+  { value: 'travel', label: 'Путешествия' },
+  { value: 'dates', label: 'Свидания' },
+  { value: 'other', label: 'Разное' },
+] as const;
+
+export type DateCategory = typeof dateCategories[number]['value'];
+
 export type DateEventIcon = 'heart' | 'sparkles' | 'gift' | 'cake' | 'plane';
 
 export type DateEvent = {
@@ -21,6 +31,7 @@ export type DateEvent = {
   title: string;
   eventDate: string;
   recurrence: DateRecurrence;
+  category: DateCategory;
   icon: DateEventIcon;
 };
 

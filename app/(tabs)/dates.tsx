@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { AppButton } from '@/components/AppButton';
@@ -9,43 +10,62 @@ import { useApp } from '@/context/AppContext';
 import { useReminders } from '@/context/ReminderContext';
 import { getPlannedReminderLabel } from '@/services/reminders';
 import { colors, radii, spacing, typography } from '@/theme/tokens';
+import { dateCategories, DateCategory } from '@/types/domain';
 import { getUpcomingEvents, sortByNextOccurrence } from '@/utils/dates';
 
 export default function DatesScreen() {
   const { events } = useApp();
   const { plannedReminders } = useReminders();
-  const upcoming = getUpcomingEvents(events);
-  const past = sortByNextOccurrence(events.filter((event) => !upcoming.some((item) => item.id === event.id)));
+  const [category, setCategory] = useState<DateCategory | 'all'>('all');
+  const filteredEvents = category === 'all' ? events : events.filter((event) => event.category === category);
+  const upcoming = getUpcomingEvents(filteredEvents);
+  const past = sortByNextOccurrence(filteredEvents.filter((event) => !upcoming.some((item) => item.id === event.id)));
 
   return (
     <AppScreen>
       <View style={styles.header}>
         <View style={styles.headingCopy}>
-          <Text style={styles.title}>Важные даты</Text>
+          <Text style={styles.title}>Наши даты</Text>
           <Text style={styles.subtitle}>{events.length ? `${events.length} в вашем календаре` : 'Ваш общий календарь'}</Text>
         </View>
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Добавить дату"
-          onPress={() => router.push('/date-form')}
+          onPress={() => router.push({ pathname: '/date-form', params: { category } })}
           style={styles.addButton}
         >
           <Ionicons name="add" size={26} color={colors.white} />
         </Pressable>
       </View>
 
-      {events.length === 0 ? (
+      <View style={styles.filters}>
+        {[{ value: 'all' as const, label: 'Все' }, ...dateCategories].map((option) => (
+          <Pressable
+            key={option.value}
+            accessibilityRole="button"
+            accessibilityState={{ selected: category === option.value }}
+            onPress={() => setCategory(option.value)}
+            style={[styles.filter, category === option.value && styles.filterSelected]}
+          >
+            <Text style={[styles.filterText, category === option.value && styles.filterTextSelected]}>
+              {option.label}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
+
+      {filteredEvents.length === 0 ? (
         <View style={styles.empty}>
           <View style={styles.emptyIcon}>
             <Ionicons name="calendar-outline" size={34} color={colors.primary} />
           </View>
-          <Text style={styles.emptyTitle}>Здесь появятся ваши даты</Text>
+          <Text style={styles.emptyTitle}>{category === 'all' ? 'Здесь появятся ваши даты' : 'В этой категории пока нет дат'}</Text>
           <Text style={styles.emptyText}>Добавьте годовщину, дни рождения и будущие совместные планы.</Text>
-          <AppButton label="Добавить первую дату" onPress={() => router.push('/date-form')} />
+          <AppButton label="Добавить дату" onPress={() => router.push({ pathname: '/date-form', params: { category } })} />
         </View>
       ) : (
         <>
-          <View style={styles.section}>
+          {upcoming.length ? <View style={styles.section}>
             <Text style={styles.sectionTitle}>Ближайшие</Text>
             <View style={styles.list}>
               {upcoming.map((event) => (
@@ -57,7 +77,7 @@ export default function DatesScreen() {
                 />
               ))}
             </View>
-          </View>
+          </View> : null}
           {past.length ? (
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Прошедшие</Text>
@@ -80,6 +100,23 @@ export default function DatesScreen() {
 }
 
 const styles = StyleSheet.create({
+  filters: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+    marginBottom: spacing.xxl,
+  },
+  filter: {
+    minHeight: 44,
+    justifyContent: 'center',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radii.md,
+    backgroundColor: colors.softRose,
+  },
+  filterSelected: { backgroundColor: colors.primary },
+  filterText: { ...typography.label, color: colors.primary },
+  filterTextSelected: { color: colors.white },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',

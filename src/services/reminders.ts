@@ -15,6 +15,7 @@ export const reminderOffsets = [7, 1, 0] as const;
 export type ReminderOffset = (typeof reminderOffsets)[number];
 
 export type EventReminderSettings = {
+  notifications?: { date: string; time: string; text?: string }[];
   enabled: boolean;
   offsets: ReminderOffset[];
   time: string;
@@ -27,8 +28,10 @@ export type ReminderPreferences = {
 };
 
 export type PlannedReminder = {
+  text?: string;
   event: DateEvent;
-  offset: ReminderOffset;
+  offset: number;
+  recurring?: boolean;
   date: Date;
 };
 
@@ -68,7 +71,7 @@ function getReminderDate(event: DateEvent, offset: ReminderOffset, time: string,
   return reminderDate;
 }
 
-function getNotificationTitle(offset: ReminderOffset): string {
+function getNotificationTitle(offset: number): string {
   if (offset === 0) {
     return 'Сегодня важная дата';
   }
@@ -114,6 +117,11 @@ export function normalizeReminderPreferences(value: unknown): ReminderPreference
             )))]
           : [7 as const, 0 as const];
         result[eventId] = {
+          ...(Array.isArray(candidate.notifications) ? {
+            notifications: candidate.notifications.filter((item) => item
+              && /^\d{4}-\d{2}-\d{2}$/.test(item.date)
+              && /^([01]\d|2[0-3]):[0-5]\d$/.test(item.time)).slice(0, 4),
+          } : {}),
           enabled: candidate.enabled === true,
           offsets,
           time: typeof candidate.time === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(candidate.time)
@@ -171,10 +179,24 @@ export function getPlannedReminders(
   }
 
   return events
-    .flatMap((event) => {
+    .flatMap<PlannedReminder>((event) => {
       const settings = getEventReminderSettings(preferences, event.id);
       if (!settings.enabled) {
         return [];
+      }
+      if (settings.notifications) {
+        const occurrence = getNextOccurrence(event, now);
+        const deadline = new Date(occurrence);
+        deadline.setHours(23, 59, 59, 999);
+        const seen = new Set<number>();
+        return settings.notifications.slice(0, 4).flatMap((item) => {
+          const date = new Date(`${item.date}T${item.time}:00`);
+          if (!(date > now && date <= deadline) || seen.has(date.getTime())) return [];
+          seen.add(date.getTime());
+          const offset = Math.round((Date.UTC(occurrence.getFullYear(), occurrence.getMonth(), occurrence.getDate())
+            - Date.UTC(date.getFullYear(), date.getMonth(), date.getDate())) / 86400000);
+          return [{ event, offset, date, recurring: false, text: typeof item.text === 'string' ? item.text.trim().slice(0, 200) : '' }];
+        });
       }
       return settings.offsets.flatMap((offset) => {
         const date = getReminderDate(event, offset, settings.time, now);
@@ -247,14 +269,14 @@ export async function syncScheduledReminders(
   await configureReminderChannel();
   const planned = getPlannedReminders(events, preferences);
 
-  await Promise.all(planned.map(({ event, offset, date }) => (
+  await Promise.all(planned.map(({ event, offset, date, recurring, text }) => (
     scheduleReminderNotification({
-      identifier: `${notificationIdPrefix}${event.id}:${offset}`,
+      identifier: `${notificationIdPrefix}${event.id}:${date.getTime()}`,
       title: getNotificationTitle(offset),
-      body: event.title,
+      body: text || event.title,
       eventId: event.id,
       date,
-      recurring: event.recurrence === 'yearly',
+      recurring: recurring ?? event.recurrence === 'yearly',
     })
   )));
 }

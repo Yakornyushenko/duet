@@ -12,6 +12,7 @@ type RemoteWorkspace = {
 };
 
 type CoupleRow = {
+  created_by: string;
   id: string;
   relationship_started_at: string;
   invite_code: string | null;
@@ -23,6 +24,7 @@ type EventRow = {
   title: string;
   event_date: string;
   recurrence: DateEvent['recurrence'];
+  category: DateEvent['category'];
   icon: DateEvent['icon'];
 };
 
@@ -39,6 +41,7 @@ function mapEvent(row: EventRow): DateEvent {
     title: row.title,
     eventDate: row.event_date,
     recurrence: row.recurrence,
+    category: row.category,
     icon: row.icon,
   };
 }
@@ -129,7 +132,7 @@ export async function loadRemoteWorkspace(session: Session): Promise<RemoteWorks
 
   const { data: membership, error: membershipError } = await client
     .from('couple_members')
-    .select('couple_id, couples(id, relationship_started_at, invite_code, invite_expires_at)')
+    .select('couple_id, couples(id, created_by, relationship_started_at, invite_code, invite_expires_at)')
     .eq('user_id', session.user.id)
     .maybeSingle();
   if (membershipError) {
@@ -155,7 +158,7 @@ export async function loadRemoteWorkspace(session: Session): Promise<RemoteWorks
         .maybeSingle(),
       client
         .from('date_events')
-        .select('id, title, event_date, recurrence, icon')
+        .select('id, title, event_date, recurrence, icon, category')
         .eq('couple_id', coupleRow.id),
     ]);
   if (partnerError) {
@@ -171,6 +174,7 @@ export async function loadRemoteWorkspace(session: Session): Promise<RemoteWorks
   return {
     user,
     couple: {
+      createdBy: coupleRow.created_by,
       id: coupleRow.id,
       relationshipStartedAt: coupleRow.relationship_started_at,
       inviteCode: coupleRow.invite_code,
@@ -229,9 +233,10 @@ export async function addEventRemote(coupleId: string, input: DateEventInput): P
       title: input.title,
       event_date: input.eventDate,
       recurrence: input.recurrence,
+      category: input.category,
       icon: input.icon,
     })
-    .select('id, title, event_date, recurrence, icon')
+    .select('id, title, event_date, recurrence, icon, category')
     .single();
   if (error) {
     throw error;
@@ -246,10 +251,11 @@ export async function updateEventRemote(id: string, input: DateEventInput): Prom
       title: input.title,
       event_date: input.eventDate,
       recurrence: input.recurrence,
+      category: input.category,
       icon: input.icon,
     })
     .eq('id', id)
-    .select('id, title, event_date, recurrence, icon')
+    .select('id, title, event_date, recurrence, icon, category')
     .single();
   if (error) {
     throw error;

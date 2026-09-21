@@ -6,16 +6,16 @@ import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 
 import { AppButton } from '@/components/AppButton';
 import { AppDatePicker } from '@/components/AppDatePicker';
+import { AppTimePicker } from '@/components/AppTimePicker';
 import { AppInput } from '@/components/AppInput';
 import { AppScreen } from '@/components/AppScreen';
 import { SegmentedControl } from '@/components/SegmentedControl';
 import { useApp } from '@/context/AppContext';
 import { useDialog } from '@/context/DialogContext';
 import { useReminders } from '@/context/ReminderContext';
-import { ReminderOffset } from '@/services/reminders';
 import { colors, radii, spacing, typography } from '@/theme/tokens';
-import { DateEventIcon, DateRecurrence } from '@/types/domain';
-import { formatRelationshipDate, toDateOnly } from '@/utils/dates';
+import { dateCategories, DateCategory, DateEventIcon, DateRecurrence } from '@/types/domain';
+import { formatRelationshipDate, getNextOccurrence, toDateOnly } from '@/utils/dates';
 
 type IoniconName = ComponentProps<typeof Ionicons>['name'];
 
@@ -28,7 +28,7 @@ const iconOptions: { value: DateEventIcon; icon: IoniconName; label: string }[] 
 ];
 
 export default function DateFormScreen() {
-  const params = useLocalSearchParams<{ id?: string | string[] }>();
+  const params = useLocalSearchParams<{ id?: string | string[]; category?: string }>();
   const eventId = Array.isArray(params.id) ? params.id[0] : params.id;
   const { events, addEvent, updateEvent, deleteEvent } = useApp();
   const { showDialog } = useDialog();
@@ -45,11 +45,17 @@ export default function DateFormScreen() {
   const [eventDate, setEventDate] = useState(existingEvent?.eventDate ?? toDateOnly(new Date()));
   const [recurrence, setRecurrence] = useState<DateRecurrence>(existingEvent?.recurrence ?? 'yearly');
   const [icon, setIcon] = useState<DateEventIcon>(existingEvent?.icon ?? 'heart');
+  const [category, setCategory] = useState<DateCategory>(
+    existingEvent?.category ?? dateCategories.find((option) => option.value === params.category)?.value ?? 'important',
+  );
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showTimePicker, setShowTimePicker] = useState(false);
   const [loading, setLoading] = useState(false);
   const [reminderEnabled, setReminderEnabled] = useState(false);
-  const [reminderOffsets, setReminderOffsets] = useState<ReminderOffset[]>([7, 0]);
-  const [reminderTime, setReminderTime] = useState('10:00');
+  const [notifications, setNotifications] = useState<{ date: string; time: string; text?: string }[]>([]);
+  const [editingReminder, setEditingReminder] = useState<number | null>(null);
+  const [reminderDatePicker, setReminderDatePicker] = useState(false);
+  const deadline = toDateOnly(getNextOccurrence({ id: eventId ?? '', title, eventDate, recurrence, icon, category }));
 
   useEffect(() => {
     if (remindersInitializing) {
@@ -57,8 +63,11 @@ export default function DateFormScreen() {
     }
     const settings = getEventSettings(existingEvent?.id);
     setReminderEnabled(settings.enabled);
-    setReminderOffsets(settings.offsets);
-    setReminderTime(settings.time);
+    setNotifications(settings.notifications ?? (existingEvent ? settings.offsets.map((offset) => {
+      const date = getNextOccurrence(existingEvent);
+      date.setDate(date.getDate() - offset);
+      return { date: toDateOnly(date), time: settings.time };
+    }) : []));
   }, [existingEvent?.id, remindersInitializing]);
 
   const showNotificationSettingsDialog = () => {
@@ -87,11 +96,8 @@ export default function DateFormScreen() {
     }
   };
 
-  const toggleReminderOffset = (offset: ReminderOffset) => {
-    setReminderOffsets((current) => current.includes(offset)
-      ? current.filter((value) => value !== offset)
-      : [...current, offset]);
-    void Haptics.selectionAsync();
+  const updateReminder = (change: Partial<{ date: string; time: string }>) => {
+    setNotifications((current) => current.map((item, index) => index === editingReminder ? { ...item, ...change } : item));
   };
 
   const save = async () => {
@@ -103,33 +109,39 @@ export default function DateFormScreen() {
       });
       return;
     }
-    if (reminderEnabled && reminderOffsets.length === 0) {
+    if (reminderEnabled && notifications.length === 0) {
       showDialog({
         title: 'Когда напомнить?',
-        message: 'Выберите хотя бы один вариант напоминания.',
+        message: 'Настройте хотя бы одно уведомление.',
         tone: 'warning',
       });
       return;
     }
-    if (reminderEnabled && !/^([01]\d|2[0-3]):[0-5]\d$/.test(reminderTime)) {
+    if (reminderEnabled && notifications.some((item) => item.date > deadline
+      || new Date(`${item.date}T${item.time}:00`) <= new Date())) {
       showDialog({
-        title: 'Проверьте время',
-        message: 'Укажите время в формате 10:00.',
+        title: 'Проверьте уведомления',
+        message: 'Выберите будущее время не позже дня события.',
         tone: 'warning',
       });
+      return;
+    }
+    if (reminderEnabled && new Set(notifications.map((item) => `${item.date}T${item.time}`)).size !== notifications.length) {
+      showDialog({ title: 'Одинаковые уведомления', message: 'Выберите разное время для каждого уведомления.', tone: 'warning' });
       return;
     }
 
     try {
       setLoading(true);
-      const input = { title: title.trim(), eventDate, recurrence, icon };
+      const input = { title: title.trim(), eventDate, recurrence, icon, category };
       const savedEvent = existingEvent
         ? await updateEvent(existingEvent.id, input)
         : await addEvent(input);
       await saveEventSettings(savedEvent.id, {
         enabled: reminderEnabled,
-        offsets: reminderOffsets,
-        time: reminderTime,
+        offsets: [],
+        time: '10:00',
+        notifications,
       });
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       router.back();
@@ -224,6 +236,23 @@ export default function DateFormScreen() {
         </View>
 
         <View style={styles.field}>
+          <Text style={styles.label}>Категория</Text>
+          <View style={styles.iconGrid}>
+            {dateCategories.map((option) => (
+              <Pressable
+                key={option.value}
+                accessibilityRole="radio"
+                accessibilityState={{ checked: category === option.value }}
+                onPress={() => setCategory(option.value)}
+                style={[styles.offsetOption, category === option.value && styles.offsetOptionSelected]}
+              >
+                <Text style={styles.offsetLabelSelected}>{option.label}</Text>
+              </Pressable>
+            ))}
+          </View>
+        </View>
+
+        <View style={styles.field}>
           <Text style={styles.label}>Значок</Text>
           <View style={styles.iconGrid}>
             {iconOptions.map((option) => {
@@ -275,44 +304,52 @@ export default function DateFormScreen() {
             {reminderEnabled ? (
               <View style={styles.reminderOptions}>
                 <Text style={styles.reminderOptionsLabel}>Когда напомнить</Text>
-                <View style={styles.offsets}>
-                  {([
-                    { value: 7 as const, label: 'За неделю' },
-                    { value: 1 as const, label: 'За день' },
-                    { value: 0 as const, label: 'В день события' },
-                  ]).map((option) => {
-                    const selected = reminderOffsets.includes(option.value);
-                    return (
-                      <Pressable
-                        key={option.value}
-                        accessibilityRole="checkbox"
-                        accessibilityState={{ checked: selected }}
-                        onPress={() => toggleReminderOffset(option.value)}
-                        style={({ pressed }) => [
-                          styles.offsetOption,
-                          selected && styles.offsetOptionSelected,
-                          pressed && styles.pressed,
-                        ]}
-                      >
-                        <Ionicons
-                          name={selected ? 'checkmark-circle' : 'ellipse-outline'}
-                          size={20}
-                          color={selected ? colors.primary : colors.muted}
-                        />
-                        <Text style={[styles.offsetLabel, selected && styles.offsetLabelSelected]}>
-                          {option.label}
-                        </Text>
-                      </Pressable>
-                    );
-                  })}
-                </View>
-                <AppInput
-                  label="Время"
-                  value={reminderTime}
-                  onChangeText={setReminderTime}
-                  placeholder="10:00"
-                  maxLength={5}
-                  keyboardType="numbers-and-punctuation"
+                {notifications.map((item, index) => (
+                  <View key={index} style={styles.field}>
+                    <AppInput
+                      label=""
+                      accessibilityLabel={`Текст уведомления ${index + 1}`}
+                      placeholder="Текст уведомления"
+                      value={item.text ?? ''}
+                      maxLength={200}
+                      autoCapitalize="sentences"
+                      onChangeText={(text) => setNotifications((current) => current.map((notification, position) =>
+                        position === index ? { ...notification, text } : notification))}
+                    />
+                    <AppButton
+                      label={formatRelationshipDate(item.date)}
+                      variant="secondary"
+                      onPress={() => { setEditingReminder(index); setReminderDatePicker(true); }}
+                    />
+                    <AppButton
+                      label={item.time}
+                      variant="secondary"
+                      onPress={() => { setEditingReminder(index); setShowTimePicker(true); }}
+                    />
+                    <AppButton label="Удалить уведомление" variant="ghost"
+                      onPress={() => setNotifications((current) => current.filter((_, position) => position !== index))} />
+                  </View>
+                ))}
+                {notifications.length < 4 ? (
+                  <AppButton label="Настроить день" variant="secondary" onPress={() => {
+                    setEditingReminder(notifications.length);
+                    setNotifications((current) => [...current, { date: deadline, time: '10:00' }]);
+                    setReminderDatePicker(true);
+                  }} />
+                ) : null}
+                <AppDatePicker
+                  visible={reminderDatePicker}
+                  title="День уведомления"
+                  maximumDate={deadline}
+                  value={notifications[editingReminder ?? -1]?.date ?? deadline}
+                  onSelect={(date) => updateReminder({ date })}
+                  onClose={() => setReminderDatePicker(false)}
+                />
+                <AppTimePicker
+                  visible={showTimePicker}
+                  value={notifications[editingReminder ?? -1]?.time ?? '10:00'}
+                  onSelect={(time) => updateReminder({ time })}
+                  onClose={() => setShowTimePicker(false)}
                 />
               </View>
             ) : null}
@@ -332,6 +369,17 @@ export default function DateFormScreen() {
 }
 
 const styles = StyleSheet.create({
+  timeField: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    minHeight: 56,
+    paddingHorizontal: spacing.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radii.md,
+    backgroundColor: colors.surface,
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',

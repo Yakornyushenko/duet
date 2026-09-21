@@ -6,12 +6,12 @@ import { AppButton } from '@/components/AppButton';
 import { AppScreen } from '@/components/AppScreen';
 import { useApp } from '@/context/AppContext';
 import { useReminders } from '@/context/ReminderContext';
-import { formatReminderCount, ReminderOffset } from '@/services/reminders';
+import { formatReminderCount } from '@/services/reminders';
 import { colors, radii, spacing, typography } from '@/theme/tokens';
 import { formatEventDate } from '@/utils/dates';
 import { eventIcons } from '@/utils/eventIcons';
 
-function getOffsetLabel(offset: ReminderOffset): string {
+function getOffsetLabel(offset: number): string {
   if (offset === 0) {
     return 'В день события';
   }
@@ -76,12 +76,12 @@ export default function EventRemindersScreen() {
             </View>
             <View style={styles.list}>
               {eventReminders.map((reminder) => (
-                <View key={reminder.offset} style={styles.reminderCard}>
+                <View key={reminder.date.getTime()} style={styles.reminderCard}>
                   <View style={styles.reminderIcon}>
                     <Ionicons name="notifications-outline" size={20} color={colors.primary} />
                   </View>
                   <View style={styles.reminderCopy}>
-                    <Text style={styles.reminderLabel}>{getOffsetLabel(reminder.offset)}</Text>
+                    <Text style={styles.reminderLabel}>{reminder.text || getOffsetLabel(reminder.offset)}</Text>
                     <Text style={styles.reminderDate}>{formatReminderDate(reminder.date)}</Text>
                   </View>
                 </View>

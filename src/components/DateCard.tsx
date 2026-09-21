@@ -3,7 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import { colors, radii, spacing, typography } from '@/theme/tokens';
-import { DateEvent } from '@/types/domain';
+import { dateCategories, DateEvent } from '@/types/domain';
 import { formatEventDate, getDaysUntil, pluralizeDays } from '@/utils/dates';
 import { eventIcons } from '@/utils/eventIcons';
 
@@ -32,6 +32,9 @@ export function DateCard({ event, highlighted = false, reminderLabel, onPress }:
           {event.title}
         </Text>
         <Text style={[styles.date, highlighted && styles.highlightedSecondary]}>{formatEventDate(event)}</Text>
+        <Text style={[styles.date, highlighted && styles.highlightedSecondary]}>
+          {dateCategories.find((category) => category.value === event.category)?.label}
+        </Text>
         {reminderLabel ? (
           <View style={styles.reminderStatus}>
             <Ionicons
