@@ -111,11 +111,16 @@ export async function createSessionFromAuthUrl(url: string): Promise<void> {
 
 export async function loadRemoteWorkspace(session: Session): Promise<RemoteWorkspace> {
   const client = getClient();
-  const { data: profile, error: profileError } = await client
+  const [{ data: profile, error: profileError }, { data: membership, error: membershipError }] = await Promise.all([client
     .from('profiles')
     .select('display_name')
     .eq('id', session.user.id)
-    .maybeSingle();
+    .maybeSingle(),
+    client.from('couple_members')
+      .select('couple_id, couples(id, created_by, relationship_started_at, invite_code, invite_expires_at)')
+      .eq('user_id', session.user.id)
+      .maybeSingle(),
+  ]);
   if (profileError) {
     throw profileError;
   }
@@ -130,11 +135,6 @@ export async function loadRemoteWorkspace(session: Session): Promise<RemoteWorks
         : session.user.email?.split('@')[0] ?? 'Вы'),
   };
 
-  const { data: membership, error: membershipError } = await client
-    .from('couple_members')
-    .select('couple_id, couples(id, created_by, relationship_started_at, invite_code, invite_expires_at)')
-    .eq('user_id', session.user.id)
-    .maybeSingle();
   if (membershipError) {
     throw membershipError;
   }
@@ -159,7 +159,8 @@ export async function loadRemoteWorkspace(session: Session): Promise<RemoteWorks
       client
         .from('date_events')
         .select('id, title, event_date, recurrence, icon, category')
-        .eq('couple_id', coupleRow.id),
+        .eq('couple_id', coupleRow.id)
+        .order('id'),
     ]);
   if (partnerError) {
     throw partnerError;

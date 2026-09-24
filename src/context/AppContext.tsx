@@ -1,8 +1,9 @@
 import { Session } from '@supabase/supabase-js';
 import * as Linking from 'expo-linking';
-import { createContext, PropsWithChildren, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, PropsWithChildren, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 
 import { supabase } from '@/lib/supabase';
+import { unregisterWishPushDevice } from '@/services/wishes';
 import {
   addEventRemote,
   createSessionFromAuthUrl,
@@ -49,8 +50,10 @@ export function AppProvider({ children }: PropsWithChildren) {
   const [events, setEvents] = useState<DateEvent[]>([]);
   const [session, setSession] = useState<Session | null>(null);
   const [initializing, setInitializing] = useState(true);
+  const workspaceRequest = useRef(0);
 
   const clearWorkspace = useCallback(() => {
+    workspaceRequest.current += 1;
     setSession(null);
     setUser(null);
     setCouple(null);
@@ -58,10 +61,14 @@ export function AppProvider({ children }: PropsWithChildren) {
   }, []);
 
   const applyRemoteWorkspace = useCallback(async (activeSession: Session) => {
+    const request = ++workspaceRequest.current;
     const workspace = await loadRemoteWorkspace(activeSession);
-    setUser(workspace.user);
-    setCouple(workspace.couple);
-    setEvents(workspace.events);
+    if (request !== workspaceRequest.current) return;
+    // Preserve references when server data did not change. In particular, avoid
+    // re-scheduling every local reminder on a profile/couple refresh.
+    setUser((current) => JSON.stringify(current) === JSON.stringify(workspace.user) ? current : workspace.user);
+    setCouple((current) => JSON.stringify(current) === JSON.stringify(workspace.couple) ? current : workspace.couple);
+    setEvents((current) => JSON.stringify(current) === JSON.stringify(workspace.events) ? current : workspace.events);
   }, []);
 
   useEffect(() => {
@@ -112,7 +119,11 @@ export function AppProvider({ children }: PropsWithChildren) {
         setInitializing(false);
         return;
       }
-      void applyRemoteWorkspace(nextSession);
+      if (event !== 'TOKEN_REFRESHED') {
+        void applyRemoteWorkspace(nextSession).catch((error) => {
+          console.error('Не удалось обновить данные аккаунта', error);
+        });
+      }
     });
 
     return () => listener.subscription.unsubscribe();
@@ -151,31 +162,39 @@ export function AppProvider({ children }: PropsWithChildren) {
       return;
     }
 
+    let refreshTimer: ReturnType<typeof setTimeout> | undefined;
+    const scheduleRefresh = () => {
+      if (refreshTimer) clearTimeout(refreshTimer);
+      refreshTimer = setTimeout(() => {
+        void refreshWorkspace().catch((error) => console.warn('Не удалось обновить данные пары', error));
+      }, 150);
+    };
     const channel = client
       .channel(`couple-${couple.id}`)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'date_events', filter: `couple_id=eq.${couple.id}` },
-        () => void refreshWorkspace(),
+        scheduleRefresh,
       )
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'couple_members', filter: `couple_id=eq.${couple.id}` },
-        () => void refreshWorkspace(),
+        scheduleRefresh,
       )
       .on(
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'couples', filter: `id=eq.${couple.id}` },
-        () => void refreshWorkspace(),
+        scheduleRefresh,
       )
       .on(
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'profiles' },
-        () => void refreshWorkspace(),
+        scheduleRefresh,
       )
       .subscribe();
 
     return () => {
+      if (refreshTimer) clearTimeout(refreshTimer);
       void client.removeChannel(channel);
     };
   }, [couple?.id, refreshWorkspace, session]);
@@ -199,6 +218,7 @@ export function AppProvider({ children }: PropsWithChildren) {
         if (!supabase) {
           throw new Error('Supabase не настроен');
         }
+        await unregisterWishPushDevice();
         const { error } = await supabase.auth.signOut();
         if (error) {
           throw error;
@@ -229,7 +249,7 @@ export function AppProvider({ children }: PropsWithChildren) {
           throw new Error('Сначала создайте пару');
         }
         const created = await addEventRemote(couple.id, input);
-        setEvents((current) => [...current, created]);
+        setEvents((current) => current.some((event) => event.id === created.id) ? current : [...current, created]);
         return created;
       },
       updateEvent: async (id, input) => {

@@ -12,6 +12,10 @@ export type ReminderNotificationInput = {
   recurring: boolean;
 };
 
+export type NotificationOpenTarget =
+  | { type: 'event'; id: string }
+  | { type: 'wish'; id: string };
+
 export type NotificationResponseSubscription = {
   remove: () => void;
 };

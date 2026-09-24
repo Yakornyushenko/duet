@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
@@ -19,7 +19,8 @@ export default function DatesScreen() {
   const [category, setCategory] = useState<DateCategory | 'all'>('all');
   const filteredEvents = category === 'all' ? events : events.filter((event) => event.category === category);
   const upcoming = getUpcomingEvents(filteredEvents);
-  const past = sortByNextOccurrence(filteredEvents.filter((event) => !upcoming.some((item) => item.id === event.id)));
+  const upcomingIds = new Set(upcoming.map((event) => event.id));
+  const past = sortByNextOccurrence(filteredEvents.filter((event) => !upcomingIds.has(event.id)));
 
   return (
     <AppScreen>

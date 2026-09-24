@@ -19,6 +19,12 @@ web-build/
 *.key
 *.mobileprovision
 
+# iOS APNs uses Expo-managed credentials; no plist needed in the repo.
+GoogleService-Info.plist
+google-services.json
+*firebase-adminsdk*.json
+supabase/.temp/
+
 # Metro
 .metro-health-check*
 

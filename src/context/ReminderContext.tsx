@@ -1,12 +1,16 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { router } from 'expo-router';
+import { Href, router } from 'expo-router';
 import { AppState, Platform } from 'react-native';
 import { createContext, PropsWithChildren, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useApp } from '@/context/AppContext';
 import {
   addNotificationResponseListener,
-  getLastNotificationResponseEventId,
+  addPushTokenListener,
+  configureWishChannel,
+  getExpoPushToken,
+  getLastNotificationResponseTarget,
+  getNotificationPermission,
 } from '@/services/notificationApi';
 import {
   defaultReminderPreferences,
@@ -22,6 +26,7 @@ import {
   requestReminderPermission,
   syncScheduledReminders,
 } from '@/services/reminders';
+import { registerWishPushDevice } from '@/services/wishes';
 
 type ReminderContextValue = {
   initializing: boolean;
@@ -123,13 +128,19 @@ export function ReminderProvider({ children }: PropsWithChildren) {
       return;
     }
 
+    const openTarget = (target: { type: 'event' | 'wish'; id: string }) => {
+      if (target.type === 'wish') {
+        router.push(`/wish?id=${target.id}` as Href);
+        return;
+      }
+      router.push({ pathname: '/date-form', params: { id: target.id } });
+    };
+
     let active = true;
-    const subscription = addNotificationResponseListener((eventId) => {
-      router.push({ pathname: '/date-form', params: { id: eventId } });
-    });
-    void getLastNotificationResponseEventId().then((eventId) => {
-      if (active && eventId) {
-        router.push({ pathname: '/date-form', params: { id: eventId } });
+    const subscription = addNotificationResponseListener(openTarget);
+    void getLastNotificationResponseTarget().then((target) => {
+      if (active && target) {
+        openTarget(target);
       }
     });
     return () => {
@@ -137,6 +148,43 @@ export function ReminderProvider({ children }: PropsWithChildren) {
       subscription.remove();
     };
   }, []);
+
+  useEffect(() => {
+    if (Platform.OS === 'web' || !user) {
+      return;
+    }
+
+    let active = true;
+    const register = async () => {
+      await configureWishChannel().catch(() => undefined);
+      const permission = await getNotificationPermission();
+      if (!active || !permission.granted) {
+        return;
+      }
+      const token = await getExpoPushToken();
+      if (!active || !token) {
+        return;
+      }
+      try {
+        await registerWishPushDevice(token);
+      } catch (error) {
+        console.warn('Не удалось зарегистрировать устройство для желаний', error);
+      }
+    };
+
+    // Register immediately, then keep the device token in sync when it rotates.
+    void register().catch((error) => console.warn('Не удалось подготовить push-уведомления', error));
+    const tokenSubscription = addPushTokenListener((token) => {
+      void registerWishPushDevice(token).catch((error) => {
+        console.warn('Не удалось обновить push-токен для желаний', error);
+      });
+    });
+
+    return () => {
+      active = false;
+      tokenSubscription.remove();
+    };
+  }, [user?.id, permissionStatus]);
 
   const storePreferences = useCallback(async (
     update: (current: ReminderPreferences) => ReminderPreferences,

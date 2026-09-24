@@ -1,0 +1,3 @@
+[functions.process-wish-jobs]
+# Authenticated with a server-only secret, never with a client publishable key.
+verify_jwt = false

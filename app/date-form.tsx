@@ -1,5 +1,5 @@
 import { ComponentProps, useEffect, useState } from 'react';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import * as Haptics from 'expo-haptics';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';

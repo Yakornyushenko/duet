@@ -1,4 +1,5 @@
 import {
+  NotificationOpenTarget,
   NotificationPermissionSnapshot,
   NotificationResponseSubscription,
   ReminderNotificationInput,
@@ -16,6 +17,8 @@ export async function requestNotificationPermission(): Promise<NotificationPermi
 
 export async function configureReminderChannel(): Promise<void> {}
 
+export async function configureWishChannel(): Promise<void> {}
+
 export async function getScheduledNotificationIds(): Promise<string[]> {
   return [];
 }
@@ -26,12 +29,26 @@ export async function scheduleReminderNotification(_input: ReminderNotificationI
 
 export async function openNotificationSettings(): Promise<void> {}
 
+export async function getLastNotificationResponseTarget(): Promise<NotificationOpenTarget | null> {
+  return null;
+}
+
 export async function getLastNotificationResponseEventId(): Promise<string | null> {
   return null;
 }
 
 export function addNotificationResponseListener(
-  _listener: (eventId: string) => void,
+  _listener: (target: NotificationOpenTarget) => void,
+): NotificationResponseSubscription {
+  return { remove: () => undefined };
+}
+
+export async function getExpoPushToken(): Promise<string | null> {
+  return null;
+}
+
+export function addPushTokenListener(
+  _listener: (token: string) => void,
 ): NotificationResponseSubscription {
   return { remove: () => undefined };
 }
