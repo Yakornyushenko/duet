@@ -20,7 +20,7 @@ export default function HomeScreen() {
   const [relationshipDateEditorVisible, setRelationshipDateEditorVisible] = useState(false);
   const upcomingEvents = getUpcomingEvents(events);
   const nextEvent = upcomingEvents[0];
-  const otherEvents = upcomingEvents.slice(1);
+  const otherEvents = upcomingEvents.slice(1, 5);
 
   if (!user || !couple) {
     return null;

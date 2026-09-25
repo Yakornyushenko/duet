@@ -3,7 +3,8 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import { colors, radii, spacing, typography } from '@/theme/tokens';
-import { dateCategories, DateEvent } from '@/types/domain';
+import { DateEvent } from '@/types/domain';
+import { useApp } from '@/context/AppContext';
 import { formatEventDate, getDaysUntil, pluralizeDays } from '@/utils/dates';
 import { eventIcons } from '@/utils/eventIcons';
 
@@ -15,6 +16,7 @@ type DateCardProps = {
 };
 
 export function DateCard({ event, highlighted = false, reminderLabel, onPress }: DateCardProps) {
+  const { categories } = useApp();
   const days = getDaysUntil(event);
   const absoluteDays = Math.abs(days);
   const content = (
@@ -33,7 +35,7 @@ export function DateCard({ event, highlighted = false, reminderLabel, onPress }:
         </Text>
         <Text style={[styles.date, highlighted && styles.highlightedSecondary]}>{formatEventDate(event)}</Text>
         <Text style={[styles.date, highlighted && styles.highlightedSecondary]}>
-          {dateCategories.find((category) => category.value === event.category)?.label}
+          {categories.find((category) => category.value === event.category)?.label}
         </Text>
         {reminderLabel ? (
           <View style={styles.reminderStatus}>

@@ -1,12 +1,14 @@
-import { ComponentProps, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import * as Haptics from 'expo-haptics';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 
+import { DateCategoryPicker } from '@/components/DateCategoryPicker';
 import { AppButton } from '@/components/AppButton';
 import { AppDatePicker } from '@/components/AppDatePicker';
 import { AppTimePicker } from '@/components/AppTimePicker';
+import { EventIconPicker } from '@/components/EventIconPicker';
 import { AppInput } from '@/components/AppInput';
 import { AppScreen } from '@/components/AppScreen';
 import { SegmentedControl } from '@/components/SegmentedControl';
@@ -14,23 +16,13 @@ import { useApp } from '@/context/AppContext';
 import { useDialog } from '@/context/DialogContext';
 import { useReminders } from '@/context/ReminderContext';
 import { colors, radii, spacing, typography } from '@/theme/tokens';
-import { dateCategories, DateCategory, DateEventIcon, DateRecurrence } from '@/types/domain';
+import { DateCategory, DateEventIcon, DateRecurrence } from '@/types/domain';
 import { formatRelationshipDate, getNextOccurrence, toDateOnly } from '@/utils/dates';
-
-type IoniconName = ComponentProps<typeof Ionicons>['name'];
-
-const iconOptions: { value: DateEventIcon; icon: IoniconName; label: string }[] = [
-  { value: 'heart', icon: 'heart-outline', label: 'Любовь' },
-  { value: 'sparkles', icon: 'sparkles-outline', label: 'Событие' },
-  { value: 'gift', icon: 'gift-outline', label: 'Подарок' },
-  { value: 'cake', icon: 'calendar-outline', label: 'День рождения' },
-  { value: 'plane', icon: 'airplane-outline', label: 'Путешествие' },
-];
 
 export default function DateFormScreen() {
   const params = useLocalSearchParams<{ id?: string | string[]; category?: string }>();
   const eventId = Array.isArray(params.id) ? params.id[0] : params.id;
-  const { events, addEvent, updateEvent, deleteEvent } = useApp();
+  const { events, categories, addEvent, updateEvent, deleteEvent } = useApp();
   const { showDialog } = useDialog();
   const {
     initializing: remindersInitializing,
@@ -46,8 +38,11 @@ export default function DateFormScreen() {
   const [recurrence, setRecurrence] = useState<DateRecurrence>(existingEvent?.recurrence ?? 'yearly');
   const [icon, setIcon] = useState<DateEventIcon>(existingEvent?.icon ?? 'heart');
   const [category, setCategory] = useState<DateCategory>(
-    existingEvent?.category ?? dateCategories.find((option) => option.value === params.category)?.value ?? 'important',
+    existingEvent?.category ?? categories.find((option) => option.value === params.category)?.value ?? categories[0]?.value ?? '',
   );
+  useEffect(() => {
+    if (!categories.some((item) => item.value === category)) setCategory(categories[0]?.value ?? '');
+  }, [categories, category]);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -133,6 +128,10 @@ export default function DateFormScreen() {
 
     try {
       setLoading(true);
+      if (!categories.some((item) => item.value === category)) {
+        showDialog({ title: 'Выберите категорию', message: 'Добавьте категорию с помощью плюсика и выберите её для даты.' });
+        return;
+      }
       const input = { title: title.trim(), eventDate, recurrence, icon, category };
       const savedEvent = existingEvent
         ? await updateEvent(existingEvent.id, input)
@@ -237,48 +236,10 @@ export default function DateFormScreen() {
 
         <View style={styles.field}>
           <Text style={styles.label}>Категория</Text>
-          <View style={styles.iconGrid}>
-            {dateCategories.map((option) => (
-              <Pressable
-                key={option.value}
-                accessibilityRole="radio"
-                accessibilityState={{ checked: category === option.value }}
-                onPress={() => setCategory(option.value)}
-                style={[styles.offsetOption, category === option.value && styles.offsetOptionSelected]}
-              >
-                <Text style={styles.offsetLabelSelected}>{option.label}</Text>
-              </Pressable>
-            ))}
-          </View>
+          <DateCategoryPicker value={category} onChange={setCategory} />
         </View>
 
-        <View style={styles.field}>
-          <Text style={styles.label}>Значок</Text>
-          <View style={styles.iconGrid}>
-            {iconOptions.map((option) => {
-              const isSelected = icon === option.value;
-              return (
-                <Pressable
-                  key={option.value}
-                  accessibilityRole="radio"
-                  accessibilityLabel={option.label}
-                  accessibilityState={{ checked: isSelected }}
-                  onPress={() => {
-                    setIcon(option.value);
-                    void Haptics.selectionAsync();
-                  }}
-                  style={({ pressed }) => [
-                    styles.iconChoice,
-                    isSelected && styles.iconChoiceSelected,
-                    pressed && styles.pressed,
-                  ]}
-                >
-                  <Ionicons name={option.icon} size={23} color={isSelected ? colors.white : colors.primary} />
-                </Pressable>
-              );
-            })}
-          </View>
-        </View>
+        <EventIconPicker value={icon} onChange={(value) => { setIcon(value); void Haptics.selectionAsync(); }} />
 
         <View style={styles.field}>
           <Text style={styles.label}>Напоминания</Text>

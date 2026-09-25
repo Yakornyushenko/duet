@@ -18,12 +18,13 @@ import {
   updateEventRemote,
   updateRelationshipDateRemote,
 } from '@/services/backend';
-import { AppUser, Couple, DateEvent, DateEventInput } from '@/types/domain';
+import { AppUser, Couple, DateEvent, DateEventInput, DateCategoryOption } from '@/types/domain';
 
 type AppState = {
   user: AppUser | null;
   couple: Couple | null;
   events: DateEvent[];
+  categories: DateCategoryOption[];
 };
 
 type AppContextValue = AppState & {
@@ -48,6 +49,7 @@ export function AppProvider({ children }: PropsWithChildren) {
   const [user, setUser] = useState<AppUser | null>(null);
   const [couple, setCouple] = useState<Couple | null>(null);
   const [events, setEvents] = useState<DateEvent[]>([]);
+  const [categories, setCategories] = useState<DateCategoryOption[]>([]);
   const [session, setSession] = useState<Session | null>(null);
   const [initializing, setInitializing] = useState(true);
   const workspaceRequest = useRef(0);
@@ -58,6 +60,7 @@ export function AppProvider({ children }: PropsWithChildren) {
     setUser(null);
     setCouple(null);
     setEvents([]);
+    setCategories([]);
   }, []);
 
   const applyRemoteWorkspace = useCallback(async (activeSession: Session) => {
@@ -69,6 +72,7 @@ export function AppProvider({ children }: PropsWithChildren) {
     setUser((current) => JSON.stringify(current) === JSON.stringify(workspace.user) ? current : workspace.user);
     setCouple((current) => JSON.stringify(current) === JSON.stringify(workspace.couple) ? current : workspace.couple);
     setEvents((current) => JSON.stringify(current) === JSON.stringify(workspace.events) ? current : workspace.events);
+    setCategories((current) => JSON.stringify(current) === JSON.stringify(workspace.categories) ? current : workspace.categories);
   }, []);
 
   useEffect(() => {
@@ -171,6 +175,9 @@ export function AppProvider({ children }: PropsWithChildren) {
     };
     const channel = client
       .channel(`couple-${couple.id}`)
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'date_categories', filter: `couple_id=eq.${couple.id}` },
+        scheduleRefresh)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'date_events', filter: `couple_id=eq.${couple.id}` },
@@ -204,6 +211,7 @@ export function AppProvider({ children }: PropsWithChildren) {
       user,
       couple,
       events,
+      categories,
       initializing,
       signIn: async (email, password) => {
         await signInRemote(email.trim(), password);
@@ -262,7 +270,7 @@ export function AppProvider({ children }: PropsWithChildren) {
         setEvents((current) => current.filter((event) => event.id !== id));
       },
     }),
-    [couple, events, initializing, refreshWorkspace, user],
+    [couple, events, categories, initializing, refreshWorkspace, user],
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

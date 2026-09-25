@@ -1,9 +1,11 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { supabase } from '@/lib/supabase';
+import { DateEventIcon } from '@/types/domain';
 import { Wishlist } from '@/utils/wishlists';
 
 export type Wish = {
+  icon: DateEventIcon;
   id: string;
   title: string;
   list: Wishlist;
@@ -24,6 +26,7 @@ export type WishComment = {
 };
 
 type WishRow = {
+  icon?: DateEventIcon;
   id: string;
   title: string;
   list: Wishlist;
@@ -53,6 +56,7 @@ function getClient() {
 function mapWish(row: WishRow): Wish {
   return {
     id: row.id,
+    icon: row.icon ?? 'heart',
     title: row.title,
     list: row.list,
     fulfilled: row.fulfilled,
@@ -78,7 +82,7 @@ function mapComment(row: CommentRow): WishComment {
 export async function listWishes(coupleId: string, signal?: AbortSignal): Promise<Wish[]> {
   const query = getClient()
     .from('wishes')
-    .select('id, title, list, fulfilled, description, photos, version, created_by')
+    .select('id, title, list, fulfilled, description, photos, version, created_by, icon')
     .eq('couple_id', coupleId)
     .order('created_at', { ascending: false });
   const { data, error } = await (signal ? query.abortSignal(signal) : query);
@@ -91,7 +95,7 @@ export async function listWishes(coupleId: string, signal?: AbortSignal): Promis
 export async function getWish(coupleId: string, wishId: string, signal?: AbortSignal): Promise<Wish | null> {
   const query = getClient()
     .from('wishes')
-    .select('id, title, list, fulfilled, description, photos, version, created_by')
+    .select('id, title, list, fulfilled, description, photos, version, created_by, icon')
     .eq('couple_id', coupleId)
     .eq('id', wishId);
   const { data, error } = await (signal ? query.abortSignal(signal) : query).maybeSingle();
@@ -101,11 +105,11 @@ export async function getWish(coupleId: string, wishId: string, signal?: AbortSi
   return data ? mapWish(data as WishRow) : null;
 }
 
-export async function createWish(coupleId: string, list: Wishlist, title: string): Promise<Wish> {
+export async function createWish(coupleId: string, list: Wishlist, title: string, icon: DateEventIcon = 'heart'): Promise<Wish> {
   const { data, error } = await getClient()
     .from('wishes')
-    .insert({ couple_id: coupleId, list, title: title.trim() })
-    .select('id, title, list, fulfilled, description, photos, version, created_by')
+    .insert({ couple_id: coupleId, list, icon, title: title.trim() })
+    .select('id, title, list, fulfilled, description, photos, version, created_by, icon')
     .single();
   if (error) {
     throw error;
@@ -116,11 +120,12 @@ export async function createWish(coupleId: string, list: Wishlist, title: string
 export async function updateWish(
   coupleId: string,
   wishId: string,
-  patch: Partial<Pick<Wish, 'title' | 'description' | 'photos' | 'fulfilled' | 'list'>>,
+  patch: Partial<Pick<Wish, 'title' | 'description' | 'photos' | 'fulfilled' | 'list' | 'icon'>>,
 ): Promise<Wish> {
   const { data, error } = await getClient()
     .from('wishes')
     .update({
+      ...(patch.icon !== undefined ? { icon: patch.icon } : {}),
       ...(patch.title !== undefined ? { title: patch.title.trim() } : {}),
       ...(patch.description !== undefined ? { description: patch.description } : {}),
       ...(patch.photos !== undefined ? { photos: patch.photos } : {}),
@@ -129,7 +134,7 @@ export async function updateWish(
     })
     .eq('couple_id', coupleId)
     .eq('id', wishId)
-    .select('id, title, list, fulfilled, description, photos, version, created_by')
+    .select('id, title, list, fulfilled, description, photos, version, created_by, icon')
     .single();
   if (error) {
     throw error;

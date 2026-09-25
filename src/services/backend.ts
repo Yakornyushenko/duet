@@ -1,7 +1,7 @@
 import { Session } from '@supabase/supabase-js';
 
 import { supabase } from '@/lib/supabase';
-import { AppUser, Couple, DateEvent, DateEventInput } from '@/types/domain';
+import { AppUser, Couple, DateEvent, DateEventInput, DateCategoryOption } from '@/types/domain';
 
 const emailRedirectTo = 'duet://auth';
 
@@ -9,6 +9,7 @@ type RemoteWorkspace = {
   user: AppUser;
   couple: Couple | null;
   events: DateEvent[];
+  categories: DateCategoryOption[];
 };
 
 type CoupleRow = {
@@ -139,16 +140,16 @@ export async function loadRemoteWorkspace(session: Session): Promise<RemoteWorks
     throw membershipError;
   }
   if (!membership) {
-    return { user, couple: null, events: [] };
+    return { user, couple: null, events: [], categories: [] };
   }
 
   const rawCouple = membership.couples as unknown as CoupleRow | CoupleRow[] | null;
   const coupleRow = Array.isArray(rawCouple) ? rawCouple[0] : rawCouple;
   if (!coupleRow) {
-    return { user, couple: null, events: [] };
+    return { user, couple: null, events: [], categories: [] };
   }
 
-  const [{ data: partnerMembership, error: partnerError }, { data: eventRows, error: eventError }] =
+  const [{ data: partnerMembership, error: partnerError }, { data: eventRows, error: eventError }, { data: categoryRows, error: categoryError }] =
     await Promise.all([
       client
         .from('couple_members')
@@ -161,6 +162,8 @@ export async function loadRemoteWorkspace(session: Session): Promise<RemoteWorks
         .select('id, title, event_date, recurrence, icon, category')
         .eq('couple_id', coupleRow.id)
         .order('id'),
+      client.from('date_categories').select('value, label, custom_slot')
+        .eq('couple_id', coupleRow.id).order('position'),
     ]);
   if (partnerError) {
     throw partnerError;
@@ -168,6 +171,7 @@ export async function loadRemoteWorkspace(session: Session): Promise<RemoteWorks
   if (eventError) {
     throw eventError;
   }
+  if (categoryError) throw categoryError;
 
   const rawProfile = partnerMembership?.profiles as unknown as { display_name: string } | { display_name: string }[] | null;
   const partnerProfile = Array.isArray(rawProfile) ? rawProfile[0] : rawProfile;
@@ -183,6 +187,7 @@ export async function loadRemoteWorkspace(session: Session): Promise<RemoteWorks
       partnerName: partnerProfile?.display_name ?? null,
     },
     events: ((eventRows ?? []) as EventRow[]).map(mapEvent),
+    categories: (categoryRows ?? []).map((row) => ({ value: row.value, label: row.label, customSlot: row.custom_slot })),
   };
 }
 

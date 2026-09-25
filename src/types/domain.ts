@@ -22,9 +22,12 @@ export const dateCategories = [
   { value: 'other', label: 'Разное' },
 ] as const;
 
-export type DateCategory = typeof dateCategories[number]['value'];
+export type DateCategory = string;
+export type DateCategoryOption = { value: string; label: string; customSlot: number | null };
 
-export type DateEventIcon = 'heart' | 'sparkles' | 'gift' | 'cake' | 'plane';
+export type DateEventIcon = 'heart' | 'sparkles' | 'gift' | 'cake' | 'plane'
+  | 'sun' | 'moon' | 'cafe' | 'restaurant' | 'film'
+  | 'music' | 'camera' | 'flower' | 'home' | 'fitness';
 
 export type DateEvent = {
   id: string;

@@ -6,6 +6,9 @@ import { FlatList, Platform, Pressable, StyleSheet, Text, View } from 'react-nat
 import { AppScreen } from '@/components/AppScreen';
 import { AppButton } from '@/components/AppButton';
 import { AppInput } from '@/components/AppInput';
+import { EventIconPicker } from '@/components/EventIconPicker';
+import { DateEventIcon } from '@/types/domain';
+import { eventIcons } from '@/utils/eventIcons';
 import { useApp } from '@/context/AppContext';
 import { useDialog } from '@/context/DialogContext';
 import { supabase } from '@/lib/supabase';
@@ -27,6 +30,7 @@ export default function WishlistsScreen() {
   );
   const [wishes, setWishes] = useState<Wish[]>([]);
   const [title, setTitle] = useState('');
+  const [icon, setIcon] = useState<DateEventIcon>('heart');
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -114,7 +118,8 @@ export default function WishlistsScreen() {
     }
     setBusy(true);
     try {
-      const wish = await createWish(couple.id, list, title);
+      const wish = await createWish(couple.id, list, title, icon);
+      setIcon('heart');
       setTitle('');
       setRevision((current) => current + 1);
       router.push(`/wish?id=${wish.id}` as Href);
@@ -142,7 +147,8 @@ export default function WishlistsScreen() {
       style={({ pressed }) => [styles.card, styles.wishCard, pressed && styles.pressed]}
     >
       <View style={styles.wishRow}>
-        <Ionicons name={wish.fulfilled ? 'checkmark-circle' : 'heart-outline'} size={22} color={colors.primary} />
+        <Ionicons name={eventIcons[wish.icon] ?? eventIcons.heart} size={22} color={colors.primary} />
+        {wish.fulfilled && <Ionicons name="checkmark-circle" size={16} color={colors.primary} />}
         <Text style={[styles.wishTitle, wish.fulfilled && styles.done]} numberOfLines={2}>
           {wish.title}
         </Text>
@@ -220,6 +226,7 @@ export default function WishlistsScreen() {
               onChangeText={setTitle}
               maxLength={200}
             />
+            <EventIconPicker value={icon} onChange={setIcon} disabled={busy} />
             <AppButton
               label="Добавить желание"
               disabled={!title.trim()}

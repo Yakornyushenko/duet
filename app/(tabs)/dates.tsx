@@ -1,8 +1,9 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { DateCategoryPicker } from '@/components/DateCategoryPicker';
 import { AppButton } from '@/components/AppButton';
 import { AppScreen } from '@/components/AppScreen';
 import { DateCard } from '@/components/DateCard';
@@ -10,13 +11,16 @@ import { useApp } from '@/context/AppContext';
 import { useReminders } from '@/context/ReminderContext';
 import { getPlannedReminderLabel } from '@/services/reminders';
 import { colors, radii, spacing, typography } from '@/theme/tokens';
-import { dateCategories, DateCategory } from '@/types/domain';
+import { DateCategory } from '@/types/domain';
 import { getUpcomingEvents, sortByNextOccurrence } from '@/utils/dates';
 
 export default function DatesScreen() {
-  const { events } = useApp();
+  const { events, categories } = useApp();
   const { plannedReminders } = useReminders();
   const [category, setCategory] = useState<DateCategory | 'all'>('all');
+  useEffect(() => {
+    if (category !== 'all' && !categories.some((item) => item.value === category)) setCategory('all');
+  }, [categories, category]);
   const filteredEvents = category === 'all' ? events : events.filter((event) => event.category === category);
   const upcoming = getUpcomingEvents(filteredEvents);
   const upcomingIds = new Set(upcoming.map((event) => event.id));
@@ -40,19 +44,7 @@ export default function DatesScreen() {
       </View>
 
       <View style={styles.filters}>
-        {[{ value: 'all' as const, label: 'Все' }, ...dateCategories].map((option) => (
-          <Pressable
-            key={option.value}
-            accessibilityRole="button"
-            accessibilityState={{ selected: category === option.value }}
-            onPress={() => setCategory(option.value)}
-            style={[styles.filter, category === option.value && styles.filterSelected]}
-          >
-            <Text style={[styles.filterText, category === option.value && styles.filterTextSelected]}>
-              {option.label}
-            </Text>
-          </Pressable>
-        ))}
+        <DateCategoryPicker value={category} onChange={setCategory} includeAll />
       </View>
 
       {filteredEvents.length === 0 ? (

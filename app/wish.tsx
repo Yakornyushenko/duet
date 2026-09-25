@@ -15,6 +15,8 @@ import { useIsFocused } from '@react-navigation/native';
 
 import { AppButton } from '@/components/AppButton';
 import { AppInput } from '@/components/AppInput';
+import { EventIconPicker } from '@/components/EventIconPicker';
+import { DateEventIcon } from '@/types/domain';
 import { AppScreen } from '@/components/AppScreen';
 import { useApp } from '@/context/AppContext';
 import { useDialog } from '@/context/DialogContext';
@@ -46,6 +48,7 @@ export default function WishScreen() {
 
   const [wish, setWish] = useState<Wish | null>(null);
   const [title, setTitle] = useState('');
+  const [icon, setIcon] = useState<DateEventIcon>('heart');
   const [description, setDescription] = useState('');
   const [photos, setPhotos] = useState<string[]>([]);
   const [photoUrls, setPhotoUrls] = useState<Record<string, string>>({});
@@ -84,6 +87,7 @@ export default function WishScreen() {
       }
       setWish(nextWish);
       setTitle(nextWish.title);
+      setIcon(nextWish.icon);
       setDescription(nextWish.description);
       setPhotos(nextWish.photos);
       setFulfilled(nextWish.fulfilled);
@@ -134,6 +138,7 @@ export default function WishScreen() {
         description,
         photos,
         fulfilled,
+        icon,
       });
       setWish(next);
       showDialog({
@@ -321,6 +326,7 @@ export default function WishScreen() {
 
       <View style={styles.card}>
         <AppInput label="Название" value={title} onChangeText={setTitle} maxLength={200} />
+        <EventIconPicker value={icon} onChange={setIcon} disabled={busy} />
         <AppInput
           label="Описание"
           value={description}
