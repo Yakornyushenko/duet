@@ -5,6 +5,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 
 import { DateCategoryPicker } from '@/components/DateCategoryPicker';
+import { DateCompletionEditor } from '@/components/DateCompletionEditor';
 import { AppButton } from '@/components/AppButton';
 import { AppDatePicker } from '@/components/AppDatePicker';
 import { AppTimePicker } from '@/components/AppTimePicker';
@@ -240,6 +241,8 @@ export default function DateFormScreen() {
         </View>
 
         <EventIconPicker value={icon} onChange={(value) => { setIcon(value); void Haptics.selectionAsync(); }} />
+
+        {existingEvent && <DateCompletionEditor event={existingEvent} />}
 
         <View style={styles.field}>
           <Text style={styles.label}>Напоминания</Text>

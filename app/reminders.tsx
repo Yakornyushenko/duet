@@ -1,5 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Href, router } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { useIsFocused } from '@react-navigation/native';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { AppButton } from '@/components/AppButton';
@@ -37,6 +39,24 @@ function EventReminderCard({ group }: { group: PlannedEventReminders }) {
 }
 
 export default function RemindersScreen() {
+  const [backPressed, setBackPressed] = useState(false);
+  const [returning, setReturning] = useState(false);
+  const focused = useIsFocused();
+
+  useEffect(() => {
+    setBackPressed(false);
+    setReturning(false);
+  }, [focused]);
+
+  useEffect(() => {
+    if (!returning || !focused) return;
+    const timer = setTimeout(() => {
+      if (router.canGoBack()) router.back();
+      else router.replace('/');
+    }, 30);
+    return () => clearTimeout(timer);
+  }, [returning, focused]);
+
   const {
     enabled,
     initializing,
@@ -69,10 +89,12 @@ export default function RemindersScreen() {
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Назад"
-          onPress={() => router.back()}
+          onPressIn={() => setBackPressed(true)}
+          onPressOut={() => setBackPressed(false)}
+          onPress={() => setReturning(true)}
           style={styles.iconButton}
         >
-          <Ionicons name="chevron-back" size={24} color={colors.text} />
+          <Ionicons name="chevron-back" size={24} color={backPressed || returning ? colors.primary : colors.muted} />
         </Pressable>
         <Text style={styles.headerTitle}>Напоминания</Text>
         <View style={styles.headerSpacer} />

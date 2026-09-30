@@ -83,7 +83,15 @@ export default function ProfileScreen() {
   return (
     <AppScreen>
       <View style={styles.header}>
-        <Text style={styles.title}>Ваш Дуэт</Text>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Назад в Ещё"
+          onPress={() => router.canGoBack() ? router.back() : router.replace('/more')}
+          style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}
+        >
+          <Ionicons name="chevron-back" size={24} color={colors.primary} />
+        </Pressable>
+        <Text style={styles.title}>Профиль</Text>
       </View>
 
       <View style={styles.coupleCard}>
@@ -225,12 +233,17 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    gap: spacing.md,
     marginBottom: spacing.xxxl,
   },
   title: {
     ...typography.title,
     color: colors.text,
+  },
+  backButton: {
+    width: 44, height: 44,
+    alignItems: 'center', justifyContent: 'center',
+    borderRadius: radii.md, backgroundColor: colors.softRose,
   },
   coupleCard: {
     alignItems: 'center',

@@ -1,6 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useIsFocused } from '@react-navigation/native';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { AppButton } from '@/components/AppButton';
@@ -18,6 +19,36 @@ export default function HomeScreen() {
   const { user, couple, events } = useApp();
   const { plannedReminders } = useReminders();
   const [relationshipDateEditorVisible, setRelationshipDateEditorVisible] = useState(false);
+  const [openingReminders, setOpeningReminders] = useState(false);
+  const [bellPressed, setBellPressed] = useState(false);
+  const reminderTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const focused = useIsFocused();
+
+  useEffect(() => {
+    setOpeningReminders(false);
+    setBellPressed(false);
+    return () => {
+      if (reminderTimer.current !== null) {
+        clearTimeout(reminderTimer.current);
+        reminderTimer.current = null;
+      }
+    };
+  }, [focused]);
+
+  useEffect(() => {
+    if (!openingReminders || !focused) return;
+    // Start the delay after the highlighted icon has been committed.
+    reminderTimer.current = setTimeout(() => {
+      reminderTimer.current = null;
+      router.push('/reminders');
+    }, 30);
+    return () => {
+      if (reminderTimer.current !== null) {
+        clearTimeout(reminderTimer.current);
+        reminderTimer.current = null;
+      }
+    };
+  }, [openingReminders, focused]);
   const upcomingEvents = getUpcomingEvents(events);
   const nextEvent = upcomingEvents[0];
   const otherEvents = upcomingEvents.slice(1, 5);
@@ -39,10 +70,18 @@ export default function HomeScreen() {
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Уведомления"
-          onPress={() => router.push('/reminders')}
+          onPressIn={() => setBellPressed(true)}
+          onPressOut={() => setBellPressed(false)}
+          onPress={() => {
+            setOpeningReminders(true);
+          }}
           style={styles.iconButton}
         >
-          <Ionicons name="notifications-outline" size={22} color={colors.secondary} />
+            <Ionicons
+              name="notifications-outline"
+              size={22}
+              color={bellPressed || openingReminders ? colors.primary : colors.secondary}
+            />
         </Pressable>
       </View>
 
