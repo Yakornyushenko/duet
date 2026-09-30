@@ -13,7 +13,7 @@ import { NoteEditor } from '@/components/NoteEditor';
 import { useApp } from '@/context/AppContext';
 import { useDialog } from '@/context/DialogContext';
 import { supabase } from '@/lib/supabase';
-import { emptyNotesTrash, listNotes, Note, saveNote } from '@/services/notes';
+import { emptyNotesTrash, listNotes, Note } from '@/services/notes';
 import { colors, radii, spacing, typography } from '@/theme/tokens';
 
 export default function NotesScreen() {
@@ -24,7 +24,7 @@ export default function NotesScreen() {
   const [search, setSearch] = useState('');
   const [trash, setTrash] = useState(false);
   const [editor, setEditor] = useState<Note | null>(null);
-  const [creating, setCreating] = useState(false);
+  const creating = editor !== null;
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [revision, setRevision] = useState(0);
@@ -67,16 +67,10 @@ export default function NotesScreen() {
       .sort((a, b) => Number(b.pinned) - Number(a.pinned) || b.updated_at.localeCompare(a.updated_at));
   }, [notes, search, trash]);
 
-  const create = async (kind: Note['kind']) => {
+  const create = (kind: Note['kind']) => {
     if (!couple || creating) return;
-    setCreating(true);
-    try {
-      const note = await saveNote({ id: '', couple_id: couple.id, kind, title: '', body: '', items: [],
+      setEditor({ id: '', couple_id: couple.id, kind, title: '', body: '', items: [],
         pinned: false, deleted_at: null, version: 0, updated_at: '', updated_by: user?.id ?? null });
-      setNotes((current) => [note, ...current]);
-      setEditor(note);
-    } catch { setError('Не получилось создать заметку. Проверьте подключение и попробуйте снова.'); }
-    finally { setCreating(false); }
   };
 
   return (

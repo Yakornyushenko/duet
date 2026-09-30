@@ -88,6 +88,9 @@ export function DateCategoryPicker({ value, onChange, includeAll = false, editab
           </> : <>
           <Text style={styles.heading}>{editor?.category ? 'Изменить категорию' : 'Новая категория'}</Text>
           <AppInput label="Название" value={name} onChangeText={setName} maxLength={40} editable={!busy} error={error} />
+          <Text style={styles.notice}>{editor.category
+            ? 'Новое название появится и в статистике у обоих партнёров. Даты и накопленные результаты сохранятся.'
+            : 'Категория появится в статистике у обоих партнёров. Её сегмент в кольце появится, когда вы отметите первую состоявшуюся дату.'}</Text>
           <AppButton label="Сохранить" loading={busy} disabled={!name.trim()}
             onPress={() => void save(editor?.category ? 'rename' : 'add', editor?.category)} />
           {editor?.category && <AppButton label="Удалить категорию" variant="danger" disabled={busy} onPress={() => {
@@ -95,7 +98,7 @@ export function DateCategoryPicker({ value, onChange, includeAll = false, editab
             setEditor(null);
             setManagerVisible(false);
             showDialog({ title: `Удалить «${category.label}»?`,
-              message: 'Категория и все даты в ней будут удалены у обоих партнёров. Восстановить их нельзя.',
+              message: 'Категория, все даты в ней и отметки об их выполнении будут удалены у обоих партнёров. Эти события больше не будут учитываться в статистике: общий итог уменьшится на количество удалённых состоявшихся событий, а кольцо пересчитается. Восстановить данные нельзя.',
               tone: 'warning', actions: [
                 { label: 'Отмена', variant: 'ghost' },
                 { label: 'Удалить категорию и даты', variant: 'danger', onPress: () => save('delete', category) },
@@ -125,4 +128,5 @@ const styles = StyleSheet.create({
   dialog: { width: '100%', maxWidth: 480, maxHeight: '85%', alignSelf: 'center', backgroundColor: colors.background, borderRadius: radii.xl },
   dialogContent: { padding: spacing.xl, gap: spacing.md },
   heading: { ...typography.sectionTitle, color: colors.text },
+  notice: { ...typography.caption, color: colors.muted },
 });

@@ -51,6 +51,19 @@ assert.equal(all.wishes, 2);
 assert.equal(all.undated, 1);
 assert.equal(all.buckets.reduce((sum, bucket) => sum + bucket.count, 0), 3, 'Chart excludes unknown dates and old history outside 12 months');
 const month = summarizeStatistics(data, 'month', now);
+assert.equal(all.categoryCounts.dates, 2);
+assert.equal(all.categoryCounts.travel, 1);
+const customData = {
+  ...data,
+  dates: [...data.dates, { id: 'custom-event', category: 'custom-category', title: 'Театр', icon: 'heart' }],
+  completions: [...data.completions, { id: 'custom-done', event_id: 'custom-event', happened_on: '2026-09-15' }],
+};
+const custom = summarizeStatistics(customData, 'month', now);
+assert.equal(custom.categoryCounts['custom-category'], 1, 'Custom categories keep their own count');
+assert.equal(Object.values(custom.categoryCounts).reduce((sum, count) => sum + count, 0) + custom.wishes, custom.total);
+const removed = summarizeStatistics({ ...customData, dates: data.dates }, 'month', now);
+assert.equal(removed.categoryCounts['custom-category'], undefined, 'Removed events no longer contribute');
+assert.equal(removed.total, custom.total - 1);
 assert.equal(month.total, 2);
 assert.equal(month.wishes, 1, 'Unknown completion dates are all-time only');
 assert.equal(month.buckets.reduce((sum, bucket) => sum + bucket.count, 0), 2);

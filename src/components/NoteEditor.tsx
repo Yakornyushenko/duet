@@ -1,6 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { AppState, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { AppScreen } from '@/components/AppScreen';
@@ -30,11 +30,11 @@ export function NoteEditor({ initial, remote, onSaved, onClose }: Props) {
   const storageQueue = useRef(Promise.resolve());
   const trashView = Boolean(initial.deleted_at);
   const backupKey = `duet:note-draft:${user?.id}:${initial.couple_id}:${initial.id}`;
-  const dirty = noteContent(draft) !== noteContent(saved.current);
+  const dirty = !saved.current.id || noteContent(draft) !== noteContent(saved.current);
 
   useEffect(() => {
     alive.current = true;
-    if (trashView) {
+    if (trashView || !initial.id) {
       setReady(true);
       return () => { alive.current = false; };
     }
@@ -58,14 +58,6 @@ export function NoteEditor({ initial, remote, onSaved, onClose }: Props) {
     return () => { alive.current = false; };
   }, [backupKey, initial, trashView]);
 
-  useEffect(() => {
-    if (!ready || trashView) return;
-    const value = dirty ? JSON.stringify(draft) : null;
-    storageQueue.current = storageQueue.current.catch(() => {}).then(() =>
-      value ? AsyncStorage.setItem(backupKey, value) : AsyncStorage.removeItem(backupKey));
-    void storageQueue.current.catch(() => { if (alive.current) setError('Не удалось сохранить черновик на устройстве. Не закрывайте заметку до синхронизации.'); });
-  }, [draft, dirty, ready, backupKey, trashView]);
-
   const change = (patch: Partial<Note>) => {
     const updated = { ...current.current, ...patch };
     current.current = updated;
@@ -78,14 +70,15 @@ export function NoteEditor({ initial, remote, onSaved, onClose }: Props) {
     const task = (async () => {
       setSaving(true);
       try {
-        while (noteContent(current.current) !== noteContent(saved.current)) {
+        if (!saved.current.id || noteContent(current.current) !== noteContent(saved.current)) {
           const snapshot = { ...current.current, version: saved.current.version };
           const result = await saveNote(snapshot);
           saved.current = result;
-          current.current = reconcileSavedNote(current.current, snapshot, result);
+          current.current = { ...reconcileSavedNote(current.current, snapshot, result), id: result.id };
           if (alive.current) { setDraft(current.current); onSaved(result); }
           if (!alive.current) return true;
         }
+        await AsyncStorage.removeItem(backupKey);
         if (alive.current) setError('');
         return true;
       } catch (failure) {
@@ -103,20 +96,7 @@ export function NoteEditor({ initial, remote, onSaved, onClose }: Props) {
     pending.current = task;
     void task.finally(() => { pending.current = null; });
     return task;
-  }, [onSaved]);
-
-  useEffect(() => {
-    if (!ready || trashView || !dirty || blocked.current) return;
-    const timer = setTimeout(() => void flush(), 700);
-    return () => clearTimeout(timer);
-  }, [draft, dirty, ready, flush, trashView]);
-
-  useEffect(() => {
-    const subscription = AppState.addEventListener('change', (state) => {
-      if (state !== 'active' && ready && !trashView) void flush();
-    });
-    return () => subscription.remove();
-  }, [flush, ready, trashView]);
+  }, [onSaved, backupKey]);
 
   useEffect(() => {
     if (!ready || !remote || remote.id !== current.current.id || remote.version <= saved.current.version || pending.current) return;
@@ -140,10 +120,17 @@ export function NoteEditor({ initial, remote, onSaved, onClose }: Props) {
   };
 
   const close = async () => {
+    if (saving || pending.current) return;
     if (trashView || !ready) { onClose(); return; }
-    await flush();
-    // A conflict must not trap the user: keep their draft locally before leaving.
-    await persistAndClose();
+    if (!dirty) { onClose(); return; }
+    showDialog({ title: 'Выйти без сохранения?',
+      message: 'Изменения не сохранятся. Чтобы сохранить заметку, вернитесь к ней и нажмите «Сохранить».',
+      actions: [{ label: 'Продолжить редактирование', variant: 'ghost' },
+        { label: 'Выйти без сохранения', variant: 'danger', onPress: async () => {
+          await AsyncStorage.removeItem(backupKey);
+          onClose();
+        } }],
+    });
   };
 
   const restore = async () => {
@@ -228,13 +215,22 @@ export function NoteEditor({ initial, remote, onSaved, onClose }: Props) {
             void flush();
           }}
         />}
-        <View style={styles.footer}>
+        {saved.current.id && <View style={styles.footer}>
         {trashView || draft.deleted_at ? <AppButton label="Восстановить заметку" disabled={!ready || saving || conflict} onPress={() => void restore()} /> :
           <AppButton label="В корзину" variant="danger" disabled={!ready || saving || conflict} onPress={() => showDialog({
-            title: 'Переместить в корзину?', message: 'Заметка исчезнет из общего списка у вас обоих. Её можно будет восстановить.',
-            actions: [{ label: 'В корзину', variant: 'danger', onPress: async () => { change({ deleted_at: new Date().toISOString() }); await close(); } }, { label: 'Отмена', variant: 'ghost' }],
+            title: 'Переместить в корзину?', message: 'Сохранённая версия заметки исчезнет из общего списка у вас обоих. Несохранённые изменения будут потеряны. Заметку можно будет восстановить.',
+            actions: [{ label: 'В корзину', variant: 'danger', onPress: async () => {
+              if (pending.current) return;
+              setSaving(true);
+              try {
+                const result = await saveNote({ ...saved.current, deleted_at: new Date().toISOString() });
+                await AsyncStorage.removeItem(backupKey);
+                onSaved(result); onClose();
+              } catch { setError('Не удалось переместить заметку в корзину. Попробуйте ещё раз.'); }
+              finally { if (alive.current) setSaving(false); }
+            } }, { label: 'Отмена', variant: 'ghost' }],
           })} />}
-        </View>
+        </View>}
       </AppScreen>
     </Modal>
   );

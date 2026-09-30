@@ -53,6 +53,8 @@ export function summarizeStatistics(data: StatisticsData, period: HistoryPeriod,
   }
   return {
     moments: selected, buckets, total: selected.length,
+    categoryCounts: Object.fromEntries(Array.from(new Set(dates.map((moment) => moment.category)))
+      .map((category) => [category, dates.filter((moment) => moment.category === category).length])),
     dates: dates.filter((moment) => moment.category === 'dates').length,
     travels: dates.filter((moment) => moment.category === 'travel').length,
     otherEvents: dates.filter((moment) => moment.category !== 'dates' && moment.category !== 'travel').length,
