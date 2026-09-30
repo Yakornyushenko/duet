@@ -129,7 +129,7 @@ export default function DateFormScreen() {
     try {
       setLoading(true);
       if (!categories.some((item) => item.value === category)) {
-        showDialog({ title: 'Выберите категорию', message: 'Добавьте категорию с помощью плюсика и выберите её для даты.' });
+        showDialog({ title: 'Выберите категорию', message: 'Добавьте категорию через меню «…» на главном экране раздела «Даты», затем выберите её для даты.' });
         return;
       }
       const input = { title: title.trim(), eventDate, recurrence, icon, category };

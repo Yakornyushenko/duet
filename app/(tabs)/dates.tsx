@@ -44,7 +44,7 @@ export default function DatesScreen() {
       </View>
 
       <View style={styles.filters}>
-        <DateCategoryPicker value={category} onChange={setCategory} includeAll />
+        <DateCategoryPicker value={category} onChange={setCategory} includeAll editable />
       </View>
 
       {filteredEvents.length === 0 ? (
@@ -94,8 +94,6 @@ export default function DatesScreen() {
 
 const styles = StyleSheet.create({
   filters: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
     gap: spacing.sm,
     marginBottom: spacing.xxl,
   },

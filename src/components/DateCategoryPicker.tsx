@@ -1,6 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { PencilIcon } from '@/components/PencilIcon';
 import { useState } from 'react';
-import { KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { AppButton } from '@/components/AppButton';
 import { AppInput } from '@/components/AppInput';
 import { useApp } from '@/context/AppContext';
@@ -9,12 +10,13 @@ import { supabase } from '@/lib/supabase';
 import { DateCategoryOption } from '@/types/domain';
 import { colors, radii, spacing, typography } from '@/theme/tokens';
 
-export function DateCategoryPicker({ value, onChange, includeAll = false }: {
-  value: string; onChange: (value: string) => void; includeAll?: boolean;
+export function DateCategoryPicker({ value, onChange, includeAll = false, editable = false }: {
+  value: string; onChange: (value: string) => void; includeAll?: boolean; editable?: boolean;
 }) {
   const { categories, couple, refreshWorkspace } = useApp();
   const { showDialog } = useDialog();
   const [editor, setEditor] = useState<{ category?: DateCategoryOption } | null>(null);
+  const [managerVisible, setManagerVisible] = useState(false);
   const [name, setName] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -43,6 +45,13 @@ export function DateCategoryPicker({ value, onChange, includeAll = false }: {
   };
 
   return <>
+    {editable && <View style={styles.header}>
+      <Text style={styles.fieldLabel}>Категории</Text>
+      <Pressable accessibilityRole="button" accessibilityLabel="Управление категориями"
+        style={styles.edit} disabled={busy} onPress={() => setManagerVisible(true)}>
+        <Ionicons name="ellipsis-horizontal" size={22} color={colors.primary} />
+      </Pressable>
+    </View>}
     <View style={styles.grid}>
       {includeAll && <Pressable accessibilityRole="button" onPress={() => onChange('all')}
         style={[styles.chip, value === 'all' && styles.selected]}>
@@ -53,22 +62,30 @@ export function DateCategoryPicker({ value, onChange, includeAll = false }: {
           onPress={() => onChange(category.value)} style={styles.chip}>
           <Text style={[styles.label, value === category.value && styles.selectedLabel]}>{category.label}</Text>
         </Pressable>
-        <Pressable accessibilityRole="button" accessibilityLabel={`Изменить категорию ${category.label}`}
-          disabled={busy} style={styles.edit} onPress={() => {
-            setName(category.label); setError(''); setEditor({ category });
-          }}>
-          <Ionicons name="ellipsis-horizontal" size={18} color={value === category.value ? colors.white : colors.primary} />
-        </Pressable>
       </View>)}
-      {categories.filter((item) => item.customSlot !== null).length < 2 &&
-        <Pressable accessibilityRole="button" accessibilityLabel="Добавить категорию" disabled={busy}
-          style={styles.add} onPress={() => { setName(''); setError(''); setEditor({}); }}>
-          <Ionicons name="add" size={24} color={colors.primary} />
-        </Pressable>}
     </View>
-    <Modal transparent animationType="fade" visible={editor !== null} onRequestClose={() => { if (!busy) setEditor(null); }}>
+    <Modal transparent animationType="fade" visible={managerVisible} onRequestClose={() => {
+      if (busy) return;
+      if (editor) setEditor(null); else setManagerVisible(false);
+    }}>
       <KeyboardAvoidingView style={styles.backdrop} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <View style={styles.dialog}>
+        <View style={styles.dialog}><ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.dialogContent}>
+          {!editor ? <>
+            <Text style={styles.heading}>Категории</Text>
+            {categories.map((category) => <Pressable key={category.value}
+              accessibilityRole="button" accessibilityLabel={`Изменить категорию ${category.label}`}
+              disabled={busy} style={styles.categoryRow} onPress={() => {
+                setName(category.label); setError(''); setEditor({ category });
+              }}>
+              <Text style={styles.categoryName}>{category.label}</Text>
+              <PencilIcon />
+            </Pressable>)}
+            {categories.filter((item) => item.customSlot !== null).length < 2 &&
+              <AppButton label="Добавить категорию" disabled={busy} onPress={() => {
+                setName(''); setError(''); setEditor({});
+              }} />}
+            <AppButton label="Готово" variant="ghost" disabled={busy} onPress={() => setManagerVisible(false)} />
+          </> : <>
           <Text style={styles.heading}>{editor?.category ? 'Изменить категорию' : 'Новая категория'}</Text>
           <AppInput label="Название" value={name} onChangeText={setName} maxLength={40} editable={!busy} error={error} />
           <AppButton label="Сохранить" loading={busy} disabled={!name.trim()}
@@ -76,6 +93,7 @@ export function DateCategoryPicker({ value, onChange, includeAll = false }: {
           {editor?.category && <AppButton label="Удалить категорию" variant="danger" disabled={busy} onPress={() => {
             const category = editor.category!;
             setEditor(null);
+            setManagerVisible(false);
             showDialog({ title: `Удалить «${category.label}»?`,
               message: 'Категория и все даты в ней будут удалены у обоих партнёров. Восстановить их нельзя.',
               tone: 'warning', actions: [
@@ -84,7 +102,8 @@ export function DateCategoryPicker({ value, onChange, includeAll = false }: {
               ] });
           }} />}
           <AppButton label="Отмена" variant="ghost" disabled={busy} onPress={() => setEditor(null)} />
-        </View>
+          </>}
+        </ScrollView></View>
       </KeyboardAvoidingView>
     </Modal>
   </>;
@@ -98,8 +117,12 @@ const styles = StyleSheet.create({
   label: { ...typography.label, color: colors.primary },
   selectedLabel: { color: colors.white },
   edit: { width: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
-  add: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.softRose, borderRadius: radii.md },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  fieldLabel: { ...typography.label, color: colors.text },
+  categoryRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, minHeight: 48, paddingVertical: spacing.sm },
+  categoryName: { ...typography.body, color: colors.text, flex: 1 },
   backdrop: { flex: 1, backgroundColor: colors.overlay, justifyContent: 'center', padding: spacing.xl },
-  dialog: { width: '100%', maxWidth: 480, alignSelf: 'center', backgroundColor: colors.background, borderRadius: radii.xl, padding: spacing.xl, gap: spacing.md },
+  dialog: { width: '100%', maxWidth: 480, maxHeight: '85%', alignSelf: 'center', backgroundColor: colors.background, borderRadius: radii.xl },
+  dialogContent: { padding: spacing.xl, gap: spacing.md },
   heading: { ...typography.sectionTitle, color: colors.text },
 });
