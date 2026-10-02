@@ -18,6 +18,7 @@ export async function requestNotificationPermission(): Promise<NotificationPermi
 export async function configureReminderChannel(): Promise<void> {}
 
 export async function configureWishChannel(): Promise<void> {}
+export async function configureQuestionChannel(): Promise<void> {}
 
 export async function getScheduledNotificationIds(): Promise<string[]> {
   return [];

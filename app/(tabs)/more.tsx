@@ -9,19 +9,10 @@ import { colors, radii, spacing, typography } from '@/theme/tokens';
 export default function MoreScreen() {
   return (
     <AppScreen contentContainerStyle={styles.content}>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Открыть профиль"
-        onPress={() => router.push('/profile')}
-        style={({ pressed }) => [styles.card, pressed && styles.pressed]}
-      >
-        <View style={styles.icon}>
-          <Ionicons name="person-outline" size={24} color={colors.primary} />
-        </View>
-        <View style={styles.copy}>
-          <Text style={styles.label}>Профиль</Text>
-          <Text style={styles.description}>Наша пара и настройки</Text>
-        </View>
+      <Pressable accessibilityRole="button" accessibilityLabel="Открыть вопрос дня" onPress={() => router.push('/daily-question')}
+        style={({ pressed }) => [styles.card, pressed && styles.pressed]}>
+        <View style={styles.icon}><Ionicons name="chatbubbles-outline" size={24} color={colors.primary} /></View>
+        <View style={styles.copy}><Text style={styles.label}>Вопрос дня</Text><Text style={styles.description}>Один вопрос — два взгляда</Text></View>
         <Ionicons name="chevron-forward" size={20} color={colors.muted} />
       </Pressable>
       <Pressable
@@ -88,6 +79,21 @@ export default function MoreScreen() {
         <View style={styles.copy}>
           <Text style={styles.label}>Заметки</Text>
           <Text style={styles.description}>Наши идеи и важные мелочи</Text>
+        </View>
+        <Ionicons name="chevron-forward" size={20} color={colors.muted} />
+      </Pressable>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Открыть профиль"
+        onPress={() => router.push('/profile')}
+        style={({ pressed }) => [styles.card, pressed && styles.pressed]}
+      >
+        <View style={styles.icon}>
+          <Ionicons name="person-outline" size={24} color={colors.primary} />
+        </View>
+        <View style={styles.copy}>
+          <Text style={styles.label}>Профиль</Text>
+          <Text style={styles.description}>Наша пара и настройки</Text>
         </View>
         <Ionicons name="chevron-forward" size={20} color={colors.muted} />
       </Pressable>

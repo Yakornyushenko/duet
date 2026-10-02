@@ -8,6 +8,7 @@ import {
   addNotificationResponseListener,
   addPushTokenListener,
   configureWishChannel,
+  configureQuestionChannel,
   getExpoPushToken,
   getLastNotificationResponseTarget,
   getNotificationPermission,
@@ -128,7 +129,11 @@ export function ReminderProvider({ children }: PropsWithChildren) {
       return;
     }
 
-    const openTarget = (target: { type: 'event' | 'wish'; id: string }) => {
+    const openTarget = (target: { type: 'event' | 'wish' | 'question'; id: string }) => {
+      if (target.type === 'question') {
+        router.push({ pathname: '/daily-question', params: { id: target.id } });
+        return;
+      }
       if (target.type === 'wish') {
         router.push(`/wish?id=${target.id}` as Href);
         return;
@@ -157,6 +162,7 @@ export function ReminderProvider({ children }: PropsWithChildren) {
     let active = true;
     const register = async () => {
       await configureWishChannel().catch(() => undefined);
+      await configureQuestionChannel().catch(() => undefined);
       const permission = await getNotificationPermission();
       if (!active || !permission.granted) {
         return;

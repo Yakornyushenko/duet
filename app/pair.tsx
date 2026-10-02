@@ -1,175 +1,77 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
-import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Share, StyleSheet, Text, View } from 'react-native';
-
 import { AppButton } from '@/components/AppButton';
-import { AppDatePicker } from '@/components/AppDatePicker';
 import { AppInput } from '@/components/AppInput';
 import { AppScreen } from '@/components/AppScreen';
-import { PairAvatars } from '@/components/PairAvatars';
-import { SegmentedControl } from '@/components/SegmentedControl';
 import { useApp } from '@/context/AppContext';
 import { useDialog } from '@/context/DialogContext';
 import { colors, radii, spacing, typography } from '@/theme/tokens';
-import { formatRelationshipDate, toDateOnly } from '@/utils/dates';
-
-type PairMode = 'create' | 'join';
+import { JoinPreview, prepareJoinRemote } from '@/services/backend';
 
 export default function PairScreen() {
-  const { user, couple, createCouple, joinCouple, refreshWorkspace, signOut } = useApp();
+  const { couple, createCouple, joinCouple, refreshWorkspace } = useApp();
   const { showDialog } = useDialog();
-  const [mode, setMode] = useState<PairMode>('create');
-  const [relationshipDate, setRelationshipDate] = useState(toDateOnly(new Date()));
-  const [showDatePicker, setShowDatePicker] = useState(false);
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
-
+  const [preview, setPreview] = useState<JoinPreview | null>(null);
+  const [categoryNames, setCategoryNames] = useState<Record<string, string>>({});
+  const categoryCount = new Set(preview?.categories.map(item => item.label.trim().toLocaleLowerCase('ru-RU'))).size;
+  const categoriesValid = !!preview && categoryCount <= 6 && preview.categories.every(item => item.label.trim().length > 0);
   useEffect(() => {
-    if (couple?.partnerName) {
-      router.replace('/');
-    }
+    if (couple?.partnerName) router.replace('/');
   }, [couple?.partnerName]);
-
-  const handleCreate = async () => {
-    try {
-      setLoading(true);
-      await createCouple(relationshipDate);
-      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    } catch (error) {
-      showDialog({
-        title: 'Не получилось создать пару',
-        message: error instanceof Error ? error.message : 'Попробуйте ещё раз.',
-        tone: 'danger',
-      });
-    } finally {
-      setLoading(false);
-    }
+  const perform = async (action: () => Promise<void>) => {
+    if (loading) return;
+    setLoading(true);
+    try { await action(); }
+    catch (error) {
+      showDialog({ title: 'Не получилось подключиться', message: error && typeof error === 'object' && 'message' in error && typeof error.message === 'string' ? error.message : 'Попробуйте ещё раз.', tone: 'warning' });
+    } finally { setLoading(false); }
   };
-
-  const handleJoin = async () => {
-    if (code.trim().length !== 6) {
-      showDialog({ title: 'Проверьте код', message: 'Код пары состоит из 6 символов.', tone: 'warning' });
-      return;
-    }
-    try {
-      setLoading(true);
-      await joinCouple(code.trim());
-      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    } catch (error) {
-      showDialog({
-        title: 'Не получилось присоединиться',
-        message: error instanceof Error ? error.message : 'Проверьте код.',
-        tone: 'danger',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (couple?.inviteCode && !couple.partnerName) {
-    return (
-      <AppScreen contentContainerStyle={styles.waitingContent}>
-        <View style={styles.waitingIcon}>
-          <Ionicons name="hourglass-outline" size={34} color={colors.primary} />
-        </View>
-        <View style={styles.centeredCopy}>
-          <Text style={styles.title}>Ждём партнёра</Text>
-          <Text style={styles.subtitle}>Отправьте этот код человеку, с которым хотите разделить пространство.</Text>
-        </View>
-        <View style={styles.codeCard}>
-          <Text style={styles.codeLabel}>Код вашей пары</Text>
-          <Text selectable style={styles.code}>{couple.inviteCode}</Text>
-          <Text style={styles.codeHint}>Действует 24 часа и только для одного человека</Text>
-        </View>
-        <View style={styles.actions}>
-          <AppButton
-            label="Поделиться кодом"
-            onPress={() =>
-              void Share.share({
-                message: `Присоединяйся ко мне в приложении «Duet». Код нашей пары: ${couple.inviteCode}`,
-              })
-            }
-          />
-          <AppButton label="Проверить подключение" variant="secondary" onPress={() => void refreshWorkspace()} />
-        </View>
-      </AppScreen>
-    );
-  }
-
-  return (
-    <AppScreen contentContainerStyle={styles.content}>
-      <View style={styles.header}>
-        <PairAvatars firstName={user?.displayName ?? 'Вы'} size={48} />
-        <View style={styles.centeredCopy}>
-          <Text style={styles.title}>Создадим ваш Duet</Text>
-          <Text style={styles.subtitle}>Один создаёт пространство, второй присоединяется по коду.</Text>
-        </View>
-      </View>
-
-      <SegmentedControl
-        value={mode}
-        onChange={setMode}
-        options={[
-          { label: 'Создать пару', value: 'create' },
-          { label: 'Ввести код', value: 'join' },
-        ]}
-      />
-
+  const inviteActive = couple?.inviteCode && couple.inviteExpiresAt && new Date(couple.inviteExpiresAt).getTime() > Date.now();
+  return <AppScreen contentContainerStyle={styles.content}>
+    <AppButton label="Вернуться в пространство" variant="ghost" onPress={() => couple ? router.replace('/(tabs)') : void perform(refreshWorkspace)} />
+    <View style={styles.centeredCopy}>
+      <Text style={styles.title}>Вместе, когда будете готовы</Text>
+      <Text style={styles.subtitle}>Даты, желания и заметки доступны и без партнёра.</Text>
+    </View>
+    {!couple ? <AppButton label="Открыть моё пространство" loading={loading} onPress={() => void perform(refreshWorkspace)} /> : <>
       <View style={styles.card}>
-        {mode === 'create' ? (
-          <>
-            <View style={styles.fieldCopy}>
-              <Text style={styles.cardTitle}>Когда вы начали встречаться?</Text>
-              <Text style={styles.subtitle}>Эта дата станет началом общего счётчика.</Text>
-            </View>
-            <AppButton
-              label={formatRelationshipDate(relationshipDate)}
-              variant="secondary"
-              onPress={() => setShowDatePicker(true)}
-            />
-            <AppDatePicker
-              visible={showDatePicker}
-              value={relationshipDate}
-              title="Дата начала отношений"
-              maximumDate={toDateOnly(new Date())}
-              onSelect={setRelationshipDate}
-              onClose={() => setShowDatePicker(false)}
-            />
-            <AppButton label="Создать код пары" onPress={() => void handleCreate()} loading={loading} />
-          </>
-        ) : (
-          <>
-            <View style={styles.fieldCopy}>
-              <Text style={styles.cardTitle}>Введите код партнёра</Text>
-              <Text style={styles.subtitle}>Шесть символов из приглашения — регистр не важен.</Text>
-            </View>
-            <AppInput
-              label="Код пары"
-              placeholder="8K4M2Q"
-              value={code}
-              onChangeText={(value) => setCode(value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6))}
-              autoCapitalize="characters"
-              autoCorrect={false}
-              maxLength={6}
-              style={styles.codeInput}
-            />
-            <AppButton label="Присоединиться" onPress={() => void handleJoin()} loading={loading} />
-          </>
-        )}
+        <Text style={styles.cardTitle}>Пригласить партнёра</Text>
+        <Text style={styles.subtitle}>После подключения все ваши даты, желания, фото и заметки, включая корзину, станут доступны вам обоим.</Text>
+        {inviteActive && <Text selectable style={styles.code}>{couple.inviteCode}</Text>}
+        {inviteActive && <Text style={styles.codeHint}>Код действует до {new Date(couple.inviteExpiresAt!).toLocaleString('ru-RU')}</Text>}
+        {inviteActive && <AppButton label="Поделиться кодом" onPress={() => void Share.share({message: `Присоединяйся ко мне в приложении «Duet». Код нашей пары: ${couple.inviteCode}`})} />}
+        <AppButton label={inviteActive ? 'Обновить код' : 'Создать код приглашения'} loading={loading} variant="secondary"
+          onPress={() => showDialog({title:'Открыть общее пространство?',message:'Подключившийся по коду человек получит доступ ко всем данным вашего пространства. Передавайте код только своему партнёру. Новый код отменит предыдущий.',
+            actions:[{label:'Создать код',onPress:()=>perform(createCouple)},{label:'Отмена',variant:'ghost'}]})} />
       </View>
-
-      <AppButton
-        label="Выйти из аккаунта"
-        variant="ghost"
-        onPress={() => {
-          void signOut();
-          router.replace('/');
-        }}
-      />
-    </AppScreen>
-  );
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>У меня есть код</Text>
+        <AppInput label="Код партнёра" value={code} editable={!loading} onChangeText={value=>{setCode(value.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,6));setPreview(null);}} maxLength={6} autoCapitalize="characters" autoCorrect={false} />
+        <AppButton label={preview ? 'Обновить список категорий' : 'Продолжить'} loading={loading} disabled={code.length!==6}
+          onPress={()=>void perform(async()=>{
+            setPreview(null);
+            const next = await prepareJoinRemote(code);
+            setCategoryNames(Object.fromEntries(next.categories.map(item=>[item.key,item.label])));
+            setPreview(next);
+          })} />
+        {preview && <>
+          <Text style={styles.cardTitle}>Категории общего пространства</Text>
+          <Text style={styles.subtitle}>Одинаковые названия объединятся. Чтобы оставить не больше 6 категорий, укажите одинаковое название для тех, которые хотите объединить. Все даты сохранятся.</Text>
+          {preview.categories.map((item,index)=><AppInput key={item.key}
+            label={`${item.mine ? 'Моя' : 'Партнёра'}: ${categoryNames[item.key]}`}
+            value={item.label} editable={!loading} maxLength={40}
+            onChangeText={label=>setPreview(current=>current ? {...current,categories:current.categories.map((row,i)=>i===index ? {...row,label} : row)} : current)} />)}
+          <Text style={styles.codeHint}>После объединения: {categoryCount} из 6 категорий</Text>
+          <AppButton label="Объединить пространства" loading={loading} disabled={!categoriesValid}
+            onPress={()=>showDialog({title:'Объединить ваши данные?',message:'Даты, желания с фото и комментариями, заметки и корзина обоих пользователей станут общими. Личные желания останутся в списках их владельцев. Для счётчика дней используем дату начала отношений партнёра, а если она не задана — вашу. Отменить объединение в приложении нельзя.',
+              actions:[{label:'Объединить',onPress:()=>perform(()=>joinCouple(preview.token,preview.categories))},{label:'Отмена',variant:'ghost'}]})} />
+        </>}
+      </View>
+    </>}
+  </AppScreen>;
 }
 
 const styles = StyleSheet.create({

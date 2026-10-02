@@ -1,6 +1,6 @@
 import { Session } from '@supabase/supabase-js';
 
-import { supabase } from '@/lib/supabase';
+import { enableSession, supabase } from '@/lib/supabase';
 import { AppUser, Couple, DateEvent, DateEventInput, DateCategoryOption } from '@/types/domain';
 
 const emailRedirectTo = 'duet://auth';
@@ -15,7 +15,7 @@ type RemoteWorkspace = {
 type CoupleRow = {
   created_by: string;
   id: string;
-  relationship_started_at: string;
+  relationship_started_at: string | null;
   invite_code: string | null;
   invite_expires_at: string | null;
 };
@@ -47,29 +47,17 @@ function mapEvent(row: EventRow): DateEvent {
   };
 }
 
-function getAuthTokens(url: string) {
-  const query = url.includes('?') ? url.split('?')[1].split('#')[0] : '';
-  const fragment = url.includes('#') ? url.split('#')[1] : '';
-  const params = new URLSearchParams(fragment || query);
-  const errorDescription = params.get('error_description');
-
-  if (errorDescription) {
-    throw new Error(errorDescription);
-  }
-
-  const accessToken = params.get('access_token');
-  const refreshToken = params.get('refresh_token');
-  return accessToken && refreshToken ? { accessToken, refreshToken } : null;
-}
-
 export async function signInRemote(email: string, password: string): Promise<void> {
+  enableSession();
   const { error } = await getClient().auth.signInWithPassword({ email, password });
   if (error) {
     throw error;
   }
+  await getClient().auth.startAutoRefresh();
 }
 
 export async function signUpRemote(displayName: string, email: string, password: string): Promise<boolean> {
+  enableSession();
   const { data, error } = await getClient().auth.signUp({
     email,
     password,
@@ -95,23 +83,10 @@ export async function resendSignUpConfirmationRemote(email: string): Promise<voi
   }
 }
 
-export async function createSessionFromAuthUrl(url: string): Promise<void> {
-  const tokens = getAuthTokens(url);
-  if (!tokens) {
-    return;
-  }
-
-  const { error } = await getClient().auth.setSession({
-    access_token: tokens.accessToken,
-    refresh_token: tokens.refreshToken,
-  });
-  if (error) {
-    throw error;
-  }
-}
-
 export async function loadRemoteWorkspace(session: Session): Promise<RemoteWorkspace> {
   const client = getClient();
+  const { error: workspaceError } = await client.rpc('ensure_personal_workspace');
+  if (workspaceError) throw new Error('Не удалось открыть пространство. Проверьте подключение и применение миграции личного режима.');
   const [{ data: profile, error: profileError }, { data: membership, error: membershipError }] = await Promise.all([client
     .from('profiles')
     .select('display_name')
@@ -191,10 +166,8 @@ export async function loadRemoteWorkspace(session: Session): Promise<RemoteWorks
   };
 }
 
-export async function createCoupleRemote(relationshipStartedAt: string): Promise<void> {
-  const { error } = await getClient().rpc('create_couple', {
-    p_relationship_started_at: relationshipStartedAt,
-  });
+export async function createCoupleRemote(): Promise<void> {
+  const { error } = await getClient().rpc('create_personal_invite');
   if (error) {
     throw error;
   }
@@ -222,12 +195,27 @@ export async function updateDisplayNameRemote(userId: string, displayName: strin
   return data.display_name;
 }
 
-export async function joinCoupleRemote(inviteCode: string): Promise<void> {
-  const { error } = await getClient().rpc('join_couple', {
-    p_invite_code: inviteCode.toUpperCase(),
+export type JoinCategory = { key: string; label: string; mine: boolean };
+export type JoinPreview = { token: string; categories: JoinCategory[] };
+
+export async function prepareJoinRemote(inviteCode: string): Promise<JoinPreview> {
+  const { data, error } = await getClient().rpc('prepare_personal_join', { p_invite_code: inviteCode.toUpperCase() });
+  if (error) throw error;
+  if (!data) throw new Error('Код недоступен или срок действия истёк. После 5 попыток подождите 15 минут.');
+  return data as JoinPreview;
+}
+
+export async function joinCoupleRemote(token: string, categories: JoinCategory[]): Promise<void> {
+  const { data, error } = await getClient().rpc('join_personal_workspace', {
+    p_token: token,
+    p_categories: categories.map(({ key, label }) => ({ key, label: label.trim() })),
+    p_confirm_sharing: true,
   });
   if (error) {
     throw error;
+  }
+  if (!data?.length) {
+    throw new Error('Код не найден или срок действия истёк. После 5 попыток подождите 15 минут.');
   }
 }
 

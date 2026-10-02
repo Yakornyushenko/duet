@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import { supabase } from '@/lib/supabase';
+import { isSessionEnabled, supabase } from '@/lib/supabase';
 import { DateEventIcon } from '@/types/domain';
 import { Wishlist } from '@/utils/wishlists';
 
@@ -239,6 +239,7 @@ export async function removeDraftWishPhoto(path: string): Promise<void> {
 }
 
 export async function registerWishPushDevice(token: string): Promise<void> {
+  if (!isSessionEnabled()) return;
   const { error } = await getClient().rpc('register_wish_device', { p_token: token });
   if (error) {
     throw error;

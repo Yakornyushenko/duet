@@ -13,7 +13,10 @@ async function main() {
   let calls = 0;
   let removed = false;
   let resolvePending;
+  const channels = [];
   const notifications = {
+    AndroidImportance: { HIGH: 4 },
+    async setNotificationChannelAsync(id, options) { channels.push({ id, options }); },
     setNotificationHandler() {},
     addPushTokenListener(callback) {
       handler = callback;
@@ -40,6 +43,14 @@ async function main() {
     },
   });
   const received = [];
+  await exports.configureReminderChannel();
+  await exports.configureWishChannel();
+  await exports.configureQuestionChannel();
+  assert.equal(channels.length, 3);
+  for (const channel of channels) {
+    assert.equal(Object.hasOwn(channel.options, 'sound'), false, 'System channel sound must not be passed as a custom filename');
+    assert.equal(channel.options.importance, 4);
+  }
   const subscription = exports.addPushTokenListener((token) => received.push(token));
   const flush = () => new Promise((resolve) => setImmediate(resolve));
   handler({ type: 'android', data: 'first' });

@@ -7,7 +7,7 @@ export type AppUser = {
 export type Couple = {
   createdBy: string;
   id: string;
-  relationshipStartedAt: string;
+  relationshipStartedAt: string | null;
   inviteCode: string | null;
   inviteExpiresAt: string | null;
   partnerName: string | null;

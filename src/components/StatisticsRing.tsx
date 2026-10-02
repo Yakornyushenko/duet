@@ -114,7 +114,7 @@ const styles = StyleSheet.create({
   title: { ...typography.sectionTitle, color: colors.text },
   ring: { width: '100%', maxWidth: 300, aspectRatio: 1, alignSelf: 'center', alignItems: 'center', justifyContent: 'center' },
   center: { position: 'absolute', width: '56%', height: 120 },
-  centerContent: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center', gap: spacing.xs },
+  centerContent: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, alignItems: 'center', justifyContent: 'center', gap: spacing.xs },
   number: { fontSize: 46, fontWeight: '700', color: colors.text },
   centerLabel: { ...typography.caption, color: colors.muted, textAlign: 'center' },
   empty: { ...typography.caption, color: colors.muted, textAlign: 'center' },

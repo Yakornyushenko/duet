@@ -36,6 +36,7 @@ function getOpenTarget(data: Record<string, unknown> | undefined): NotificationO
   if (!data) {
     return null;
   }
+  if (typeof data.questionId === 'string') return { type: 'question', id: data.questionId };
   if (typeof data.wishId === 'string') {
     return { type: 'wish', id: data.wishId };
   }
@@ -72,7 +73,7 @@ export async function configureReminderChannel(): Promise<void> {
     importance: Notifications.AndroidImportance.HIGH,
     enableVibrate: true,
     vibrationPattern: [0, 250, 180, 250],
-    sound: 'default',
+    // Omit sound: Android uses its system default. A string is treated as a bundled filename.
     lightColor: '#E85D75',
   });
 }
@@ -84,7 +85,17 @@ export async function configureWishChannel(): Promise<void> {
     importance: Notifications.AndroidImportance.HIGH,
     enableVibrate: true,
     vibrationPattern: [0, 250, 180, 250],
-    sound: 'default',
+    // Keep the system default and the user's existing channel sound preference.
+    lightColor: '#E85D75',
+  });
+}
+
+export async function configureQuestionChannel(): Promise<void> {
+  await Notifications.setNotificationChannelAsync('daily-questions', {
+    name: 'Вопрос дня',
+    description: 'Ежедневный вопрос для вашей пары',
+    importance: Notifications.AndroidImportance.HIGH,
+    enableVibrate: true,
     lightColor: '#E85D75',
   });
 }

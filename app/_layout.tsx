@@ -13,7 +13,7 @@ export default function RootLayout() {
       <DialogProvider>
         <AppProvider>
           <ReminderProvider>
-            <StatusBar style="dark" backgroundColor={colors.background} />
+            <StatusBar style="dark" />
             <Stack
               screenOptions={{
                 headerShown: false,

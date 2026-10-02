@@ -163,7 +163,7 @@ export default function AuthScreen() {
             <View style={styles.modalCopy}>
               <Text style={styles.modalTitle}>Подтвердите почту</Text>
               <Text style={styles.modalText}>
-                Мы отправили ссылку на <Text style={styles.modalEmail}>{email.trim()}</Text>. Откройте её на этом телефоне.
+                Мы отправили ссылку на <Text style={styles.modalEmail}>{email.trim()}</Text>. Подтвердите почту, затем войдите с вашим email и паролем.
               </Text>
               {confirmationStatus ? <Text style={styles.modalStatus}>{confirmationStatus}</Text> : null}
             </View>

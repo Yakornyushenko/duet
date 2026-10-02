@@ -38,7 +38,7 @@ export function RelationshipDateEditor({ visible, onClose }: RelationshipDateEdi
   return (
     <AppDatePicker
       visible={visible}
-      value={couple.relationshipStartedAt}
+      value={couple.relationshipStartedAt ?? toDateOnly(new Date())}
       title="Дата начала отношений"
       maximumDate={toDateOnly(new Date())}
       onSelect={(relationshipDate) => void saveRelationshipDate(relationshipDate)}

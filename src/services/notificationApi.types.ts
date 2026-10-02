@@ -13,6 +13,7 @@ export type ReminderNotificationInput = {
 };
 
 export type NotificationOpenTarget =
+  | { type: 'question'; id: string }
   | { type: 'event'; id: string }
   | { type: 'wish'; id: string };
 

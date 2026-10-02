@@ -1,15 +1,16 @@
 import { Session } from '@supabase/supabase-js';
 import * as Linking from 'expo-linking';
+import { AppState as NativeAppState } from 'react-native';
 import { createContext, PropsWithChildren, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 
-import { supabase } from '@/lib/supabase';
-import { unregisterWishPushDevice } from '@/services/wishes';
+import { clearLocalSession, isSessionEnabled, revokeRemoteSession, supabase } from '@/lib/supabase';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   addEventRemote,
-  createSessionFromAuthUrl,
   createCoupleRemote,
   deleteEventRemote,
   joinCoupleRemote,
+  JoinCategory,
   loadRemoteWorkspace,
   resendSignUpConfirmationRemote,
   signInRemote,
@@ -19,6 +20,8 @@ import {
   updateRelationshipDateRemote,
 } from '@/services/backend';
 import { AppUser, Couple, DateEvent, DateEventInput, DateCategoryOption } from '@/types/domain';
+import { isAuthConfirmationLink } from '@/utils/authLink';
+import { useDialog } from '@/context/DialogContext';
 
 type AppState = {
   user: AppUser | null;
@@ -33,10 +36,10 @@ type AppContextValue = AppState & {
   signUp: (name: string, email: string, password: string) => Promise<boolean>;
   resendSignUpConfirmation: (email: string) => Promise<void>;
   signOut: () => Promise<void>;
-  createCouple: (relationshipStartedAt: string) => Promise<void>;
+  createCouple: () => Promise<void>;
   updateRelationshipDate: (relationshipStartedAt: string) => Promise<void>;
   updateDisplayName: (displayName: string) => Promise<void>;
-  joinCouple: (code: string) => Promise<void>;
+  joinCouple: (token: string, categories: JoinCategory[]) => Promise<void>;
   refreshWorkspace: () => Promise<void>;
   addEvent: (input: DateEventInput) => Promise<DateEvent>;
   updateEvent: (id: string, input: DateEventInput) => Promise<DateEvent>;
@@ -46,6 +49,7 @@ type AppContextValue = AppState & {
 const AppContext = createContext<AppContextValue | null>(null);
 
 export function AppProvider({ children }: PropsWithChildren) {
+  const { showDialog } = useDialog();
   const [user, setUser] = useState<AppUser | null>(null);
   const [couple, setCouple] = useState<Couple | null>(null);
   const [events, setEvents] = useState<DateEvent[]>([]);
@@ -66,7 +70,7 @@ export function AppProvider({ children }: PropsWithChildren) {
   const applyRemoteWorkspace = useCallback(async (activeSession: Session) => {
     const request = ++workspaceRequest.current;
     const workspace = await loadRemoteWorkspace(activeSession);
-    if (request !== workspaceRequest.current) return;
+    if (request !== workspaceRequest.current || !isSessionEnabled()) return;
     // Preserve references when server data did not change. In particular, avoid
     // re-scheduling every local reminder on a profile/couple refresh.
     setUser((current) => JSON.stringify(current) === JSON.stringify(workspace.user) ? current : workspace.user);
@@ -95,16 +99,19 @@ export function AppProvider({ children }: PropsWithChildren) {
 
         const { data: userData, error: userError } = await client.auth.getUser();
         if (userError || !userData.user) {
-          await client.auth.signOut({ scope: 'local' });
-          clearWorkspace();
-          return;
+          if (userError?.status === 401 || userError?.status === 403) {
+            await clearLocalSession();
+            clearWorkspace();
+            return;
+          }
+          throw new Error('Не удалось проверить сессию. Проверьте подключение.');
         }
 
         setSession(data.session);
         await applyRemoteWorkspace(data.session);
       } catch (error) {
         console.error('Не удалось восстановить сессию', error);
-        await client.auth.signOut({ scope: 'local' });
+        // A network/secure-storage failure must not destroy a migratable session.
         clearWorkspace();
       } finally {
         setInitializing(false);
@@ -117,6 +124,7 @@ export function AppProvider({ children }: PropsWithChildren) {
       if (event === 'INITIAL_SESSION') {
         return;
       }
+      if (nextSession && !isSessionEnabled()) return;
       setSession(nextSession);
       if (!nextSession) {
         clearWorkspace();
@@ -139,8 +147,10 @@ export function AppProvider({ children }: PropsWithChildren) {
     }
 
     const handleAuthUrl = (url: string) => {
-      void createSessionFromAuthUrl(url).catch((error) => {
-        console.error('Не удалось завершить подтверждение почты', error);
+      if (!isAuthConfirmationLink(url)) return;
+      showDialog({
+        title: 'Подтверждение почты',
+        message: 'Если почта подтверждена, войдите с вашим email и паролем. Открытие ссылки не меняет текущий аккаунт.',
       });
     };
 
@@ -152,7 +162,7 @@ export function AppProvider({ children }: PropsWithChildren) {
 
     const subscription = Linking.addEventListener('url', ({ url }) => handleAuthUrl(url));
     return () => subscription.remove();
-  }, []);
+  }, [showDialog]);
 
   const refreshWorkspace = useCallback(async () => {
     if (session) {
@@ -190,6 +200,11 @@ export function AppProvider({ children }: PropsWithChildren) {
       )
       .on(
         'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'couple_members', filter: `user_id=eq.${session.user.id}` },
+        scheduleRefresh,
+      )
+      .on(
+        'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'couples', filter: `id=eq.${couple.id}` },
         scheduleRefresh,
       )
@@ -198,10 +213,14 @@ export function AppProvider({ children }: PropsWithChildren) {
         { event: 'UPDATE', schema: 'public', table: 'profiles' },
         scheduleRefresh,
       )
-      .subscribe();
+      .subscribe(status => { if (status === 'SUBSCRIBED') scheduleRefresh(); });
+    const foreground = NativeAppState.addEventListener('change', state => {
+      if (state === 'active') scheduleRefresh();
+    });
 
     return () => {
       if (refreshTimer) clearTimeout(refreshTimer);
+      foreground.remove();
       void client.removeChannel(channel);
     };
   }, [couple?.id, refreshWorkspace, session]);
@@ -226,14 +245,14 @@ export function AppProvider({ children }: PropsWithChildren) {
         if (!supabase) {
           throw new Error('Supabase не настроен');
         }
-        await unregisterWishPushDevice();
-        const { error } = await supabase.auth.signOut();
-        if (error) {
-          throw error;
-        }
+        const token = await AsyncStorage.getItem('duet:wish-push-token').catch(() => null);
+        const accessToken = await clearLocalSession();
+        clearWorkspace();
+        void supabase.removeAllChannels();
+        if (accessToken) void revokeRemoteSession(accessToken, token);
       },
-      createCouple: async (relationshipStartedAt) => {
-        await createCoupleRemote(relationshipStartedAt);
+      createCouple: async () => {
+        await createCoupleRemote();
         await refreshWorkspace();
       },
       updateRelationshipDate: async (relationshipStartedAt) => {
@@ -247,8 +266,8 @@ export function AppProvider({ children }: PropsWithChildren) {
         const updatedDisplayName = await updateDisplayNameRemote(user.id, displayName.trim());
         setUser((current) => current ? { ...current, displayName: updatedDisplayName } : current);
       },
-      joinCouple: async (code) => {
-        await joinCoupleRemote(code);
+      joinCouple: async (token, categories) => {
+        await joinCoupleRemote(token, categories);
         await refreshWorkspace();
       },
       refreshWorkspace,
@@ -270,7 +289,7 @@ export function AppProvider({ children }: PropsWithChildren) {
         setEvents((current) => current.filter((event) => event.id !== id));
       },
     }),
-    [couple, events, categories, initializing, refreshWorkspace, user],
+    [couple, events, categories, initializing, refreshWorkspace, user, clearWorkspace],
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

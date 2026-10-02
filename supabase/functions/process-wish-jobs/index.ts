@@ -5,6 +5,7 @@ type WishJob = {
   couple_id: string;
   recipient_id: string | null;
   wish_id: string | null;
+  daily_question_id: string | null;
   message: string | null;
   remove_photos: string[] | null;
 };
@@ -29,6 +30,9 @@ Deno.serve(async (request) => {
   }
 
   const supabase = createClient(supabaseUrl, serviceRoleKey);
+  const { error: dailyError } = await supabase.rpc('enqueue_daily_questions');
+  // A daily-question failure must not stop existing wish notifications.
+  if (dailyError) console.error('Daily question scheduling failed:', dailyError.message);
   const { data: jobs, error } = await supabase.rpc('claim_wish_jobs');
   if (error) {
     return Response.json({ error: error.message }, { status: 500 });
@@ -84,6 +88,15 @@ async function sendWishPush(
     .select('user_id').eq('couple_id', job.couple_id).eq('user_id', job.recipient_id).maybeSingle();
   if (memberError) throw memberError;
   if (!member) return;
+  let body = job.message;
+  if (job.daily_question_id) {
+    const { data, error } = await supabase.rpc('daily_question_delivery', {
+      p_id: job.daily_question_id, p_user: job.recipient_id,
+    });
+    if (error) throw error;
+    if (!data) return;
+    body = data;
+  }
   const { data: devices, error: deviceError } = await supabase
     .from('wish_devices')
     .select('token')
@@ -101,12 +114,12 @@ async function sendWishPush(
 
   const messages = tokens.map((token: string) => ({
     to: token,
-    title: 'Duet',
-    body: job.message,
+    title: job.daily_question_id ? 'Duet · Вопрос дня' : 'Duet',
+    body,
     sound: 'default',
     // Android needs a channel so the notification is grouped and vibrates.
-    channelId: 'wish-updates',
-    data: job.wish_id ? { wishId: job.wish_id } : {},
+    channelId: job.daily_question_id ? 'daily-questions' : 'wish-updates',
+    data: job.daily_question_id ? { questionId: job.daily_question_id } : job.wish_id ? { wishId: job.wish_id } : {},
   }));
 
   const pushResponse = await fetch('https://exp.host/--/api/v2/push/send', {

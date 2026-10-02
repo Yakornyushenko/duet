@@ -52,16 +52,16 @@ export default function StatisticsScreen() {
   }, [couple?.id, user?.id, revision]));
 
   const stats = useMemo(() => data ? summarizeStatistics(data, period) : null, [data, period]);
-  const categoryMetrics = categories.map((category) => ({
+  const categoryMetrics = categories.map((category, index) => ({
     id: category.value, label: category.label, count: stats?.categoryCounts[category.value] ?? 0,
     color: ({ dates: colors.primary, travel: colors.secondary, important: '#C48B67', other: '#B99AAC' } as Record<string, string>)[category.value]
-      ?? (category.customSlot === 1 ? '#A67683' : '#9A9C72'),
+      ?? [colors.primary, colors.secondary, '#C48B67', '#B99AAC', '#A67683', '#9A9C72'][index % 6],
   }));
   const ringSegments = [
     ...categoryMetrics,
     { id: 'fulfilled-wishes', label: 'Исполненные желания', count: stats?.wishes ?? 0, color: '#E8B7A5' },
   ];
-  const days = couple ? getDaysTogether(couple.relationshipStartedAt) : 0;
+  const days = couple?.relationshipStartedAt ? getDaysTogether(couple.relationshipStartedAt) : 0;
   const wishlists = getWishlists(user, couple);
 
   return <AppScreen contentContainerStyle={styles.screen}>
@@ -71,11 +71,11 @@ export default function StatisticsScreen() {
       </Pressable>
       <Text style={styles.title}>Наша история</Text>
     </View>
-    <LinearGradient colors={[colors.primary, colors.secondary]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.hero}>
+    {couple?.relationshipStartedAt && <LinearGradient colors={[colors.primary, colors.secondary]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.hero}>
       <Text style={styles.heroCaption}>Вместе</Text>
       <Text style={styles.heroNumber}>{days} <Text style={styles.heroUnit}>{pluralizeDays(days)}</Text></Text>
       {couple && <Text style={styles.heroCaption}>С {formatRelationshipDate(couple.relationshipStartedAt)}</Text>}
-    </LinearGradient>
+    </LinearGradient>}
     <SegmentedControl value={period} onChange={setPeriod} options={[
       { value: 'month', label: 'Месяц' }, { value: 'year', label: 'Год' }, { value: 'all', label: 'Всё время' },
     ]} />

@@ -8,6 +8,7 @@ import { AppButton } from '@/components/AppButton';
 import { AppInput } from '@/components/AppInput';
 import { AppScreen } from '@/components/AppScreen';
 import { PairAvatars } from '@/components/PairAvatars';
+import { IntimateQuestionSettings } from '@/components/IntimateQuestionSettings';
 import { RelationshipDateEditor } from '@/components/RelationshipDateEditor';
 import { useApp } from '@/context/AppContext';
 import { useDialog } from '@/context/DialogContext';
@@ -97,14 +98,15 @@ export default function ProfileScreen() {
       <View style={styles.coupleCard}>
         <PairAvatars firstName={user.displayName} secondName={couple.partnerName} size={64} />
         <View style={styles.centeredCopy}>
-          <Text style={styles.coupleName}>{user.displayName} + {couple.partnerName}</Text>
+          <Text style={styles.coupleName}>{user.displayName}{couple.partnerName ? ` + ${couple.partnerName}` : ''}</Text>
           <View style={styles.connectedRow}>
             <Ionicons name="checkmark-circle" size={18} color={colors.success} />
-            <Text style={styles.connected}>Вы связаны</Text>
+            <Text style={styles.connected}>{couple.partnerName ? 'Вы связаны' : 'Личное пространство'}</Text>
           </View>
         </View>
       </View>
 
+      {!couple.partnerName && <AppButton label="Пригласить партнёра" variant="secondary" onPress={() => router.push('/pair')} />}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>О паре</Text>
         <View style={styles.detailsCard}>
@@ -119,7 +121,7 @@ export default function ProfileScreen() {
             </View>
             <View style={styles.detailCopy}>
               <Text style={styles.detailLabel}>Вместе с</Text>
-              <Text style={styles.detailValue}>{formatRelationshipDate(couple.relationshipStartedAt)}</Text>
+              <Text style={styles.detailValue}>{couple.relationshipStartedAt ? formatRelationshipDate(couple.relationshipStartedAt) : 'Добавить дату'}</Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color={colors.muted} />
           </Pressable>
@@ -153,7 +155,8 @@ export default function ProfileScreen() {
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Настройки</Text>
+        <Text style={styles.sectionTitle}>Настройки аккаунта</Text>
+        <IntimateQuestionSettings />
         <View style={styles.detailsCard}>
           <View style={styles.detailRow}>
             <View style={styles.detailIcon}>

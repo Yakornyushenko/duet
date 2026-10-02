@@ -80,7 +80,7 @@ export function DateCategoryPicker({ value, onChange, includeAll = false, editab
               <Text style={styles.categoryName}>{category.label}</Text>
               <PencilIcon />
             </Pressable>)}
-            {categories.filter((item) => item.customSlot !== null).length < 2 &&
+            {categories.length < 6 &&
               <AppButton label="Добавить категорию" disabled={busy} onPress={() => {
                 setName(''); setError(''); setEditor({});
               }} />}

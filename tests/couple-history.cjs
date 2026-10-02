@@ -15,6 +15,15 @@ function load(path, dependencies = {}) {
 }
 
 const { isChecklistComplete } = load('src/utils/notes.ts');
+const { getWishlists } = load('src/utils/wishlists.ts');
+const soloLists = getWishlists({ id: 'one', displayName: 'Первый' }, { createdBy: 'one', partnerName: null });
+assert.equal(soloLists.length, 2);
+assert.equal(soloLists[1].value, 'creator');
+assert.equal(soloLists[1].label, 'Мои');
+const pairedLists = getWishlists({ id: 'two', displayName: 'Второй' }, { createdBy: 'one', partnerName: 'Первый' });
+assert.equal(pairedLists.length, 3);
+assert.equal(pairedLists.find(item => item.value === 'creator').label, 'Первый');
+assert.equal(pairedLists.find(item => item.value === 'partner').label, 'Второй');
 assert.equal(isChecklistComplete({ kind: 'checklist', items: [] }), false);
 assert.equal(isChecklistComplete({ kind: 'checklist', items: [{ done: true }, { done: false }] }), false);
 assert.equal(isChecklistComplete({ kind: 'checklist', items: [{ done: true }, { done: true }] }), true);

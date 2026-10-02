@@ -31,7 +31,7 @@ export default function EntryScreen() {
     return <Redirect href="/auth" />;
   }
 
-  if (!couple || !couple.partnerName) {
+  if (!couple) {
     return <Redirect href="/pair" />;
   }
 

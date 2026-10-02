@@ -76,6 +76,8 @@ const styles = StyleSheet.create({
   },
   label: {
     ...typography.body,
+    alignSelf: 'stretch',
+    textAlign: 'center',
     fontWeight: '600',
   },
 });

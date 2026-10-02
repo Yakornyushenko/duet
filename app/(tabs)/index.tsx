@@ -1,7 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { useIsFocused } from '@react-navigation/native';
+import { useIsFocused } from 'expo-router';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { AppButton } from '@/components/AppButton';
@@ -63,8 +63,8 @@ export default function HomeScreen() {
         <View style={styles.coupleIdentity}>
           <PairAvatars firstName={user.displayName} secondName={couple.partnerName} />
           <View style={styles.identityCopy}>
-            <Text style={styles.eyebrow}>Наше пространство</Text>
-            <Text style={styles.coupleName} numberOfLines={1} ellipsizeMode="tail">{user.displayName} + {couple.partnerName}</Text>
+            <Text style={styles.eyebrow}>{couple.partnerName ? 'Наше пространство' : 'Моё пространство'}</Text>
+            <Text style={styles.coupleName} numberOfLines={1} ellipsizeMode="tail">{user.displayName}{couple.partnerName ? ` + ${couple.partnerName}` : ''}</Text>
           </View>
         </View>
         <Pressable
@@ -85,8 +85,10 @@ export default function HomeScreen() {
         </Pressable>
       </View>
 
+      {!couple.partnerName && <AppButton label="Пригласить партнёра" variant="ghost" onPress={() => router.push('/pair')} />}
       <View style={styles.hero}>
         <View style={styles.daySummary}>
+        {couple.relationshipStartedAt ? <>
         <Text style={styles.eyebrow}>Мы вместе уже</Text>
         <Pressable
           accessibilityRole="button"
@@ -98,6 +100,7 @@ export default function HomeScreen() {
           <Text style={styles.dayLabel}>дней</Text>
         </Pressable>
         <Text style={styles.heroDate}>С {formatRelationshipDate(couple.relationshipStartedAt)}</Text>
+        </> : <AppButton label="Добавить дату начала отношений" variant="ghost" onPress={() => setRelationshipDateEditorVisible(true)} />}
         </View>
         <Pressable
           accessibilityRole="button"
@@ -257,7 +260,7 @@ const styles = StyleSheet.create({
     padding: spacing.xxl,
   },
   emptyCopy: {
-    alignItems: 'center',
+    alignSelf: 'stretch',
     gap: spacing.xs,
   },
   cardTitle: {

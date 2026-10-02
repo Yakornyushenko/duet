@@ -125,3 +125,5 @@ pnpm android:phone
 Команда собирает release APK для `arm64-v8a` и устанавливает его на Samsung SM-S931B.
 
 Production-сборки Android и iOS выполняются через EAS Build. Собственный Mac для облачной сборки и отправки в TestFlight не требуется.
+
+Пошаговый план публикации Android-приложения в Google Play находится в [ANDROID_RELEASE.md](./ANDROID_RELEASE.md).

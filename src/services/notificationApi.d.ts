@@ -10,6 +10,7 @@ export function getNotificationPermission(): Promise<NotificationPermissionSnaps
 export function requestNotificationPermission(): Promise<NotificationPermissionSnapshot>;
 export function configureReminderChannel(): Promise<void>;
 export function configureWishChannel(): Promise<void>;
+export function configureQuestionChannel(): Promise<void>;
 export function getScheduledNotificationIds(): Promise<string[]>;
 export function cancelScheduledNotification(identifier: string): Promise<void>;
 export function scheduleReminderNotification(input: ReminderNotificationInput): Promise<void>;
