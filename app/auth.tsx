@@ -1,5 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { router } from 'expo-router';
+import { Href, router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -140,7 +140,16 @@ export default function AuthScreen() {
         />
       </View>
 
-      <Text style={styles.privacy}>Продолжая, вы соглашаетесь бережно хранить общее пространство пары.</Text>
+      <View style={styles.privacyNotice}>
+        <Text style={styles.privacy}>Создавая аккаунт, вы принимаете</Text>
+        <Pressable
+          accessibilityRole="link"
+          accessibilityLabel="Открыть политику конфиденциальности"
+          onPress={() => router.push('/privacy' as Href)}
+        >
+          <Text style={styles.privacyLink}>Политику конфиденциальности</Text>
+        </Pressable>
+      </View>
 
       <Modal
         transparent
@@ -225,11 +234,21 @@ const styles = StyleSheet.create({
     padding: spacing.xl,
     gap: spacing.lg,
   },
+  privacyNotice: {
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.xl,
+  },
   privacy: {
     ...typography.caption,
     color: colors.muted,
     textAlign: 'center',
-    paddingHorizontal: spacing.xl,
+  },
+  privacyLink: {
+    ...typography.caption,
+    color: colors.primary,
+    textAlign: 'center',
+    textDecorationLine: 'underline',
   },
   modalBackdrop: {
     flex: 1,

@@ -40,6 +40,7 @@ pnpm start
 ```env
 EXPO_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your-publishable-key
+EXPO_PUBLIC_SUPPORT_EMAIL=support@example.com
 ```
 
 Publishable key можно использовать в клиентском приложении: доступ к данным защищён политиками Row Level Security из миграции. Service role key добавлять в приложение нельзя.
@@ -108,6 +109,19 @@ npx eas build --platform ios
 Войти под разными пользователями одной пары, разрешить уведомления через существующий раздел колокольчика. На первом устройстве добавить/изменить желание или оставить комментарий; на втором дождаться push и проверить открытие желания нажатием. Автор не должен получать свой push. Проверить также закрытое приложение и выход из аккаунта. Если push не приходит, проверить `wish_devices`, `wish_jobs.last_error`, журнал функции и запуск задания Cron. На главной новые элементы не добавляются.
 
 Официальная настройка: [Expo / FCM V1](https://docs.expo.dev/push-notifications/fcm-credentials/), [Supabase / запуск по расписанию](https://supabase.com/docs/guides/functions/schedule-functions).
+
+## Удаление аккаунта
+
+Кнопка в профиле вызывает Edge Function `delete-account`. Функция проверяет JWT пользователя, сохраняет список принадлежащих ему фотографий закрытой RPC `begin_account_deletion`, удаляет их из приватного bucket, атомарно очищает данные через `finalize_account_deletion` и только затем удаляет запись Supabase Auth.
+
+Для включения функции в production:
+
+1. применить миграцию `supabase/migrations/20261002000000_account_deletion.sql`;
+2. развернуть функцию `supabase functions deploy delete-account`;
+3. проверить удаление сначала на двух тестовых аккаунтах в общей паре, затем на одиночном тестовом аккаунте;
+4. убедиться, что удалённый пользователь не может войти, его push-токены и фотографии исчезли, а аккаунт партнёра и совместные материалы остались доступны.
+
+Service role key предоставляется функции окружением Supabase. Его нельзя добавлять в `.env`, приложение или репозиторий.
 
 ## Проверки
 

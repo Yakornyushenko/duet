@@ -31,7 +31,8 @@
     },
     "web": {
       "favicon": "./assets/duet-icon-foreground.png",
-      "bundler": "metro"
+      "bundler": "metro",
+      "output": "static"
     },
     "plugins": [
       "expo-secure-store",

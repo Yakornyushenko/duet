@@ -8,6 +8,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   addEventRemote,
   createCoupleRemote,
+  deleteAccountRemote,
   deleteEventRemote,
   joinCoupleRemote,
   JoinCategory,
@@ -36,6 +37,7 @@ type AppContextValue = AppState & {
   signUp: (name: string, email: string, password: string) => Promise<boolean>;
   resendSignUpConfirmation: (email: string) => Promise<void>;
   signOut: () => Promise<void>;
+  deleteAccount: () => Promise<void>;
   createCouple: () => Promise<void>;
   updateRelationshipDate: (relationshipStartedAt: string) => Promise<void>;
   updateDisplayName: (displayName: string) => Promise<void>;
@@ -250,6 +252,17 @@ export function AppProvider({ children }: PropsWithChildren) {
         clearWorkspace();
         void supabase.removeAllChannels();
         if (accessToken) void revokeRemoteSession(accessToken, token);
+      },
+      deleteAccount: async () => {
+        await deleteAccountRemote();
+        await clearLocalSession().catch((error) => {
+          console.warn('Аккаунт удалён, но локальная сессия очищена не полностью', error);
+        });
+        await AsyncStorage.clear().catch((error) => {
+          console.warn('Аккаунт удалён, но локальные данные очищены не полностью', error);
+        });
+        clearWorkspace();
+        void supabase?.removeAllChannels();
       },
       createCouple: async () => {
         await createCoupleRemote();

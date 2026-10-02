@@ -1,6 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import * as Haptics from 'expo-haptics';
-import { router } from 'expo-router';
+import { Href, router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 
@@ -17,7 +17,7 @@ import { colors, radii, spacing, typography } from '@/theme/tokens';
 import { formatRelationshipDate } from '@/utils/dates';
 
 export default function ProfileScreen() {
-  const { user, couple, signOut, updateDisplayName } = useApp();
+  const { user, couple, signOut, deleteAccount, updateDisplayName } = useApp();
   const { showDialog } = useDialog();
   const {
     enabled: remindersEnabled,
@@ -27,6 +27,7 @@ export default function ProfileScreen() {
   } = useReminders();
   const [displayName, setDisplayName] = useState(user?.displayName ?? '');
   const [nameSaving, setNameSaving] = useState(false);
+  const [accountDeleting, setAccountDeleting] = useState(false);
   const [relationshipDateEditorVisible, setRelationshipDateEditorVisible] = useState(false);
 
   useEffect(() => {
@@ -198,6 +199,45 @@ export default function ProfileScreen() {
 
       <View style={styles.logoutButton}>
         <AppButton
+          label="Удалить аккаунт и данные"
+          variant="danger"
+          loading={accountDeleting}
+          onPress={() =>
+            showDialog({
+              title: 'Удалить аккаунт навсегда?',
+              message: 'Аккаунт, профиль, ваши ответы, даты, желания, комментарии, push-токены и загруженные фотографии будут удалены. Совместные материалы без однозначного автора могут остаться у партнёра без связи с вашим аккаунтом. Это действие нельзя отменить.',
+              tone: 'danger',
+              actions: [
+                {
+                  label: 'Удалить навсегда',
+                  variant: 'danger',
+                  onPress: async () => {
+                    try {
+                      setAccountDeleting(true);
+                      await deleteAccount();
+                      router.replace('/auth');
+                    } catch (error) {
+                      showDialog({
+                        title: 'Не получилось удалить аккаунт',
+                        message: error instanceof Error ? error.message : 'Проверьте подключение и попробуйте ещё раз.',
+                        tone: 'danger',
+                      });
+                    } finally {
+                      setAccountDeleting(false);
+                    }
+                  },
+                },
+                { label: 'Отмена', variant: 'ghost' },
+              ],
+            })
+          }
+        />
+        <AppButton
+          label="Как удаляются данные"
+          variant="ghost"
+          onPress={() => router.push('/delete-account' as Href)}
+        />
+        <AppButton
           label="Выйти из аккаунта"
           variant="danger"
           onPress={() =>
@@ -324,6 +364,7 @@ const styles = StyleSheet.create({
   },
   logoutButton: {
     marginTop: spacing.huge,
+    gap: spacing.sm,
   },
   pressed: {
     opacity: 0.68,

@@ -1,5 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { router } from 'expo-router';
+import { Href, router } from 'expo-router';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { AppScreen } from '@/components/AppScreen';
@@ -94,6 +94,21 @@ export default function MoreScreen() {
         <View style={styles.copy}>
           <Text style={styles.label}>Профиль</Text>
           <Text style={styles.description}>Наша пара и настройки</Text>
+        </View>
+        <Ionicons name="chevron-forward" size={20} color={colors.muted} />
+      </Pressable>
+      <Pressable
+        accessibilityRole="link"
+        accessibilityLabel="Открыть политику конфиденциальности"
+        onPress={() => router.push('/privacy' as Href)}
+        style={({ pressed }) => [styles.card, pressed && styles.pressed]}
+      >
+        <View style={styles.icon}>
+          <Ionicons name="shield-checkmark-outline" size={24} color={colors.primary} />
+        </View>
+        <View style={styles.copy}>
+          <Text style={styles.label}>Конфиденциальность</Text>
+          <Text style={styles.description}>Как Duet использует и защищает данные</Text>
         </View>
         <Ionicons name="chevron-forward" size={20} color={colors.muted} />
       </Pressable>

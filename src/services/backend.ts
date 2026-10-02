@@ -83,6 +83,15 @@ export async function resendSignUpConfirmationRemote(email: string): Promise<voi
   }
 }
 
+export async function deleteAccountRemote(): Promise<void> {
+  const { error } = await getClient().functions.invoke('delete-account', {
+    body: { confirmation: 'DELETE_MY_ACCOUNT' },
+  });
+  if (error) {
+    throw new Error('Не удалось удалить аккаунт. Проверьте подключение и попробуйте ещё раз.');
+  }
+}
+
 export async function loadRemoteWorkspace(session: Session): Promise<RemoteWorkspace> {
   const client = getClient();
   const { error: workspaceError } = await client.rpc('ensure_personal_workspace');
