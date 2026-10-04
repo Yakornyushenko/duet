@@ -64,7 +64,7 @@ export default function DailyQuestionScreen() {
       if (current !== scope.current || next.preferences.introduced || introShown.current) return;
       introShown.current = true;
       showDialog({ title: 'Один вопрос — два взгляда', dismissible: false,
-        message: 'Каждый день — общий вопрос об отношениях. Ответы откроются, когда ответите оба. Время уведомления одно для пары. Можно пропустить вопрос или поставить раздел на паузу. Интимные темы включаются отдельно, только по согласию обоих совершеннолетних партнёров.',
+        message: 'Каждый день — общий вопрос об отношениях. Ответы откроются, когда ответите оба. Время уведомления одно для пары. Можно поставить раздел на паузу. Личные вопросы каждый включает для себя отдельно; они доступны только по согласию обоих совершеннолетних партнёров.',
         actions: [{ label: 'Начать', onPress: async () => {
           try { await questionRequest('set_question_preferences', { p_patch: { introduced: true, enabled: true } }); await refresh(); }
           catch { introShown.current = false; setError('Не удалось включить вопросы. Попробуйте снова.'); }

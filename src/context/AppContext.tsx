@@ -50,6 +50,10 @@ type AppContextValue = AppState & {
 
 const AppContext = createContext<AppContextValue | null>(null);
 
+function isRejectedSession(error: { status?: number } | null): boolean {
+  return error?.status === 400 || error?.status === 401 || error?.status === 403;
+}
+
 export function AppProvider({ children }: PropsWithChildren) {
   const { showDialog } = useDialog();
   const [user, setUser] = useState<AppUser | null>(null);
@@ -69,6 +73,17 @@ export function AppProvider({ children }: PropsWithChildren) {
     setCategories([]);
   }, []);
 
+  const clearRejectedSession = useCallback(async () => {
+    clearWorkspace();
+    void supabase?.removeAllChannels();
+    await clearLocalSession().catch((error) => {
+      console.warn('Не удалось полностью очистить недействительную сессию', error);
+    });
+    await AsyncStorage.clear().catch((error) => {
+      console.warn('Не удалось полностью очистить локальные данные удалённого аккаунта', error);
+    });
+  }, [clearWorkspace]);
+
   const applyRemoteWorkspace = useCallback(async (activeSession: Session) => {
     const request = ++workspaceRequest.current;
     const workspace = await loadRemoteWorkspace(activeSession);
@@ -81,6 +96,53 @@ export function AppProvider({ children }: PropsWithChildren) {
     setCategories((current) => JSON.stringify(current) === JSON.stringify(workspace.categories) ? current : workspace.categories);
   }, []);
 
+  const verifyAccountSession = useCallback(async () => {
+    const client = supabase;
+    if (!client) {
+      clearWorkspace();
+      return;
+    }
+
+    const { data: sessionData, error: sessionError } = await client.auth.getSession();
+    if (sessionError) {
+      if (isRejectedSession(sessionError)) {
+        await clearRejectedSession();
+        return;
+      }
+      throw sessionError;
+    }
+
+    const activeSession = sessionData.session;
+    if (!activeSession) {
+      clearWorkspace();
+      return;
+    }
+
+    const { data: userData, error: userError } = await client.auth.getUser(activeSession.access_token);
+    const userMismatch = Boolean(userData.user && userData.user.id !== activeSession.user.id);
+    if (userError || !userData.user || userMismatch) {
+      if ((!userError && !userData.user) || isRejectedSession(userError) || userMismatch) {
+        await clearRejectedSession();
+        return;
+      }
+      throw userError;
+    }
+
+    setSession(activeSession);
+    try {
+      await applyRemoteWorkspace(activeSession);
+    } catch (workspaceError) {
+      // The account can be deleted between the first auth check and loading its
+      // workspace. Recheck before treating this as an ordinary data/network error.
+      const { data: recheckData, error: recheckError } = await client.auth.getUser(activeSession.access_token);
+      if (!recheckData.user && (!recheckError || isRejectedSession(recheckError))) {
+        await clearRejectedSession();
+        return;
+      }
+      throw workspaceError;
+    }
+  }, [applyRemoteWorkspace, clearRejectedSession, clearWorkspace]);
+
   useEffect(() => {
     const client = supabase;
     if (!client) {
@@ -90,27 +152,7 @@ export function AppProvider({ children }: PropsWithChildren) {
 
     const initializeSession = async () => {
       try {
-        const { data, error } = await client.auth.getSession();
-        if (error) {
-          throw error;
-        }
-        if (!data.session) {
-          clearWorkspace();
-          return;
-        }
-
-        const { data: userData, error: userError } = await client.auth.getUser();
-        if (userError || !userData.user) {
-          if (userError?.status === 401 || userError?.status === 403) {
-            await clearLocalSession();
-            clearWorkspace();
-            return;
-          }
-          throw new Error('Не удалось проверить сессию. Проверьте подключение.');
-        }
-
-        setSession(data.session);
-        await applyRemoteWorkspace(data.session);
+        await verifyAccountSession();
       } catch (error) {
         console.error('Не удалось восстановить сессию', error);
         // A network/secure-storage failure must not destroy a migratable session.
@@ -141,7 +183,19 @@ export function AppProvider({ children }: PropsWithChildren) {
     });
 
     return () => listener.subscription.unsubscribe();
-  }, [applyRemoteWorkspace, clearWorkspace]);
+  }, [clearWorkspace, verifyAccountSession]);
+
+  useEffect(() => {
+    if (!supabase) return;
+
+    const foreground = NativeAppState.addEventListener('change', state => {
+      if (state !== 'active') return;
+      void verifyAccountSession().catch((error) => {
+        console.warn('Не удалось проверить аккаунт при возврате в приложение', error);
+      });
+    });
+    return () => foreground.remove();
+  }, [verifyAccountSession]);
 
   useEffect(() => {
     if (!supabase) {
@@ -216,13 +270,8 @@ export function AppProvider({ children }: PropsWithChildren) {
         scheduleRefresh,
       )
       .subscribe(status => { if (status === 'SUBSCRIBED') scheduleRefresh(); });
-    const foreground = NativeAppState.addEventListener('change', state => {
-      if (state === 'active') scheduleRefresh();
-    });
-
     return () => {
       if (refreshTimer) clearTimeout(refreshTimer);
-      foreground.remove();
       void client.removeChannel(channel);
     };
   }, [couple?.id, refreshWorkspace, session]);

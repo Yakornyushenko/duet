@@ -82,6 +82,10 @@ module.exports = async function testDailyQuestions(db, ids, couple) {
   await user(ids[1]);
   await prefs({intimate:false});
   next = await state();
+  assert.equal(next.preferences.intimate,false,'toggle changes current account');
+  await user(ids[0]);
+  assert.equal((await state()).preferences.intimate,true,'partner preference must remain enabled');
+  await user(ids[1]);
   assert.equal(next.questions[0].cancelled,true);
   assert.equal(JSON.stringify(next).includes('PRIVATE-ANSWER'),false);
   await assert.rejects(db.query('select public.answer_daily_question($1,$2)',[intimate.id,'late']),/закрыты/);

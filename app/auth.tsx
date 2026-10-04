@@ -1,7 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Href, router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppButton } from '@/components/AppButton';
@@ -13,6 +13,8 @@ import { useDialog } from '@/context/DialogContext';
 import { colors, radii, shadow, spacing, typography } from '@/theme/tokens';
 
 type AuthMode = 'signin' | 'signup';
+
+const duetLogo = require('../assets/duet-birds.png') as ReturnType<typeof Image.resolveAssetSource>;
 
 export default function AuthScreen() {
   const { user, signIn, signUp, resendSignUpConfirmation } = useApp();
@@ -87,9 +89,7 @@ export default function AuthScreen() {
 
   return (
     <AppScreen contentContainerStyle={styles.content}>
-      <View style={styles.brandMark}>
-        <Ionicons name="heart" size={34} color={colors.white} />
-      </View>
+      <Image source={duetLogo} resizeMode="contain" style={styles.brandLogo} accessible={false} />
       <View style={styles.heading}>
         <Text style={styles.brand}>Duet</Text>
         <Text style={styles.subtitle}>Место для ваших общих воспоминаний и важных дат</Text>
@@ -204,15 +204,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: spacing.xxl,
   },
-  brandMark: {
+  brandLogo: {
     alignSelf: 'center',
-    width: 72,
-    height: 72,
-    borderRadius: 26,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.primary,
-    transform: [{ rotate: '-6deg' }],
+    width: 148,
+    height: 104,
   },
   heading: {
     alignItems: 'center',
