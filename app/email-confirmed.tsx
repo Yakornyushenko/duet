@@ -1,4 +1,3 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
 import { Stack } from 'expo-router';
 import { Image, StyleSheet, Text, View } from 'react-native';
 
@@ -19,7 +18,7 @@ export default function EmailConfirmedScreen() {
 
       <View style={styles.card}>
         <View style={styles.successIcon}>
-          <Ionicons name="checkmark" size={36} color={colors.white} />
+          <Text style={styles.successIconText}>✓</Text>
         </View>
         <Text style={styles.title}>Почта подтверждена</Text>
         <Text style={styles.body}>
@@ -62,7 +61,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: radii.round,
-    backgroundColor: colors.success,
+    backgroundColor: colors.primary,
+  },
+  successIconText: {
+    color: colors.white,
+    fontSize: 38,
+    lineHeight: 44,
+    fontWeight: '700',
   },
   title: {
     ...typography.title,
