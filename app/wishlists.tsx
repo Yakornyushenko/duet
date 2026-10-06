@@ -166,6 +166,7 @@ export default function WishlistsScreen() {
         initialNumToRender={8}
         maxToRenderPerBatch={8}
         windowSize={5}
+        keyboardDismissMode="on-drag"
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.listContent}

@@ -95,7 +95,9 @@ export default function NotesScreen() {
       {loading ? <ActivityIndicator color={colors.primary} /> : null}
       <FlatList
         data={visibleNotes} keyExtractor={(note) => note.id} style={styles.list}
-        contentContainerStyle={styles.listContent} keyboardShouldPersistTaps="handled"
+        contentContainerStyle={styles.listContent}
+        keyboardDismissMode="on-drag"
+        keyboardShouldPersistTaps="handled"
         ListEmptyComponent={!loading && !error ? <Text style={styles.empty}>{search ? 'Ничего не найдено' : trash ? 'В корзине пока пусто' : 'Здесь будут наши идеи, списки и важные мелочи.'}</Text> : null}
         renderItem={({ item }) => (
           <Pressable accessibilityRole="button" onPress={() => setEditor(item)} style={({ pressed }) => [styles.card, pressed && styles.pressed]}>

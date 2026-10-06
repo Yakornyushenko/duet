@@ -32,7 +32,13 @@ const { PGlite } = require('../.android-bootstrap/merge-test/node_modules/@elect
       const sql = fs.readFileSync(path.join(migrations,name),'utf8').replace(/create extension if not exists pgcrypto;/i,'');
       try { await db.exec(sql); } catch (error) { throw new Error(`${name}: ${error.message}`,{cause:error}); }
     }
-    const ids = ['00000000-0000-4000-8000-000000000001','00000000-0000-4000-8000-000000000002','00000000-0000-4000-8000-000000000003'];
+    const ids = [
+      '00000000-0000-4000-8000-000000000001',
+      '00000000-0000-4000-8000-000000000002',
+      '00000000-0000-4000-8000-000000000003',
+      '00000000-0000-4000-8000-000000000004',
+      '00000000-0000-4000-8000-000000000005',
+    ];
     for (const id of ids) await db.query('insert into auth.users(id,email) values($1,$2)',[id,`${id}@test.invalid`]);
     const asUser = async id => {
       await db.exec('reset role');
@@ -50,6 +56,8 @@ const { PGlite } = require('../.android-bootstrap/merge-test/node_modules/@elect
     await asUser(ids[2]);
     await scalar('select public.ensure_personal_workspace()');
     await assert.rejects(db.query('select * from public.personal_join_tickets'),/permission denied/);
+    const emptyPreview = await scalar('select public.prepare_personal_join($1)',[code]);
+    assert.equal(emptyPreview.sourceEmpty,true,'new personal workspace must skip merge confirmation');
     for (let i=0;i<6;i++) assert.equal(await scalar("select public.prepare_personal_join('BADBAD')"),null);
     assert.equal(await scalar('select public.prepare_personal_join($1)',[code]),null);
 
@@ -71,6 +79,7 @@ const { PGlite } = require('../.android-bootstrap/merge-test/node_modules/@elect
     const targetWish = await scalar("insert into public.wishes(couple_id,list,title) values($1,'creator','Его желание') returning id",[target]);
     await asUser(ids[0]);
     let preview = await scalar('select public.prepare_personal_join($1)',[code]);
+    assert.equal(preview.sourceEmpty,false,'workspace with content must require merge confirmation');
     assert.equal(preview.categories.length,12);
     await assert.rejects(db.query('select public.join_personal_workspace($1,$2,true)',[preview.token,JSON.stringify(preview.categories)]),/не больше 6/);
     assert.equal(await scalar('select count(*)::int from public.date_events'),1,'failed join is atomic');
@@ -123,5 +132,25 @@ const { PGlite } = require('../.android-bootstrap/merge-test/node_modules/@elect
     assert.equal(await scalar('select count(*)::int from public.date_events where id=any($1::uuid[])',[[event,targetEvent]]),2);
     console.log('PASS: all migrations, solo workspaces, 6-category limit, atomic merge, wishes/photos/comments, trash, history, RLS, rate limit');
     await require('./daily-question-scenarios.cjs')(db, ids, target);
+    await asUser(ids[3]);
+    const customizedTarget = await scalar('select public.ensure_personal_workspace()');
+    await db.query("select public.manage_date_category($1,'rename','important','Особенные даты')",[customizedTarget]);
+    const customizedCategories = await scalar('select jsonb_object_agg(value,label) from public.date_categories where couple_id=$1',[customizedTarget]);
+    const emptyCode = await scalar('select public.create_personal_invite()');
+    await asUser(ids[4]);
+    const emptySource = await scalar('select public.ensure_personal_workspace()');
+    const directPreview = await scalar('select public.prepare_personal_join($1)',[emptyCode]);
+    assert.equal(directPreview.sourceEmpty,true);
+    await db.query('select public.join_empty_personal_workspace($1)',[directPreview.token]);
+    assert.equal(await scalar('select public.ensure_personal_workspace()'),customizedTarget);
+    assert.deepEqual(
+      await scalar('select jsonb_object_agg(value,label) from public.date_categories where couple_id=$1',[customizedTarget]),
+      customizedCategories,
+      'joining an empty workspace must preserve destination categories',
+    );
+    assert.equal(await scalar('select count(*)::int from public.couple_members where couple_id=$1',[customizedTarget]),2);
+    await db.exec('reset role');
+    assert.equal(await scalar('select merged_into from public.couples where id=$1',[emptySource]),customizedTarget);
+    console.log('PASS: empty workspace joins directly without changing destination categories');
   } finally { await db.close(); }
 })().catch(error=>{ console.error(error); process.exitCode=1; });

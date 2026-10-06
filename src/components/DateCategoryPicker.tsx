@@ -68,8 +68,12 @@ export function DateCategoryPicker({ value, onChange, includeAll = false, editab
       if (busy) return;
       if (editor) setEditor(null); else setManagerVisible(false);
     }}>
-      <KeyboardAvoidingView style={styles.backdrop} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <View style={styles.dialog}><ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.dialogContent}>
+      <KeyboardAvoidingView style={styles.backdrop} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+        <View style={styles.dialog}><ScrollView
+          keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={styles.dialogContent}
+        >
           {!editor ? <>
             <Text style={styles.heading}>Категории</Text>
             {categories.map((category) => <Pressable key={category.value}

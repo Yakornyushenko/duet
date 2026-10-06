@@ -10,7 +10,7 @@ import { colors, radii, spacing, typography } from '@/theme/tokens';
 import { JoinPreview, prepareJoinRemote } from '@/services/backend';
 
 export default function PairScreen() {
-  const { couple, createCouple, joinCouple, refreshWorkspace } = useApp();
+  const { couple, createCouple, joinCouple, joinEmptyCouple, refreshWorkspace } = useApp();
   const { showDialog } = useDialog();
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
@@ -54,6 +54,10 @@ export default function PairScreen() {
           onPress={()=>void perform(async()=>{
             setPreview(null);
             const next = await prepareJoinRemote(code);
+            if (next.sourceEmpty) {
+              await joinEmptyCouple(next.token);
+              return;
+            }
             setCategoryNames(Object.fromEntries(next.categories.map(item=>[item.key,item.label])));
             setPreview(next);
           })} />

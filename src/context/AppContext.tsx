@@ -10,6 +10,7 @@ import {
   createCoupleRemote,
   deleteAccountRemote,
   deleteEventRemote,
+  joinEmptyCoupleRemote,
   joinCoupleRemote,
   JoinCategory,
   loadRemoteWorkspace,
@@ -42,6 +43,7 @@ type AppContextValue = AppState & {
   updateRelationshipDate: (relationshipStartedAt: string) => Promise<void>;
   updateDisplayName: (displayName: string) => Promise<void>;
   joinCouple: (token: string, categories: JoinCategory[]) => Promise<void>;
+  joinEmptyCouple: (token: string) => Promise<void>;
   refreshWorkspace: () => Promise<void>;
   addEvent: (input: DateEventInput) => Promise<DateEvent>;
   updateEvent: (id: string, input: DateEventInput) => Promise<DateEvent>;
@@ -330,6 +332,10 @@ export function AppProvider({ children }: PropsWithChildren) {
       },
       joinCouple: async (token, categories) => {
         await joinCoupleRemote(token, categories);
+        await refreshWorkspace();
+      },
+      joinEmptyCouple: async (token) => {
+        await joinEmptyCoupleRemote(token);
         await refreshWorkspace();
       },
       refreshWorkspace,

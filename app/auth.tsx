@@ -23,6 +23,7 @@ export default function AuthScreen() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [passwordVisible, setPasswordVisible] = useState(false);
   const [loading, setLoading] = useState(false);
   const [confirmationVisible, setConfirmationVisible] = useState(false);
   const [confirmationStatus, setConfirmationStatus] = useState<string | null>(null);
@@ -127,11 +128,27 @@ export default function AuthScreen() {
         <AppInput
           label="Пароль"
           placeholder="Минимум 6 символов"
-          secureTextEntry
+          secureTextEntry={!passwordVisible}
           value={password}
           onChangeText={setPassword}
           textContentType={mode === 'signup' ? 'newPassword' : 'password'}
           onSubmitEditing={() => void submit()}
+          rightElement={
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={passwordVisible ? 'Скрыть пароль' : 'Показать пароль'}
+              accessibilityState={{ checked: passwordVisible }}
+              hitSlop={8}
+              style={styles.passwordVisibilityButton}
+              onPress={() => setPasswordVisible((visible) => !visible)}
+            >
+              <Ionicons
+                name={passwordVisible ? 'eye-outline' : 'eye-off-outline'}
+                size={24}
+                color={colors.muted}
+              />
+            </Pressable>
+          }
         />
         <AppButton
           label={mode === 'signin' ? 'Войти' : 'Создать аккаунт'}
@@ -228,6 +245,13 @@ const styles = StyleSheet.create({
     borderRadius: radii.xl,
     padding: spacing.xl,
     gap: spacing.lg,
+  },
+  passwordVisibilityButton: {
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: radii.md,
   },
   privacyNotice: {
     alignItems: 'center',

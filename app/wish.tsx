@@ -36,7 +36,7 @@ import {
 import { colors, radii, spacing, typography } from '@/theme/tokens';
 import { getWishlists } from '@/utils/wishlists';
 
-const maxPhotos = 3;
+const maxPhotos = 1;
 
 export default function WishScreen() {
   const isFocused = useIsFocused();

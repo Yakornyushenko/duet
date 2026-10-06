@@ -3,7 +3,7 @@ import { Session } from '@supabase/supabase-js';
 import { enableSession, supabase } from '@/lib/supabase';
 import { AppUser, Couple, DateEvent, DateEventInput, DateCategoryOption } from '@/types/domain';
 
-const emailRedirectTo = 'https://duet-app.pages.dev/email-confirmed';
+const emailRedirectTo = 'https://duet.by/email-confirmed';
 
 type RemoteWorkspace = {
   user: AppUser;
@@ -205,13 +205,19 @@ export async function updateDisplayNameRemote(userId: string, displayName: strin
 }
 
 export type JoinCategory = { key: string; label: string; mine: boolean };
-export type JoinPreview = { token: string; categories: JoinCategory[] };
+export type JoinPreview = { token: string; categories: JoinCategory[]; sourceEmpty: boolean };
 
 export async function prepareJoinRemote(inviteCode: string): Promise<JoinPreview> {
   const { data, error } = await getClient().rpc('prepare_personal_join', { p_invite_code: inviteCode.toUpperCase() });
   if (error) throw error;
   if (!data) throw new Error('Код недоступен или срок действия истёк. После 5 попыток подождите 15 минут.');
   return data as JoinPreview;
+}
+
+export async function joinEmptyCoupleRemote(token: string): Promise<void> {
+  const { data, error } = await getClient().rpc('join_empty_personal_workspace', { p_token: token });
+  if (error) throw error;
+  if (!data?.length) throw new Error('Приглашение изменилось или срок его действия истёк.');
 }
 
 export async function joinCoupleRemote(token: string, categories: JoinCategory[]): Promise<void> {
