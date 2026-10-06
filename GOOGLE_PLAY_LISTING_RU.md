@@ -9,8 +9,8 @@
 - Категория: «Стиль жизни»
 - Основной язык: русский (`ru-RU`)
 - Email поддержки: `Duet.support@proton.me`
-- Политика конфиденциальности: `https://duet-app.pages.dev/privacy`
-- Удаление аккаунта: `https://duet-app.pages.dev/delete-account`
+- Политика конфиденциальности: `https://duet.by/privacy`
+- Удаление аккаунта: `https://duet.by/delete-account`
 
 ## Краткое описание
 

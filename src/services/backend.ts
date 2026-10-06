@@ -3,7 +3,7 @@ import { Session } from '@supabase/supabase-js';
 import { enableSession, supabase } from '@/lib/supabase';
 import { AppUser, Couple, DateEvent, DateEventInput, DateCategoryOption } from '@/types/domain';
 
-const emailRedirectTo = 'https://duet-app.pages.dev/email-confirmed';
+const emailRedirectTo = 'https://duet.by/email-confirmed';
 
 type RemoteWorkspace = {
   user: AppUser;
