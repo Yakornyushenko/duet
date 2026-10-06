@@ -3,7 +3,6 @@ import { DateEvent } from '@/types/domain';
 const dayInMilliseconds = 86_400_000;
 
 function getUtcDayNumber(value: Date): number {
-    console.log(value);
   return Date.UTC(value.getFullYear(), value.getMonth(), value.getDate());
 }
 
