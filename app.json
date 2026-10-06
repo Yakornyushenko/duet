@@ -14,6 +14,7 @@
     "android": {
       "allowBackup": false,
       "package": "app.duet.mobile",
+      "softwareKeyboardLayoutMode": "resize",
       "adaptiveIcon": {
         "foregroundImage": "./assets/duet-icon-foreground.png",
         "backgroundColor": "#FFF8F3"
