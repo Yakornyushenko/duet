@@ -6,15 +6,18 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useEffect } from 'react';
 
 import { AppProvider, useApp } from '@/context/AppContext';
+import { DesktopHeader } from '@/components/DesktopHeader';
 import { DialogProvider } from '@/context/DialogContext';
 import { ReminderProvider } from '@/context/ReminderContext';
 import { LoadingSplash } from '@/components/LoadingSplash';
+import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { colors } from '@/theme/tokens';
 
 const publicRoutes = new Set(['auth', 'privacy', 'delete-account', 'email-confirmed']);
 
 function RootNavigator() {
   const { initializing, user } = useApp();
+  const { isDesktop } = useResponsiveLayout();
   const router = useRouter();
   const segments = useSegments();
   const rootSegment = segments[0];
@@ -29,7 +32,8 @@ function RootNavigator() {
       <StatusBar style="dark" />
       <Stack
         screenOptions={{
-          headerShown: false,
+          headerShown: Boolean(user && isDesktop),
+          header: () => <DesktopHeader />,
           contentStyle: { backgroundColor: colors.background },
           animation: 'fade_from_bottom',
         }}
@@ -39,9 +43,9 @@ function RootNavigator() {
 }
 
 export default function RootLayout() {
-  const [fontsLoaded, fontError] = useFonts(Ionicons.font);
+  const [fontsLoaded] = useFonts(Ionicons.font);
 
-  if (!fontsLoaded && !fontError) {
+  if (!fontsLoaded) {
     return <LoadingSplash />;
   }
 

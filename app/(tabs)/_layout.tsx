@@ -61,7 +61,7 @@ function MoreTabButton(props: BottomTabBarButtonProps) {
 
 export default function TabsLayout() {
   const insets = useSafeAreaInsets();
-  const { tabBarMaxWidth } = useResponsiveLayout();
+  const { isDesktop, tabBarMaxWidth } = useResponsiveLayout();
   const bottomInset = Math.max(insets.bottom, Platform.OS === 'android' ? 12 : 0);
 
   return (
@@ -74,7 +74,7 @@ export default function TabsLayout() {
         tabBarHideOnKeyboard: true,
         tabBarLabelStyle: { fontSize: 12, fontWeight: '500' },
         tabBarItemStyle: { paddingVertical: 4 },
-        tabBarStyle: {
+        tabBarStyle: isDesktop ? styles.hiddenTabBar : {
           backgroundColor: colors.surface,
           borderTopColor: colors.border,
           height: 64 + bottomInset,
@@ -130,4 +130,5 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
   pressed: { transform: [{ scale: 0.94 }] },
+  hiddenTabBar: { display: 'none' },
 });
