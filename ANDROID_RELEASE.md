@@ -106,7 +106,7 @@ npx eas-cli@latest submit --platform android --profile production --latest
 - Ads: указать, что рекламы нет, если она не будет добавлена до релиза.
 - Content rating: пройти анкету по фактическому содержимому.
 - Target audience: указать реальную возрастную аудиторию; приложение не позиционировать для детей без отдельной проверки требований Families.
-- Data safety: ответы должны совпадать с кодом, Supabase, Firebase/Expo push и политикой конфиденциальности.
+- Data safety: ответы должны совпадать с кодом, Supabase, Resend, Firebase/Expo push и политикой конфиденциальности.
 - Account deletion: указать путь удаления в приложении и URL внешней страницы удаления.
 
 ## 8. Перейти к production
