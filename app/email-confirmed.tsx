@@ -40,8 +40,8 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   logo: {
-    width: 96,
-    height: 72,
+    width: 128,
+    height: 96,
   },
   brand: {
     ...typography.sectionTitle,
