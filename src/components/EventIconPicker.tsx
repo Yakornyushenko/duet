@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { DateEventIcon } from '@/types/domain';
+import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { eventIcons, iconLabels } from '@/utils/eventIcons';
 import { colors, radii, spacing, typography } from '@/theme/tokens';
 
@@ -13,6 +14,7 @@ export function EventIconPicker({ value, onChange, disabled = false }: {
   onChange: (value: DateEventIcon) => void;
   disabled?: boolean;
 }) {
+  const { isTablet } = useResponsiveLayout();
   const [expanded, setExpanded] = useState(false);
   const [extraHeight, setExtraHeight] = useState(0);
   const [reduceMotion, setReduceMotion] = useState(false);
@@ -58,7 +60,7 @@ export function EventIconPicker({ value, onChange, disabled = false }: {
   return <View style={styles.field}>
     <Text style={styles.label}>Значок</Text>
     <View>
-      <View style={styles.grid}>{firstRow.map(renderIcon)}</View>
+      <View style={[styles.grid, isTablet && styles.wideGrid]}>{firstRow.map(renderIcon)}</View>
       <Animated.View
         pointerEvents={expanded ? 'auto' : 'none'}
         accessibilityElementsHidden={!expanded}
@@ -72,14 +74,14 @@ export function EventIconPicker({ value, onChange, disabled = false }: {
             transform: [{ translateY: progress.interpolate({ inputRange: [0, 1], outputRange: [-12, 0] }) }],
           }]}
         >
-          <View style={styles.grid}>{extraIcons.map(renderIcon)}</View>
+          <View style={[styles.grid, isTablet && styles.wideGrid]}>{extraIcons.map(renderIcon)}</View>
         </Animated.View>
       </Animated.View>
     </View>
     <Pressable accessibilityRole="button" accessibilityState={{ expanded }} disabled={disabled}
       onPress={() => {
         setExpanded((current) => !current);
-      }} style={styles.toggle}>
+      }} style={[styles.toggle, isTablet && styles.wideToggle]}>
       <Text style={styles.toggleText}>{expanded ? 'Скрыть значки' : 'Ещё значки'}</Text>
       <AppIcon name={expanded ? 'chevron-up' : 'chevron-down'} size={18} color={colors.primary} />
     </Pressable>
@@ -90,11 +92,13 @@ const styles = StyleSheet.create({
   field: { gap: spacing.sm },
   label: { ...typography.label, color: colors.text },
   grid: { flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -3 },
+  wideGrid: { width: '100%', maxWidth: 420 },
   extraContent: { position: 'absolute', top: 0, left: 0, right: 0 },
   cell: { width: '20%', padding: 3 },
   choice: { minHeight: 44, aspectRatio: 1, borderRadius: radii.md, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.softRose },
   selected: { backgroundColor: colors.primary },
   pressed: { opacity: 0.75 },
   toggle: { minHeight: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm },
+  wideToggle: { width: '100%', maxWidth: 420, alignSelf: 'flex-start' },
   toggleText: { ...typography.label, color: colors.primary },
 });
