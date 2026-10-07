@@ -1,5 +1,3 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
-import { useFonts } from 'expo-font';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -9,7 +7,6 @@ import { AppProvider, useApp } from '@/context/AppContext';
 import { DesktopHeader } from '@/components/DesktopHeader';
 import { DialogProvider } from '@/context/DialogContext';
 import { ReminderProvider } from '@/context/ReminderContext';
-import { LoadingSplash } from '@/components/LoadingSplash';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { colors } from '@/theme/tokens';
 
@@ -43,12 +40,6 @@ function RootNavigator() {
 }
 
 export default function RootLayout() {
-  const [fontsLoaded] = useFonts(Ionicons.font);
-
-  if (!fontsLoaded) {
-    return <LoadingSplash />;
-  }
-
   return (
     <SafeAreaProvider>
       <DialogProvider>

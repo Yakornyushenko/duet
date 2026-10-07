@@ -1,4 +1,4 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
+import { AppIcon } from '@/components/AppIcon';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import {
@@ -288,7 +288,7 @@ export default function WishScreen() {
       <AppScreen>
         <View style={styles.header}>
           <Pressable accessibilityRole="button" accessibilityLabel="Назад" onPress={() => router.back()} style={styles.icon}>
-            <Ionicons name="chevron-back" size={24} color={colors.primary} />
+            <AppIcon name="chevron-back" size={24} color={colors.primary} />
           </Pressable>
           <Text style={styles.heading}>Желание</Text>
         </View>
@@ -302,7 +302,7 @@ export default function WishScreen() {
       <AppScreen>
         <View style={styles.header}>
           <Pressable accessibilityRole="button" accessibilityLabel="Назад" onPress={() => router.back()} style={styles.icon}>
-            <Ionicons name="chevron-back" size={24} color={colors.primary} />
+            <AppIcon name="chevron-back" size={24} color={colors.primary} />
           </Pressable>
           <Text style={styles.heading}>Желание</Text>
         </View>
@@ -318,7 +318,7 @@ export default function WishScreen() {
     <AppScreen>
       <View style={styles.header}>
         <Pressable accessibilityRole="button" accessibilityLabel="Назад" onPress={() => router.back()} style={styles.icon}>
-          <Ionicons name="chevron-back" size={24} color={colors.primary} />
+          <AppIcon name="chevron-back" size={24} color={colors.primary} />
         </Pressable>
         <View style={styles.headerCopy}>
           <Text style={styles.heading} numberOfLines={1}>Желание</Text>
@@ -365,7 +365,7 @@ export default function WishScreen() {
                 </Pressable>
               ) : (
                 <View style={[styles.photo, styles.photoPlaceholder]}>
-                  <Ionicons name="image-outline" size={22} color={colors.muted} />
+                  <AppIcon name="image-outline" size={22} color={colors.muted} />
                 </View>
               )}
               <Pressable
@@ -374,7 +374,7 @@ export default function WishScreen() {
                 onPress={() => void removePhoto(path)}
                 style={styles.photoRemove}
               >
-                <Ionicons name="close" size={16} color={colors.white} />
+                <AppIcon name="close" size={16} color={colors.white} />
               </Pressable>
             </View>
           ))}
@@ -386,7 +386,7 @@ export default function WishScreen() {
               onPress={() => void addPhoto()}
               style={[styles.addPhoto, { width: mediaThumbnailSize, height: mediaThumbnailSize }]}
             >
-              <Ionicons name="camera-outline" size={24} color={colors.primary} />
+              <AppIcon name="camera-outline" size={24} color={colors.primary} />
               <Text style={styles.addPhotoLabel}>Добавить</Text>
             </Pressable>
           ) : null}
@@ -414,7 +414,7 @@ export default function WishScreen() {
               onPress={() => setPreviewUrl(null)}
               style={styles.previewClose}
             >
-              <Ionicons name="close" size={22} color={colors.white} />
+              <AppIcon name="close" size={22} color={colors.white} />
             </Pressable>
             {isFocused && previewUrl ? (
               <Image source={{ uri: previewUrl }} style={styles.previewImage} resizeMode="contain" resizeMethod="resize" />

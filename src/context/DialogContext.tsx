@@ -1,5 +1,5 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
-import { ComponentProps, createContext, PropsWithChildren, useCallback, useContext, useMemo, useState } from 'react';
+import { AppIcon, AppIconName } from '@/components/AppIcon';
+import { createContext, PropsWithChildren, useCallback, useContext, useMemo, useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -8,8 +8,6 @@ import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { colors, radii, shadow, spacing, typography } from '@/theme/tokens';
 
 type DialogTone = 'info' | 'warning' | 'danger' | 'success';
-type IoniconName = ComponentProps<typeof Ionicons>['name'];
-
 type DialogAction = {
   label: string;
   variant?: ButtonVariant;
@@ -29,7 +27,7 @@ type DialogContextValue = {
   hideDialog: () => void;
 };
 
-const toneIcons: Record<DialogTone, IoniconName> = {
+const toneIcons: Record<DialogTone, AppIconName> = {
   info: 'heart-outline',
   warning: 'alert-circle-outline',
   danger: 'warning-outline',
@@ -79,7 +77,7 @@ export function DialogProvider({ children }: PropsWithChildren) {
           ) : null}
           <View style={[styles.card, { maxWidth: modalMaxWidth }]}>
             <View style={[styles.icon, { backgroundColor: tone === 'warning' ? colors.soft : colors.softRose }]}>
-              <Ionicons name={toneIcons[tone]} size={32} color={toneColors[tone]} />
+              <AppIcon name={toneIcons[tone]} size={32} color={toneColors[tone]} />
             </View>
             <View style={styles.copy}>
               <Text style={styles.title}>{dialog?.title}</Text>

@@ -1,4 +1,4 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
+import { AppIcon } from '@/components/AppIcon';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
 import { ActivityIndicator, AppState, Pressable, StyleSheet, Text, View } from 'react-native';
@@ -48,7 +48,7 @@ export default function QuestionDetailScreen() {
     <View style={styles.header}>
       <Pressable accessibilityRole="button" accessibilityLabel="Назад к вопросам" style={styles.back}
         onPress={() => router.canGoBack() ? router.back() : router.replace('/daily-question')}>
-        <Ionicons name="chevron-back" size={26} color={colors.primary} />
+        <AppIcon name="chevron-back" size={26} color={colors.primary} />
       </Pressable>
       <Text style={styles.title}>Вопрос и ответы</Text>
     </View>

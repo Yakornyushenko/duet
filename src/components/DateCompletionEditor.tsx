@@ -1,4 +1,4 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
+import { AppIcon } from '@/components/AppIcon';
 import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -43,12 +43,12 @@ export function DateCompletionEditor({ event }: { event: DateEvent }) {
     <Text style={styles.hint}>Отметьте, что событие состоялось. В статистику попадут только подтверждённые вами моменты.</Text>
     {error ? <AppButton label="Повторить загрузку" variant="ghost" onPress={() => setRevision((value) => value + 1)} /> : <>
       {entries.map((entry) => <View key={entry.id} style={styles.row}>
-        <Ionicons name="checkmark-circle" size={22} color={colors.primary} />
+        <AppIcon name="checkmark-circle" size={22} color={colors.primary} />
         <Text style={styles.date}>{formatRelationshipDate(entry.happened_on)}</Text>
         <Pressable accessibilityRole="button" accessibilityLabel="Убрать отметку о состоявшемся событии" disabled={busy || loading} style={styles.remove}
           onPress={() => showDialog({ title: 'Убрать из истории?', message: 'Дата останется в календаре, но эта отметка исчезнет из статистики у вас обоих.',
             actions: [{ label: 'Убрать отметку', variant: 'danger', onPress: () => record(entry.happened_on, false) }, { label: 'Отмена', variant: 'ghost' }] })}>
-          <Ionicons name="close" size={20} color={colors.muted} />
+          <AppIcon name="close" size={20} color={colors.muted} />
         </Pressable>
       </View>)}
       {(!entries.length || event.recurrence === 'yearly') && <AppButton label={entries.length ? 'Отметить ещё одну дату' : 'Состоялось'} variant="secondary" disabled={loading || busy} loading={busy} onPress={() => setPicker(true)} />}

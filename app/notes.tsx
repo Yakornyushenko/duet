@@ -1,4 +1,4 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
+import { AppIcon } from '@/components/AppIcon';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
@@ -77,11 +77,11 @@ export default function NotesScreen() {
     <AppScreen scroll={false}>
       <View style={styles.header}>
         <Pressable accessibilityRole="button" accessibilityLabel="Назад" onPress={() => router.back()} style={styles.icon}>
-          <Ionicons name="chevron-back" size={24} color={colors.primary} />
+          <AppIcon name="chevron-back" size={24} color={colors.primary} />
         </Pressable>
         <Text style={styles.title}>Заметки</Text>
         <Pressable accessibilityRole="button" accessibilityLabel={trash ? 'Все заметки' : 'Корзина'} onPress={() => setTrash(!trash)} style={styles.icon}>
-          {trash ? <NotesIcon /> : <Ionicons name="trash-outline" size={23} color={colors.primary} />}
+          {trash ? <NotesIcon /> : <AppIcon name="trash-outline" size={23} color={colors.primary} />}
         </Pressable>
       </View>
       <AppInput label="" accessibilityLabel="Поиск заметок" placeholder="Найти в наших заметках" value={search} onChangeText={setSearch} />
@@ -102,7 +102,7 @@ export default function NotesScreen() {
         renderItem={({ item }) => (
           <Pressable accessibilityRole="button" onPress={() => setEditor(item)} style={({ pressed }) => [styles.card, pressed && styles.pressed]}>
             <View style={styles.cardHeader}>
-              <Ionicons name={item.kind === 'checklist' ? (isChecklistComplete(item) ? 'checkbox-outline' : 'square-outline') : 'document-text-outline'} size={21} color={colors.primary} />
+              <AppIcon name={item.kind === 'checklist' ? (isChecklistComplete(item) ? 'checkbox-outline' : 'square-outline') : 'document-text-outline'} size={21} color={colors.primary} />
               <Text style={styles.cardTitle} numberOfLines={2}>{item.title.trim() || 'Без названия'}</Text>
               {item.pinned && <NotePinIcon pinned size={22} />}
             </View>

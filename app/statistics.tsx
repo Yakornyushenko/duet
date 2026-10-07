@@ -1,4 +1,4 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
+import { AppIcon } from '@/components/AppIcon';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
@@ -69,7 +69,7 @@ export default function StatisticsScreen() {
   return <AppScreen wide contentContainerStyle={styles.screen}>
     <View style={styles.header}>
       <Pressable accessibilityRole="button" accessibilityLabel="Назад" onPress={() => router.canGoBack() ? router.back() : router.replace('/more')} style={styles.icon}>
-        <Ionicons name="chevron-back" size={24} color={colors.primary} />
+        <AppIcon name="chevron-back" size={24} color={colors.primary} />
       </Pressable>
       <Text style={styles.title}>Наша история</Text>
     </View>
@@ -89,7 +89,7 @@ export default function StatisticsScreen() {
           ...categoryMetrics,
           { id: 'fulfilled-wishes', label: 'Исполненные желания', count: stats.wishes, color: '#E8B7A5' },
         ].map((item) => <View key={item.id} style={[styles.metric, isDesktop && styles.desktopMetric]}>
-          <Ionicons name={item.id === 'fulfilled-wishes' ? 'sparkles-outline' : item.id === 'dates' ? 'heart-outline' : item.id === 'travel' ? 'airplane-outline' : 'calendar-outline'} size={23} color={item.color} />
+          <AppIcon name={item.id === 'fulfilled-wishes' ? 'sparkles-outline' : item.id === 'dates' ? 'heart-outline' : item.id === 'travel' ? 'airplane-outline' : 'calendar-outline'} size={23} color={item.color} />
           <Text style={styles.metricNumber}>{item.count}</Text><Text style={styles.caption}>{item.label}</Text>
         </View>)}
       </View>

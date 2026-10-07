@@ -1,4 +1,4 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
+import { AppIcon } from '@/components/AppIcon';
 import { useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -51,7 +51,7 @@ export function EventIconPicker({ value, onChange, disabled = false }: {
           onPress={() => onChange(icon)}
           style={({ pressed }) => [styles.choice, value === icon && styles.selected, pressed && styles.pressed]}
         >
-          <Ionicons name={eventIcons[icon]} size={24} color={value === icon ? colors.white : colors.primary} />
+          <AppIcon name={eventIcons[icon]} size={24} color={value === icon ? colors.white : colors.primary} />
         </Pressable>
       </View>;
 
@@ -81,7 +81,7 @@ export function EventIconPicker({ value, onChange, disabled = false }: {
         setExpanded((current) => !current);
       }} style={styles.toggle}>
       <Text style={styles.toggleText}>{expanded ? 'Скрыть значки' : 'Ещё значки'}</Text>
-      <Ionicons name={expanded ? 'chevron-up' : 'chevron-down'} size={18} color={colors.primary} />
+      <AppIcon name={expanded ? 'chevron-up' : 'chevron-down'} size={18} color={colors.primary} />
     </Pressable>
   </View>;
 }

@@ -1,11 +1,7 @@
-import { ComponentProps } from 'react';
-import Ionicons from '@expo/vector-icons/Ionicons';
-
+import { AppIconName } from '@/components/AppIcon';
 import { DateEventIcon } from '@/types/domain';
 
-type IoniconName = ComponentProps<typeof Ionicons>['name'];
-
-export const eventIcons: Record<DateEventIcon, IoniconName> = {
+export const eventIcons: Record<DateEventIcon, AppIconName> = {
   heart: 'heart-outline',
   sparkles: 'sparkles-outline',
   gift: 'gift-outline',

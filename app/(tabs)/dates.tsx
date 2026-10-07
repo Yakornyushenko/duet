@@ -1,4 +1,4 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
+import { AppIcon } from '@/components/AppIcon';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
@@ -41,7 +41,7 @@ export default function DatesScreen() {
           onPress={() => router.push({ pathname: '/date-form', params: { category } })}
           style={styles.addButton}
         >
-          <Ionicons name="add" size={26} color={colors.white} />
+          <AppIcon name="add" size={26} color={colors.white} />
         </Pressable>
       </View>
 
@@ -52,7 +52,7 @@ export default function DatesScreen() {
       {filteredEvents.length === 0 ? (
         <View style={styles.empty}>
           <View style={styles.emptyIcon}>
-            <Ionicons name="calendar-outline" size={34} color={colors.primary} />
+            <AppIcon name="calendar-outline" size={34} color={colors.primary} />
           </View>
           <Text style={styles.emptyTitle}>{category === 'all' ? 'Здесь появятся ваши даты' : 'В этой категории пока нет дат'}</Text>
           <Text style={styles.emptyText}>Добавьте годовщину, дни рождения и будущие совместные планы.</Text>

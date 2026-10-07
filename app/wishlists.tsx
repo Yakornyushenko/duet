@@ -1,4 +1,4 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
+import { AppIcon } from '@/components/AppIcon';
 import { Href, router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { FlatList, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
@@ -149,12 +149,12 @@ export default function WishlistsScreen() {
       style={({ pressed }) => [styles.card, styles.wishCard, isDesktop && styles.desktopWishCard, pressed && styles.pressed]}
     >
       <View style={styles.wishRow}>
-        <Ionicons name={eventIcons[wish.icon] ?? eventIcons.heart} size={22} color={colors.primary} />
-        {wish.fulfilled && <Ionicons name="checkmark-circle" size={16} color={colors.primary} />}
+        <AppIcon name={eventIcons[wish.icon] ?? eventIcons.heart} size={22} color={colors.primary} />
+        {wish.fulfilled && <AppIcon name="checkmark-circle" size={16} color={colors.primary} />}
         <Text style={[styles.wishTitle, wish.fulfilled && styles.done]} numberOfLines={2}>
           {wish.title}
         </Text>
-        <Ionicons name="chevron-forward" size={20} color={colors.muted} />
+        <AppIcon name="chevron-forward" size={20} color={colors.muted} />
       </View>
     </Pressable>
   ), [isDesktop]);
@@ -183,7 +183,7 @@ export default function WishlistsScreen() {
           onPress={() => router.back()}
           style={styles.icon}
         >
-          <Ionicons name="chevron-back" size={24} color={colors.primary} />
+          <AppIcon name="chevron-back" size={24} color={colors.primary} />
         </Pressable>
         <Text style={styles.heading}>Наши желания</Text>
       </View>
@@ -200,7 +200,7 @@ export default function WishlistsScreen() {
             }}
             style={[styles.tab, list === item.value && styles.selected]}
           >
-            <Ionicons name={item.icon} size={21} color={list === item.value ? colors.white : colors.primary} />
+            <AppIcon name={item.icon} size={21} color={list === item.value ? colors.white : colors.primary} />
             <Text style={{ color: list === item.value ? colors.white : colors.secondary }} numberOfLines={1}>
               {item.label}
             </Text>

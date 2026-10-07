@@ -1,4 +1,4 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
+import { AppIcon } from '@/components/AppIcon';
 import { Href, router } from 'expo-router';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -15,9 +15,9 @@ export default function MoreScreen() {
       <View style={[styles.grid, isDesktop && styles.desktopGrid]}>
       <Pressable accessibilityRole="button" accessibilityLabel="Открыть вопрос дня" onPress={() => router.push('/daily-question')}
         style={({ pressed }) => [styles.card, isDesktop && styles.desktopCard, pressed && styles.pressed]}>
-        <View style={styles.icon}><Ionicons name="chatbubbles-outline" size={24} color={colors.primary} /></View>
+        <View style={styles.icon}><AppIcon name="chatbubbles-outline" size={24} color={colors.primary} /></View>
         <View style={styles.copy}><Text style={styles.label}>Вопрос дня</Text><Text style={styles.description}>Один вопрос — два взгляда</Text></View>
-        <Ionicons name="chevron-forward" size={20} color={colors.muted} />
+        <AppIcon name="chevron-forward" size={20} color={colors.muted} />
       </Pressable>
       <Pressable
         accessibilityRole="button"
@@ -26,13 +26,13 @@ export default function MoreScreen() {
         style={({ pressed }) => [styles.card, isDesktop && styles.desktopCard, pressed && styles.pressed]}
       >
         <View style={styles.icon}>
-          <Ionicons name="notifications-outline" size={24} color={colors.primary} />
+          <AppIcon name="notifications-outline" size={24} color={colors.primary} />
         </View>
         <View style={styles.copy}>
           <Text style={styles.label}>Напоминания</Text>
           <Text style={styles.description}>О наших предстоящих датах</Text>
         </View>
-        <Ionicons name="chevron-forward" size={20} color={colors.muted} />
+        <AppIcon name="chevron-forward" size={20} color={colors.muted} />
       </Pressable>
       <Pressable
         accessibilityRole="button"
@@ -52,7 +52,7 @@ export default function MoreScreen() {
           <Text style={styles.label}>Желания</Text>
           <Text style={styles.description}>Наши мечты и планы вместе</Text>
         </View>
-        <Ionicons name="chevron-forward" size={20} color={colors.muted} />
+        <AppIcon name="chevron-forward" size={20} color={colors.muted} />
       </Pressable>
       <Pressable
         style={({ pressed }) => [styles.card, isDesktop && styles.desktopCard, pressed && styles.pressed]}
@@ -62,13 +62,13 @@ export default function MoreScreen() {
         onPress={() => router.push('/statistics')}
       >
         <View style={styles.icon}>
-          <Ionicons name="stats-chart-outline" size={24} color={colors.primary} />
+          <AppIcon name="stats-chart-outline" size={24} color={colors.primary} />
         </View>
         <View style={styles.copy}>
           <Text style={styles.label}>Статистика</Text>
           <Text style={styles.description}>Наша история в цифрах</Text>
         </View>
-        <Ionicons name="chevron-forward" size={20} color={colors.muted} />
+        <AppIcon name="chevron-forward" size={20} color={colors.muted} />
       </Pressable>
       <Pressable
         style={({ pressed }) => [styles.card, isDesktop && styles.desktopCard, pressed && styles.pressed]}
@@ -84,7 +84,7 @@ export default function MoreScreen() {
           <Text style={styles.label}>Заметки</Text>
           <Text style={styles.description}>Наши идеи и важные мелочи</Text>
         </View>
-        <Ionicons name="chevron-forward" size={20} color={colors.muted} />
+        <AppIcon name="chevron-forward" size={20} color={colors.muted} />
       </Pressable>
       <Pressable
         accessibilityRole="button"
@@ -93,13 +93,13 @@ export default function MoreScreen() {
         style={({ pressed }) => [styles.card, isDesktop && styles.desktopCard, pressed && styles.pressed]}
       >
         <View style={styles.icon}>
-          <Ionicons name="person-outline" size={24} color={colors.primary} />
+          <AppIcon name="person-outline" size={24} color={colors.primary} />
         </View>
         <View style={styles.copy}>
           <Text style={styles.label}>Профиль</Text>
           <Text style={styles.description}>Наша пара и настройки</Text>
         </View>
-        <Ionicons name="chevron-forward" size={20} color={colors.muted} />
+        <AppIcon name="chevron-forward" size={20} color={colors.muted} />
       </Pressable>
       <Pressable
         accessibilityRole="link"
@@ -108,13 +108,13 @@ export default function MoreScreen() {
         style={({ pressed }) => [styles.card, isDesktop && styles.desktopCard, pressed && styles.pressed]}
       >
         <View style={styles.icon}>
-          <Ionicons name="shield-checkmark-outline" size={24} color={colors.primary} />
+          <AppIcon name="shield-checkmark-outline" size={24} color={colors.primary} />
         </View>
         <View style={styles.copy}>
           <Text style={styles.label}>Конфиденциальность</Text>
           <Text style={styles.description}>Как Duet использует и защищает данные</Text>
         </View>
-        <Ionicons name="chevron-forward" size={20} color={colors.muted} />
+        <AppIcon name="chevron-forward" size={20} color={colors.muted} />
       </Pressable>
       </View>
     </AppScreen>

@@ -1,4 +1,4 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
+import { AppIcon } from '@/components/AppIcon';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -51,7 +51,7 @@ export default function EventRemindersScreen() {
           onPress={() => router.back()}
           style={styles.iconButton}
         >
-          <Ionicons name="chevron-back" size={24} color={colors.text} />
+          <AppIcon name="chevron-back" size={24} color={colors.text} />
         </Pressable>
         <Text style={styles.headerTitle}>Напоминания</Text>
         <View style={styles.headerSpacer} />
@@ -61,7 +61,7 @@ export default function EventRemindersScreen() {
         <>
           <View style={styles.eventCard}>
             <View style={styles.eventIcon}>
-              <Ionicons name={eventIcons[event.icon]} size={26} color={colors.primary} />
+              <AppIcon name={eventIcons[event.icon]} size={26} color={colors.primary} />
             </View>
             <View style={styles.eventCopy}>
               <Text style={styles.eventTitle}>{event.title}</Text>
@@ -78,7 +78,7 @@ export default function EventRemindersScreen() {
               {eventReminders.map((reminder) => (
                 <View key={reminder.date.getTime()} style={styles.reminderCard}>
                   <View style={styles.reminderIcon}>
-                    <Ionicons name="notifications-outline" size={20} color={colors.primary} />
+                    <AppIcon name="notifications-outline" size={20} color={colors.primary} />
                   </View>
                   <View style={styles.reminderCopy}>
                     <Text style={styles.reminderLabel}>{reminder.text || getOffsetLabel(reminder.offset)}</Text>
@@ -98,7 +98,7 @@ export default function EventRemindersScreen() {
       ) : (
         <View style={styles.emptyCard}>
           <View style={styles.eventIcon}>
-            <Ionicons name="calendar-outline" size={26} color={colors.primary} />
+            <AppIcon name="calendar-outline" size={26} color={colors.primary} />
           </View>
           <Text style={styles.eventTitle}>Событие не найдено</Text>
           <AppButton label="Вернуться" onPress={() => router.back()} />

@@ -1,4 +1,4 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
+import { AppIcon } from '@/components/AppIcon';
 import { Tabs, type BottomTabBarButtonProps } from 'expo-router/js-tabs';
 import { PlatformPressable } from 'expo-router/react-navigation';
 import { useEffect, useRef, useState } from 'react';
@@ -52,7 +52,7 @@ function MoreTabButton(props: BottomTabBarButtonProps) {
           styles.backIcon,
           pressed && styles.pressed,
         ]}>
-          <Ionicons name="arrow-back" color={pressed || hovered || returning ? colors.primary : colors.muted} size={26} />
+          <AppIcon name="arrow-back" color={pressed || hovered || returning ? colors.primary : colors.muted} size={26} />
         </View>
       )}
     </Pressable>
@@ -90,14 +90,14 @@ export default function TabsLayout() {
         name="index"
         options={{
           title: 'Главная',
-          tabBarIcon: ({ color, size }) => <Ionicons name="heart-outline" color={color} size={size} />,
+          tabBarIcon: ({ color, size }) => <AppIcon name="heart-outline" color={color} size={size} />,
         }}
       />
       <Tabs.Screen
         name="dates"
         options={{
           title: 'Даты',
-          tabBarIcon: ({ color, size }) => <Ionicons name="calendar-outline" color={color} size={size} />,
+          tabBarIcon: ({ color, size }) => <AppIcon name="calendar-outline" color={color} size={size} />,
         }}
       />
       <Tabs.Screen
@@ -114,7 +114,7 @@ export default function TabsLayout() {
         options={{
           title: 'Ещё',
           tabBarButton: (props) => <MoreTabButton {...props} />,
-          tabBarIcon: ({ color, size }) => <Ionicons name="ellipsis-horizontal" color={color} size={size} />,
+          tabBarIcon: ({ color, size }) => <AppIcon name="ellipsis-horizontal" color={color} size={size} />,
         }}
       />
     </Tabs>

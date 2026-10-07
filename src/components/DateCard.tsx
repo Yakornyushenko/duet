@@ -1,5 +1,5 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import Ionicons from '@expo/vector-icons/Ionicons';
+import { AppIcon } from '@/components/AppIcon';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import { colors, radii, spacing, typography } from '@/theme/tokens';
@@ -26,7 +26,7 @@ export function DateCard({ event, highlighted = false, reminderLabel, onPress }:
         reminderLabel && !highlighted && styles.reminderEventIcon,
         highlighted && styles.highlightedIcon,
       ]}>
-        <Ionicons name={eventIcons[event.icon]} size={21} color={highlighted ? colors.white : colors.primary} />
+        <AppIcon name={eventIcons[event.icon]} size={21} color={highlighted ? colors.white : colors.primary} />
       </View>
       <View style={styles.main}>
         {highlighted ? <Text style={styles.eyebrow}>Следующая дата</Text> : null}
@@ -39,7 +39,7 @@ export function DateCard({ event, highlighted = false, reminderLabel, onPress }:
         </Text>
         {reminderLabel ? (
           <View style={styles.reminderStatus}>
-            <Ionicons
+            <AppIcon
               name="notifications-outline"
               size={15}
               color={highlighted ? colors.white : colors.primary}

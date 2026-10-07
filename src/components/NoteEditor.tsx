@@ -1,4 +1,4 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
+import { AppIcon } from '@/components/AppIcon';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -163,7 +163,7 @@ export function NoteEditor({ initial, remote, onSaved, onClose }: Props) {
       <AppScreen>
         <View style={styles.header}>
           <Pressable accessibilityRole="button" accessibilityLabel="Закрыть заметку" onPress={() => void close()} style={styles.icon}>
-            <Ionicons name="chevron-back" size={24} color={colors.primary} />
+            <AppIcon name="chevron-back" size={24} color={colors.primary} />
           </Pressable>
           <Text style={styles.status}>{trashView ? 'Заметка в корзине' : !ready ? 'Загрузка…' : saving ? 'Сохраняем…' : error ? 'Не синхронизировано' : dirty ? 'Есть изменения' : 'Сохранено'}</Text>
           {!trashView && <Pressable disabled={!ready || !!draft.deleted_at} accessibilityRole="button" accessibilityState={{ selected: draft.pinned }} accessibilityLabel={draft.pinned ? 'Открепить' : 'Закрепить'} onPress={() => change({ pinned: !draft.pinned })} style={styles.icon}>
@@ -195,13 +195,13 @@ export function NoteEditor({ initial, remote, onSaved, onClose }: Props) {
             {draft.items.map((item) => <View key={item.id} style={styles.row}>
               <Pressable disabled={!ready || trashView || !!draft.deleted_at} accessibilityRole="checkbox" accessibilityState={{ checked: item.done }} accessibilityLabel={item.text || 'Пункт списка'}
                 onPress={() => change({ items: draft.items.map((entry) => entry.id === item.id ? { ...entry, done: !entry.done } : entry) })} style={styles.check}>
-                <Ionicons name={item.done ? 'checkbox' : 'square-outline'} size={25} color={colors.primary} />
+                <AppIcon name={item.done ? 'checkbox' : 'square-outline'} size={25} color={colors.primary} />
               </Pressable>
               <View style={styles.itemInput}><AppInput label="" accessibilityLabel="Текст пункта" placeholder="Новый пункт" value={item.text} maxLength={500}
                 editable={ready && !trashView && !draft.deleted_at} style={item.done ? styles.done : undefined}
                 onChangeText={(text) => change({ items: draft.items.map((entry) => entry.id === item.id ? { ...entry, text } : entry) })} /></View>
               {!trashView && !draft.deleted_at && <Pressable accessibilityRole="button" accessibilityLabel="Удалить пункт" style={styles.check}
-                onPress={() => change({ items: draft.items.filter((entry) => entry.id !== item.id) })}><Ionicons name="close" size={20} color={colors.muted} /></Pressable>}
+                onPress={() => change({ items: draft.items.filter((entry) => entry.id !== item.id) })}><AppIcon name="close" size={20} color={colors.muted} /></Pressable>}
             </View>)}
             {!trashView && !draft.deleted_at && draft.items.length < 100 && <AppButton label="Добавить пункт" variant="ghost" disabled={!ready} onPress={() => change({ items: [...draft.items, { id: `${Date.now()}-${Math.random().toString(36).slice(2)}`, text: '', done: false }] })} />}
           </>}

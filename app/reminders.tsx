@@ -1,4 +1,4 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
+import { AppIcon } from '@/components/AppIcon';
 import { Href, router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { useIsFocused } from 'expo-router';
@@ -26,14 +26,14 @@ function EventReminderCard({ group }: { group: PlannedEventReminders }) {
       style={({ pressed }) => [styles.reminderCard, pressed && styles.pressed]}
     >
       <View style={styles.eventIcon}>
-        <Ionicons name={eventIcons[group.event.icon]} size={21} color={colors.primary} />
+        <AppIcon name={eventIcons[group.event.icon]} size={21} color={colors.primary} />
       </View>
       <View style={styles.reminderCopy}>
         <Text style={styles.reminderTitle} numberOfLines={2}>{group.event.title}</Text>
         <Text style={styles.reminderDate}>{formatEventDate(group.event)}</Text>
         <Text style={styles.offset}>{formatReminderCount(group.reminders.length)}</Text>
       </View>
-      <Ionicons name="chevron-forward" size={20} color={colors.muted} />
+      <AppIcon name="chevron-forward" size={20} color={colors.muted} />
     </Pressable>
   );
 }
@@ -94,7 +94,7 @@ export default function RemindersScreen() {
           onPress={() => setReturning(true)}
           style={styles.iconButton}
         >
-          <Ionicons name="chevron-back" size={24} color={backPressed || returning ? colors.primary : colors.muted} />
+          <AppIcon name="chevron-back" size={24} color={backPressed || returning ? colors.primary : colors.muted} />
         </Pressable>
         <Text style={styles.headerTitle}>Напоминания</Text>
         <View style={styles.headerSpacer} />
@@ -103,7 +103,7 @@ export default function RemindersScreen() {
       {!enabled ? (
         <View style={styles.emptyCard}>
           <View style={styles.largeIcon}>
-            <Ionicons name="notifications-outline" size={30} color={colors.primary} />
+            <AppIcon name="notifications-outline" size={30} color={colors.primary} />
           </View>
           <View style={styles.emptyCopy}>
             <Text style={styles.emptyTitle}>
@@ -141,7 +141,7 @@ export default function RemindersScreen() {
       ) : (
         <View style={styles.emptyCard}>
           <View style={styles.largeIcon}>
-            <Ionicons name="calendar-outline" size={30} color={colors.primary} />
+            <AppIcon name="calendar-outline" size={30} color={colors.primary} />
           </View>
           <View style={styles.emptyCopy}>
             <Text style={styles.emptyTitle}>Пока ничего не запланировано</Text>

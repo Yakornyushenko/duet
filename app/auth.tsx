@@ -1,4 +1,4 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
+import { AppIcon } from '@/components/AppIcon';
 import { Href, router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Image, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
@@ -144,7 +144,7 @@ export default function AuthScreen() {
               style={styles.passwordVisibilityButton}
               onPress={() => setPasswordVisible((visible) => !visible)}
             >
-              <Ionicons
+              <AppIcon
                 name={passwordVisible ? 'eye-outline' : 'eye-off-outline'}
                 size={24}
                 color={colors.muted}
@@ -186,7 +186,7 @@ export default function AuthScreen() {
           />
           <View style={[styles.modalCard, { maxWidth: modalMaxWidth }]}>
             <View style={styles.modalIcon}>
-              <Ionicons name="mail-open-outline" size={32} color={colors.primary} />
+              <AppIcon name="mail-open-outline" size={32} color={colors.primary} />
             </View>
             <View style={styles.modalCopy}>
               <Text style={styles.modalTitle}>Подтвердите почту</Text>

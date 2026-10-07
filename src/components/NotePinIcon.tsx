@@ -1,4 +1,4 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
+import { AppIcon } from '@/components/AppIcon';
 import { StyleSheet, View } from 'react-native';
 
 import { colors } from '@/theme/tokens';
@@ -11,8 +11,8 @@ export function NotePinIcon({ pinned, size = 28 }: { pinned: boolean; size?: num
           <View style={styles.paper}>
             {[0, 1, 2].map((line) => <View key={line} style={styles.line} />)}
           </View>
-          <Ionicons name="attach-outline" size={21} color={colors.primary} style={styles.attached} />
-        </> : <Ionicons name="attach-outline" size={28} color={colors.muted} />}
+          <AppIcon name="attach-outline" size={21} color={colors.primary} style={styles.attached} />
+        </> : <AppIcon name="attach-outline" size={28} color={colors.muted} />}
       </View>
     </View>
   );

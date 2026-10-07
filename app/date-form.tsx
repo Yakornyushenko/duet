@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import Ionicons from '@expo/vector-icons/Ionicons';
+import { AppIcon } from '@/components/AppIcon';
 import * as Haptics from 'expo-haptics';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
@@ -191,7 +191,7 @@ export default function DateFormScreen() {
     <AppScreen>
       <View style={styles.header}>
         <Pressable accessibilityRole="button" accessibilityLabel="Назад" onPress={() => router.back()} style={styles.iconButton}>
-          <Ionicons name="chevron-back" size={24} color={colors.text} />
+          <AppIcon name="chevron-back" size={24} color={colors.text} />
         </Pressable>
         <Text style={styles.headerTitle}>{existingEvent ? 'Редактировать дату' : 'Новая дата'}</Text>
         <View style={styles.headerSpacer} />
@@ -249,7 +249,7 @@ export default function DateFormScreen() {
           <View style={styles.reminderCard}>
             <View style={styles.reminderHeader}>
               <View style={styles.reminderIcon}>
-                <Ionicons name="notifications-outline" size={21} color={colors.primary} />
+                <AppIcon name="notifications-outline" size={21} color={colors.primary} />
               </View>
               <View style={styles.reminderCopy}>
                 <Text style={styles.reminderTitle}>Напомнить об этой дате</Text>

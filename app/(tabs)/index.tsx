@@ -1,4 +1,4 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
+import { AppIcon } from '@/components/AppIcon';
 import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { useIsFocused } from 'expo-router';
@@ -79,7 +79,7 @@ export default function HomeScreen() {
           }}
           style={styles.iconButton}
         >
-            <Ionicons
+            <AppIcon
               name="notifications-outline"
               size={22}
               color={bellPressed || openingReminders ? colors.primary : colors.secondary}
@@ -133,7 +133,7 @@ export default function HomeScreen() {
         />
       ) : (
         <View style={styles.emptyCard}>
-          <Ionicons name="calendar-outline" size={28} color={colors.primary} />
+          <AppIcon name="calendar-outline" size={28} color={colors.primary} />
           <View style={styles.emptyCopy}>
             <Text style={styles.cardTitle}>Добавьте вашу первую дату</Text>
             <Text style={styles.muted}>Годовщина, поездка или любой важный для вас день.</Text>

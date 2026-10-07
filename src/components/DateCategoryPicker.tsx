@@ -1,4 +1,4 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
+import { AppIcon } from '@/components/AppIcon';
 import { PencilIcon } from '@/components/PencilIcon';
 import { useState } from 'react';
 import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -51,7 +51,7 @@ export function DateCategoryPicker({ value, onChange, includeAll = false, editab
       <Text style={styles.fieldLabel}>Категории</Text>
       <Pressable accessibilityRole="button" accessibilityLabel="Управление категориями"
         style={styles.edit} disabled={busy} onPress={() => setManagerVisible(true)}>
-        <Ionicons name="ellipsis-horizontal" size={22} color={colors.primary} />
+        <AppIcon name="ellipsis-horizontal" size={22} color={colors.primary} />
       </Pressable>
     </View>}
     <View style={styles.grid}>

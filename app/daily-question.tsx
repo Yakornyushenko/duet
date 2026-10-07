@@ -1,4 +1,4 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
+import { AppIcon } from '@/components/AppIcon';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, ActivityIndicator, Animated, AppState, Easing, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
@@ -98,7 +98,7 @@ export default function DailyQuestionScreen() {
   return <AppScreen contentContainerStyle={styles.screen}>
     <View style={styles.row}>
       <Pressable accessibilityRole="button" accessibilityLabel="Назад" onPress={() => router.canGoBack() ? router.back() : router.replace('/more')}>
-        <Ionicons name="chevron-back" size={26} color={colors.primary} />
+        <AppIcon name="chevron-back" size={26} color={colors.primary} />
       </Pressable>
       <Text style={styles.heading}>Вопрос дня</Text>
     </View>
@@ -152,7 +152,7 @@ function QuestionHistory({ questions, onSelect, hasMore, loading, onMore }: {
       style={({ pressed }) => [styles.historyToggle, pressed && { opacity: 0.7 }]}>
       <Text style={styles.flexTitle}>История</Text>
       <Animated.View style={{ transform: [{ rotate: progress.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '180deg'] }) }] }}>
-        <Ionicons name="chevron-down" size={22} color={colors.primary} />
+        <AppIcon name="chevron-down" size={22} color={colors.primary} />
       </Animated.View>
     </Pressable>
     <Animated.View pointerEvents={expanded ? 'auto' : 'none'} accessibilityElementsHidden={!expanded}

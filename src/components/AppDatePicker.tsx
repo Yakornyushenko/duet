@@ -1,4 +1,4 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
+import { AppIcon } from '@/components/AppIcon';
 import * as Haptics from 'expo-haptics';
 import { useEffect, useMemo, useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
@@ -107,7 +107,7 @@ export function AppDatePicker({
         <View style={[styles.card, { maxWidth: modalMaxWidth }]}>
           <View style={styles.heading}>
             <View style={styles.icon}>
-              <Ionicons name="calendar-outline" size={28} color={colors.primary} />
+              <AppIcon name="calendar-outline" size={28} color={colors.primary} />
             </View>
             <View style={styles.headingCopy}>
               <Text style={styles.title}>{title}</Text>
@@ -122,7 +122,7 @@ export function AppDatePicker({
               onPress={() => changeMonth(-1)}
               style={({ pressed }) => [styles.monthButton, pressed && styles.pressed]}
             >
-              <Ionicons name="chevron-back" size={22} color={colors.secondary} />
+              <AppIcon name="chevron-back" size={22} color={colors.secondary} />
             </Pressable>
             <Text style={styles.monthTitle}>
               {monthNames[visibleMonth.getMonth()]} {visibleMonth.getFullYear()}
@@ -134,7 +134,7 @@ export function AppDatePicker({
               onPress={() => changeMonth(1)}
               style={({ pressed }) => [styles.monthButton, !canNavigateNext && styles.disabled, pressed && styles.pressed]}
             >
-              <Ionicons name="chevron-forward" size={22} color={colors.secondary} />
+              <AppIcon name="chevron-forward" size={22} color={colors.secondary} />
             </Pressable>
           </View>
 

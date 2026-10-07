@@ -1,4 +1,4 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
+import { AppIcon } from '@/components/AppIcon';
 import * as Haptics from 'expo-haptics';
 import { Href, router } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -91,7 +91,7 @@ export default function ProfileScreen() {
           onPress={() => router.canGoBack() ? router.back() : router.replace('/more')}
           style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}
         >
-          <Ionicons name="chevron-back" size={24} color={colors.primary} />
+          <AppIcon name="chevron-back" size={24} color={colors.primary} />
         </Pressable>
         <Text style={styles.title}>Профиль</Text>
       </View>
@@ -101,7 +101,7 @@ export default function ProfileScreen() {
         <View style={styles.centeredCopy}>
           <Text style={styles.coupleName}>{user.displayName}{couple.partnerName ? ` + ${couple.partnerName}` : ''}</Text>
           <View style={styles.connectedRow}>
-            <Ionicons name="checkmark-circle" size={18} color={colors.success} />
+            <AppIcon name="checkmark-circle" size={18} color={colors.success} />
             <Text style={styles.connected}>{couple.partnerName ? 'Вы связаны' : 'Личное пространство'}</Text>
           </View>
         </View>
@@ -118,13 +118,13 @@ export default function ProfileScreen() {
             style={({ pressed }) => [styles.detailRow, pressed && styles.pressed]}
           >
             <View style={styles.detailIcon}>
-              <Ionicons name="heart-outline" size={20} color={colors.primary} />
+              <AppIcon name="heart-outline" size={20} color={colors.primary} />
             </View>
             <View style={styles.detailCopy}>
               <Text style={styles.detailLabel}>Вместе с</Text>
               <Text style={styles.detailValue}>{couple.relationshipStartedAt ? formatRelationshipDate(couple.relationshipStartedAt) : 'Добавить дату'}</Text>
             </View>
-            <Ionicons name="chevron-forward" size={20} color={colors.muted} />
+            <AppIcon name="chevron-forward" size={20} color={colors.muted} />
           </Pressable>
         </View>
       </View>
@@ -161,7 +161,7 @@ export default function ProfileScreen() {
         <View style={styles.detailsCard}>
           <View style={styles.detailRow}>
             <View style={styles.detailIcon}>
-              <Ionicons name="notifications-outline" size={20} color={colors.primary} />
+              <AppIcon name="notifications-outline" size={20} color={colors.primary} />
             </View>
             <View style={styles.detailCopy}>
               <Text style={styles.detailValue}>Напоминания</Text>
@@ -186,13 +186,13 @@ export default function ProfileScreen() {
             style={({ pressed }) => [styles.detailRow, pressed && styles.pressed]}
           >
             <View style={styles.detailIcon}>
-              <Ionicons name="volume-medium-outline" size={20} color={colors.primary} />
+              <AppIcon name="volume-medium-outline" size={20} color={colors.primary} />
             </View>
             <View style={styles.detailCopy}>
               <Text style={styles.detailValue}>Настройки уведомлений</Text>
               <Text style={styles.detailLabel}>Звук и вибрация настраиваются в системе</Text>
             </View>
-            <Ionicons name="chevron-forward" size={20} color={colors.muted} />
+            <AppIcon name="chevron-forward" size={20} color={colors.muted} />
           </Pressable>
         </View>
       </View>
