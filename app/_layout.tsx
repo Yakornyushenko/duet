@@ -1,3 +1,5 @@
+import Ionicons from '@expo/vector-icons/Ionicons';
+import { useFonts } from 'expo-font';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -6,6 +8,7 @@ import { useEffect } from 'react';
 import { AppProvider, useApp } from '@/context/AppContext';
 import { DialogProvider } from '@/context/DialogContext';
 import { ReminderProvider } from '@/context/ReminderContext';
+import { LoadingSplash } from '@/components/LoadingSplash';
 import { colors } from '@/theme/tokens';
 
 const publicRoutes = new Set(['auth', 'privacy', 'delete-account', 'email-confirmed']);
@@ -36,6 +39,12 @@ function RootNavigator() {
 }
 
 export default function RootLayout() {
+  const [fontsLoaded, fontError] = useFonts(Ionicons.font);
+
+  if (!fontsLoaded && !fontError) {
+    return <LoadingSplash />;
+  }
+
   return (
     <SafeAreaProvider>
       <DialogProvider>

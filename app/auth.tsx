@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppButton } from '@/components/AppButton';
 import { AppInput } from '@/components/AppInput';
+import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { AppScreen } from '@/components/AppScreen';
 import { SegmentedControl } from '@/components/SegmentedControl';
 import { useApp } from '@/context/AppContext';
@@ -17,6 +18,7 @@ type AuthMode = 'signin' | 'signup';
 const duetLogo = require('../assets/duet-birds.png') as ReturnType<typeof Image.resolveAssetSource>;
 
 export default function AuthScreen() {
+  const { modalMaxWidth } = useResponsiveLayout();
   const { user, signIn, signUp, resendSignUpConfirmation } = useApp();
   const { showDialog } = useDialog();
   const [mode, setMode] = useState<AuthMode>('signin');
@@ -182,7 +184,7 @@ export default function AuthScreen() {
             style={StyleSheet.absoluteFill}
             onPress={() => setConfirmationVisible(false)}
           />
-          <View style={styles.modalCard}>
+          <View style={[styles.modalCard, { maxWidth: modalMaxWidth }]}>
             <View style={styles.modalIcon}>
               <Ionicons name="mail-open-outline" size={32} color={colors.primary} />
             </View>
@@ -220,6 +222,7 @@ const styles = StyleSheet.create({
   content: {
     justifyContent: 'center',
     gap: spacing.xxl,
+    maxWidth: 640,
   },
   brandLogo: {
     alignSelf: 'center',
@@ -278,7 +281,6 @@ const styles = StyleSheet.create({
   },
   modalCard: {
     width: '100%',
-    maxWidth: 420,
     padding: spacing.xxl,
     gap: spacing.xl,
     borderRadius: radii.xl,

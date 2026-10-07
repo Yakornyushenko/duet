@@ -3,6 +3,7 @@ import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppButton } from '@/components/AppButton';
+import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { colors, radii, spacing, typography } from '@/theme/tokens';
 
 type AppTimePickerProps = {
@@ -14,6 +15,7 @@ type AppTimePickerProps = {
 
 export function AppTimePicker({ visible, value, onSelect, onClose }: AppTimePickerProps) {
   const [draft, setDraft] = useState(value);
+  const { modalMaxWidth } = useResponsiveLayout();
 
   useEffect(() => {
     if (visible) setDraft(/^([01]\d|2[0-3]):[0-5]\d$/.test(value) ? value : '10:00');
@@ -27,7 +29,7 @@ export function AppTimePicker({ visible, value, onSelect, onClose }: AppTimePick
     <Modal transparent animationType="fade" visible={visible} statusBarTranslucent onRequestClose={onClose}>
       <SafeAreaView style={styles.backdrop}>
         <Pressable style={StyleSheet.absoluteFill} accessibilityRole="button" accessibilityLabel="Отмена" onPress={onClose} />
-        <View style={styles.card} accessibilityViewIsModal>
+        <View style={[styles.card, { maxWidth: modalMaxWidth }]} accessibilityViewIsModal>
           <Text style={styles.title}>Время напоминания</Text>
           <Text style={styles.preview}>{draft}</Text>
           <View style={styles.columns}>
@@ -69,7 +71,7 @@ export function AppTimePicker({ visible, value, onSelect, onClose }: AppTimePick
 
 const styles = StyleSheet.create({
   backdrop: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: spacing.xxl, backgroundColor: colors.overlay },
-  card: { width: '100%', maxWidth: 420, maxHeight: '100%', padding: spacing.xl, borderRadius: radii.xl, backgroundColor: colors.background, gap: spacing.md },
+  card: { width: '100%', maxHeight: '100%', padding: spacing.xl, borderRadius: radii.xl, backgroundColor: colors.background, gap: spacing.md },
   title: { ...typography.sectionTitle, color: colors.text, textAlign: 'center' },
   preview: { ...typography.title, color: colors.primary, textAlign: 'center', fontVariant: ['tabular-nums'] },
   columns: { flexDirection: 'row', gap: spacing.lg, flexShrink: 1 },

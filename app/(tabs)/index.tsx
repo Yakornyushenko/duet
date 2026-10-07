@@ -11,6 +11,7 @@ import { PairAvatars } from '@/components/PairAvatars';
 import { RelationshipDateEditor } from '@/components/RelationshipDateEditor';
 import { useApp } from '@/context/AppContext';
 import { useReminders } from '@/context/ReminderContext';
+import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { getPlannedReminderLabel } from '@/services/reminders';
 import { colors, radii, shadow, spacing, typography } from '@/theme/tokens';
 import { formatRelationshipDate, getDaysTogether, getUpcomingEvents } from '@/utils/dates';
@@ -23,6 +24,7 @@ export default function HomeScreen() {
   const [bellPressed, setBellPressed] = useState(false);
   const reminderTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const focused = useIsFocused();
+  const { isDesktop } = useResponsiveLayout();
 
   useEffect(() => {
     setOpeningReminders(false);
@@ -58,7 +60,7 @@ export default function HomeScreen() {
   }
 
   return (
-    <AppScreen>
+    <AppScreen wide>
       <View style={styles.header}>
         <View style={styles.coupleIdentity}>
           <PairAvatars firstName={user.displayName} secondName={couple.partnerName} />
@@ -86,8 +88,10 @@ export default function HomeScreen() {
       </View>
 
       {!couple.partnerName && <AppButton label="Пригласить партнёра" variant="ghost" onPress={() => router.push('/pair')} />}
+      <View style={isDesktop && styles.desktopDashboard}>
+      <View style={styles.primaryColumn}>
       <View style={styles.hero}>
-        <View style={styles.daySummary}>
+        <View style={[styles.daySummary, isDesktop && styles.desktopDaySummary]}>
         {couple.relationshipStartedAt ? <>
         <Text style={styles.eyebrow}>Мы вместе уже</Text>
         <Pressable
@@ -107,7 +111,7 @@ export default function HomeScreen() {
           accessibilityLabel="Наши желания"
           accessibilityHint="Открыть общие и личные списки желаний"
           onPress={() => router.push('/wishlists')}
-          style={({ pressed }) => [styles.wishlists, pressed && styles.pressed]}
+          style={({ pressed }) => [styles.wishlists, isDesktop && styles.desktopWishlists, pressed && styles.pressed]}
         >
           <Text style={styles.wishesTitle}>Наши желания</Text>
           <View style={styles.envelopeFrame}>
@@ -137,9 +141,11 @@ export default function HomeScreen() {
           <AppButton label="Добавить дату" onPress={() => router.push('/date-form')} />
         </View>
       )}
+      </View>
 
+      <View style={styles.secondaryColumn}>
       {otherEvents.length ? (
-        <View style={styles.section}>
+        <View style={[styles.section, isDesktop && styles.desktopSection]}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Ближайшие</Text>
             <Pressable accessibilityRole="button" onPress={() => router.push('/(tabs)/dates')}>
@@ -160,6 +166,8 @@ export default function HomeScreen() {
       ) : nextEvent ? (
         <AppButton label="Добавить ещё одну дату" variant="secondary" onPress={() => router.push('/date-form')} />
       ) : null}
+      </View>
+      </View>
     </AppScreen>
   );
 }
@@ -201,6 +209,19 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: colors.softRose,
   },
+  desktopDashboard: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.xxxl,
+  },
+  primaryColumn: {
+    flex: 1,
+    minWidth: 0,
+  },
+  secondaryColumn: {
+    flex: 1,
+    minWidth: 0,
+  },
   hero: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -208,7 +229,9 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xxxl,
   },
   daySummary: { flex: 1, minWidth: 0 },
+  desktopDaySummary: { flex: 0.8 },
   wishlists: { flex: 1, minWidth: 0, overflow: 'hidden', alignItems: 'center', gap: 0, paddingVertical: spacing.md },
+  desktopWishlists: { flex: 1.2, paddingVertical: 0 },
   wishesTitle: { ...typography.body, fontWeight: '500', color: colors.secondary, textAlign: 'center' },
   envelopeFrame: { alignSelf: 'stretch', aspectRatio: 1.8, overflow: 'hidden' },
   envelope: { position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' },
@@ -231,6 +254,9 @@ const styles = StyleSheet.create({
   section: {
     gap: spacing.md,
     marginTop: spacing.xxxl,
+  },
+  desktopSection: {
+    marginTop: 0,
   },
   sectionHeader: {
     flexDirection: 'row',

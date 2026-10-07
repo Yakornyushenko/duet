@@ -5,6 +5,7 @@ import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppButton } from '@/components/AppButton';
+import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { colors, radii, shadow, spacing, typography } from '@/theme/tokens';
 import { formatRelationshipDate, parseDateOnly, toDateOnly } from '@/utils/dates';
 
@@ -72,6 +73,7 @@ export function AppDatePicker({
   onClose,
 }: AppDatePickerProps) {
   const [visibleMonth, setVisibleMonth] = useState(() => getMonthStart(value));
+  const { isTablet, modalMaxWidth } = useResponsiveLayout();
   const days = useMemo(() => getCalendarDays(visibleMonth), [visibleMonth]);
   const today = toDateOnly(new Date());
   const nextMonth = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() + 1, 1, 12);
@@ -102,7 +104,7 @@ export function AppDatePicker({
           style={StyleSheet.absoluteFill}
           onPress={onClose}
         />
-        <View style={styles.card}>
+        <View style={[styles.card, { maxWidth: modalMaxWidth }]}>
           <View style={styles.heading}>
             <View style={styles.icon}>
               <Ionicons name="calendar-outline" size={28} color={colors.primary} />
@@ -148,7 +150,7 @@ export function AppDatePicker({
               const isToday = day.value === today;
               const disabled = Boolean(maximumDate && day.value > maximumDate);
               return (
-                <View key={day.key} style={styles.daySlot}>
+                <View key={day.key} style={[styles.daySlot, isTablet && styles.tabletDaySlot]}>
                   <Pressable
                     accessibilityRole="button"
                     accessibilityLabel={formatRelationshipDate(day.value)}
@@ -157,6 +159,7 @@ export function AppDatePicker({
                     onPress={() => selectDate(day.value)}
                     style={({ pressed }) => [
                       styles.day,
+                      isTablet && styles.tabletDay,
                       isToday && !selected && styles.today,
                       selected && styles.selectedDay,
                       disabled && styles.disabled,
@@ -200,7 +203,6 @@ const styles = StyleSheet.create({
   },
   card: {
     width: '100%',
-    maxWidth: 420,
     padding: spacing.xl,
     gap: spacing.lg,
     borderRadius: radii.xl,
@@ -271,12 +273,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  tabletDaySlot: {
+    height: 52,
+  },
   day: {
     width: 38,
     height: 38,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: radii.round,
+  },
+  tabletDay: {
+    width: 46,
+    height: 46,
   },
   today: {
     borderWidth: 1.5,

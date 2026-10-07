@@ -4,13 +4,17 @@ import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { AppScreen } from '@/components/AppScreen';
 import { NotesIcon } from '@/components/NotesIcon';
+import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { colors, radii, spacing, typography } from '@/theme/tokens';
 
 export default function MoreScreen() {
+  const { isDesktop } = useResponsiveLayout();
+
   return (
-    <AppScreen contentContainerStyle={styles.content}>
+    <AppScreen wide>
+      <View style={[styles.grid, isDesktop && styles.desktopGrid]}>
       <Pressable accessibilityRole="button" accessibilityLabel="Открыть вопрос дня" onPress={() => router.push('/daily-question')}
-        style={({ pressed }) => [styles.card, pressed && styles.pressed]}>
+        style={({ pressed }) => [styles.card, isDesktop && styles.desktopCard, pressed && styles.pressed]}>
         <View style={styles.icon}><Ionicons name="chatbubbles-outline" size={24} color={colors.primary} /></View>
         <View style={styles.copy}><Text style={styles.label}>Вопрос дня</Text><Text style={styles.description}>Один вопрос — два взгляда</Text></View>
         <Ionicons name="chevron-forward" size={20} color={colors.muted} />
@@ -19,7 +23,7 @@ export default function MoreScreen() {
         accessibilityRole="button"
         accessibilityLabel="Открыть напоминания"
         onPress={() => router.push('/reminders')}
-        style={({ pressed }) => [styles.card, pressed && styles.pressed]}
+        style={({ pressed }) => [styles.card, isDesktop && styles.desktopCard, pressed && styles.pressed]}
       >
         <View style={styles.icon}>
           <Ionicons name="notifications-outline" size={24} color={colors.primary} />
@@ -34,12 +38,12 @@ export default function MoreScreen() {
         accessibilityRole="button"
         accessibilityLabel="Открыть желания"
         onPress={() => router.push('/wishlists')}
-        style={({ pressed }) => [styles.card, pressed && styles.pressed]}
+        style={({ pressed }) => [styles.card, isDesktop && styles.desktopCard, pressed && styles.pressed]}
       >
-        <View style={styles.envelopeFrame}>
+        <View style={[styles.envelopeFrame, isDesktop && styles.desktopEnvelopeFrame]}>
           <Image
             source={require('../../assets/wishes-envelope-soft.png')}
-            style={styles.envelope}
+            style={[styles.envelope, isDesktop && styles.desktopEnvelope]}
             resizeMode="contain"
             accessible={false}
           />
@@ -51,7 +55,7 @@ export default function MoreScreen() {
         <Ionicons name="chevron-forward" size={20} color={colors.muted} />
       </Pressable>
       <Pressable
-        style={({ pressed }) => [styles.card, pressed && styles.pressed]}
+        style={({ pressed }) => [styles.card, isDesktop && styles.desktopCard, pressed && styles.pressed]}
         accessible
         accessibilityRole="button"
         accessibilityLabel="Статистика"
@@ -67,7 +71,7 @@ export default function MoreScreen() {
         <Ionicons name="chevron-forward" size={20} color={colors.muted} />
       </Pressable>
       <Pressable
-        style={({ pressed }) => [styles.card, pressed && styles.pressed]}
+        style={({ pressed }) => [styles.card, isDesktop && styles.desktopCard, pressed && styles.pressed]}
         accessible
         accessibilityRole="button"
         accessibilityLabel="Заметки"
@@ -86,7 +90,7 @@ export default function MoreScreen() {
         accessibilityRole="button"
         accessibilityLabel="Открыть профиль"
         onPress={() => router.push('/profile')}
-        style={({ pressed }) => [styles.card, pressed && styles.pressed]}
+        style={({ pressed }) => [styles.card, isDesktop && styles.desktopCard, pressed && styles.pressed]}
       >
         <View style={styles.icon}>
           <Ionicons name="person-outline" size={24} color={colors.primary} />
@@ -101,7 +105,7 @@ export default function MoreScreen() {
         accessibilityRole="link"
         accessibilityLabel="Открыть политику конфиденциальности"
         onPress={() => router.push('/privacy' as Href)}
-        style={({ pressed }) => [styles.card, pressed && styles.pressed]}
+        style={({ pressed }) => [styles.card, isDesktop && styles.desktopCard, pressed && styles.pressed]}
       >
         <View style={styles.icon}>
           <Ionicons name="shield-checkmark-outline" size={24} color={colors.primary} />
@@ -112,16 +116,19 @@ export default function MoreScreen() {
         </View>
         <Ionicons name="chevron-forward" size={20} color={colors.muted} />
       </Pressable>
+      </View>
     </AppScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  content: { gap: spacing.md },
+  grid: { gap: spacing.md },
+  desktopGrid: { flexDirection: 'row', flexWrap: 'wrap' },
   card: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.md,
     padding: spacing.lg, borderRadius: radii.lg, backgroundColor: colors.surface,
   },
+  desktopCard: { flexBasis: '48%', flexGrow: 1, maxWidth: '49%' },
   icon: {
     width: 48, height: 48, borderRadius: radii.md,
     alignItems: 'center', justifyContent: 'center', backgroundColor: colors.softRose,
@@ -129,6 +136,8 @@ const styles = StyleSheet.create({
   copy: { flex: 1, gap: spacing.xs },
   envelopeFrame: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center' },
   envelope: { width: 48, height: 32 },
+  desktopEnvelopeFrame: { width: 64, height: 56 },
+  desktopEnvelope: { width: 64, height: 44 },
   label: { ...typography.cardTitle, color: colors.text },
   description: { ...typography.caption, color: colors.muted },
   pressed: { transform: [{ scale: 1.02 }] },

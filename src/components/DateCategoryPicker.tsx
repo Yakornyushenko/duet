@@ -6,6 +6,7 @@ import { AppButton } from '@/components/AppButton';
 import { AppInput } from '@/components/AppInput';
 import { useApp } from '@/context/AppContext';
 import { useDialog } from '@/context/DialogContext';
+import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { supabase } from '@/lib/supabase';
 import { DateCategoryOption } from '@/types/domain';
 import { colors, radii, spacing, typography } from '@/theme/tokens';
@@ -15,6 +16,7 @@ export function DateCategoryPicker({ value, onChange, includeAll = false, editab
 }) {
   const { categories, couple, refreshWorkspace } = useApp();
   const { showDialog } = useDialog();
+  const { largeModalMaxWidth } = useResponsiveLayout();
   const [editor, setEditor] = useState<{ category?: DateCategoryOption } | null>(null);
   const [managerVisible, setManagerVisible] = useState(false);
   const [name, setName] = useState('');
@@ -69,7 +71,7 @@ export function DateCategoryPicker({ value, onChange, includeAll = false, editab
       if (editor) setEditor(null); else setManagerVisible(false);
     }}>
       <KeyboardAvoidingView style={styles.backdrop} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-        <View style={styles.dialog}><ScrollView
+        <View style={[styles.dialog, { maxWidth: largeModalMaxWidth }]}><ScrollView
           keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={styles.dialogContent}
@@ -129,7 +131,7 @@ const styles = StyleSheet.create({
   categoryRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, minHeight: 48, paddingVertical: spacing.sm },
   categoryName: { ...typography.body, color: colors.text, flex: 1 },
   backdrop: { flex: 1, backgroundColor: colors.overlay, justifyContent: 'center', padding: spacing.xl },
-  dialog: { width: '100%', maxWidth: 480, maxHeight: '85%', alignSelf: 'center', backgroundColor: colors.background, borderRadius: radii.xl },
+  dialog: { width: '100%', maxHeight: '85%', alignSelf: 'center', backgroundColor: colors.background, borderRadius: radii.xl },
   dialogContent: { padding: spacing.xl, gap: spacing.md },
   heading: { ...typography.sectionTitle, color: colors.text },
   notice: { ...typography.caption, color: colors.muted },

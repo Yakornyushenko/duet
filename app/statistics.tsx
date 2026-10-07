@@ -9,6 +9,7 @@ import { AppButton } from '@/components/AppButton';
 import { SegmentedControl } from '@/components/SegmentedControl';
 import { StatisticsRing } from '@/components/StatisticsRing';
 import { useApp } from '@/context/AppContext';
+import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { supabase } from '@/lib/supabase';
 import { loadStatistics, StatisticsData } from '@/services/statistics';
 import { HistoryPeriod, summarizeStatistics } from '@/utils/statistics';
@@ -18,6 +19,7 @@ import { colors, radii, spacing, typography } from '@/theme/tokens';
 
 export default function StatisticsScreen() {
   const { user, couple, categories } = useApp();
+  const { isDesktop } = useResponsiveLayout();
   const [data, setData] = useState<StatisticsData | null>(null);
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -64,7 +66,7 @@ export default function StatisticsScreen() {
   const days = couple?.relationshipStartedAt ? getDaysTogether(couple.relationshipStartedAt) : 0;
   const wishlists = getWishlists(user, couple);
 
-  return <AppScreen contentContainerStyle={styles.screen}>
+  return <AppScreen wide contentContainerStyle={styles.screen}>
     <View style={styles.header}>
       <Pressable accessibilityRole="button" accessibilityLabel="Назад" onPress={() => router.canGoBack() ? router.back() : router.replace('/more')} style={styles.icon}>
         <Ionicons name="chevron-back" size={24} color={colors.primary} />
@@ -86,20 +88,22 @@ export default function StatisticsScreen() {
         {[
           ...categoryMetrics,
           { id: 'fulfilled-wishes', label: 'Исполненные желания', count: stats.wishes, color: '#E8B7A5' },
-        ].map((item) => <View key={item.id} style={styles.metric}>
+        ].map((item) => <View key={item.id} style={[styles.metric, isDesktop && styles.desktopMetric]}>
           <Ionicons name={item.id === 'fulfilled-wishes' ? 'sparkles-outline' : item.id === 'dates' ? 'heart-outline' : item.id === 'travel' ? 'airplane-outline' : 'calendar-outline'} size={23} color={item.color} />
           <Text style={styles.metricNumber}>{item.count}</Text><Text style={styles.caption}>{item.label}</Text>
         </View>)}
       </View>
-      <View style={styles.card}>
+      <View style={[styles.summaryGrid, isDesktop && styles.desktopSummaryGrid]}>
+      <View style={[styles.card, styles.summaryCard]}>
         <Text style={styles.sectionTitle}>Наши желания сбылись</Text>
         {wishlists.map((list) => <View key={list.value} style={styles.row}>
           <Text style={styles.copy}>{list.label}</Text><Text style={styles.count}>{stats.wishLists[list.value]}</Text>
         </View>)}
         {stats.undated > 0 && <Text style={styles.caption}>Без известной даты выполнения: {stats.undated}. Они учтены только в «Всё время».</Text>}
       </View>
+      <View style={styles.summaryCard}><StatisticsRing key={`${couple?.id}:${period}:${categories.map((category) => category.value).join(',')}`} segments={ringSegments} /></View>
+      </View>
     </>}
-    {stats && <StatisticsRing key={`${couple?.id}:${period}:${categories.map((category) => category.value).join(',')}`} segments={ringSegments} />}
   </AppScreen>;
 }
 
@@ -111,8 +115,12 @@ const styles = StyleSheet.create({
   heroCaption: { ...typography.label, color: colors.white }, heroNumber: { fontSize: 42, fontWeight: '700', color: colors.white },
   heroUnit: { fontSize: 18, fontWeight: '500' }, grid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md },
   metric: { flexGrow: 1, flexBasis: '45%', backgroundColor: colors.surface, borderRadius: radii.lg, padding: spacing.lg, gap: spacing.sm },
+  desktopMetric: { flexBasis: '22%', maxWidth: '24%' },
   metricNumber: { fontSize: 30, fontWeight: '700', color: colors.text },
   card: { backgroundColor: colors.surface, borderRadius: radii.xl, padding: spacing.lg, gap: spacing.md },
+  summaryGrid: { gap: spacing.xl },
+  desktopSummaryGrid: { flexDirection: 'row', alignItems: 'flex-start' },
+  summaryCard: { flex: 1, minWidth: 0 },
   sectionTitle: { ...typography.sectionTitle, color: colors.text }, caption: { ...typography.caption, color: colors.muted },
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.md }, copy: { ...typography.body, color: colors.text, flexShrink: 1, flexGrow: 1 },
   count: { ...typography.cardTitle, color: colors.secondary },

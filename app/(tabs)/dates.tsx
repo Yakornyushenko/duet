@@ -9,6 +9,7 @@ import { AppScreen } from '@/components/AppScreen';
 import { DateCard } from '@/components/DateCard';
 import { useApp } from '@/context/AppContext';
 import { useReminders } from '@/context/ReminderContext';
+import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { getPlannedReminderLabel } from '@/services/reminders';
 import { colors, radii, spacing, typography } from '@/theme/tokens';
 import { DateCategory } from '@/types/domain';
@@ -17,6 +18,7 @@ import { getUpcomingEvents, sortByNextOccurrence } from '@/utils/dates';
 export default function DatesScreen() {
   const { events, categories } = useApp();
   const { plannedReminders } = useReminders();
+  const { isDesktop } = useResponsiveLayout();
   const [category, setCategory] = useState<DateCategory | 'all'>('all');
   useEffect(() => {
     if (category !== 'all' && !categories.some((item) => item.value === category)) setCategory('all');
@@ -27,7 +29,7 @@ export default function DatesScreen() {
   const past = sortByNextOccurrence(filteredEvents.filter((event) => !upcomingIds.has(event.id)));
 
   return (
-    <AppScreen>
+    <AppScreen wide>
       <View style={styles.header}>
         <View style={styles.headingCopy}>
           <Text style={styles.title}>Наши даты</Text>
@@ -60,28 +62,30 @@ export default function DatesScreen() {
         <>
           {upcoming.length ? <View style={styles.section}>
             <Text style={styles.sectionTitle}>Ближайшие</Text>
-            <View style={styles.list}>
+            <View style={[styles.list, isDesktop && styles.desktopList]}>
               {upcoming.map((event) => (
+                <View key={event.id} style={isDesktop && styles.desktopListItem}>
                 <DateCard
-                  key={event.id}
                   event={event}
                   reminderLabel={getPlannedReminderLabel(plannedReminders, event.id)}
                   onPress={() => router.push({ pathname: '/date-form', params: { id: event.id } })}
                 />
+                </View>
               ))}
             </View>
           </View> : null}
           {past.length ? (
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Прошедшие</Text>
-              <View style={styles.list}>
+              <View style={[styles.list, isDesktop && styles.desktopList]}>
                 {past.map((event) => (
+                  <View key={event.id} style={isDesktop && styles.desktopListItem}>
                   <DateCard
-                    key={event.id}
                     event={event}
                     reminderLabel={getPlannedReminderLabel(plannedReminders, event.id)}
                     onPress={() => router.push({ pathname: '/date-form', params: { id: event.id } })}
                   />
+                  </View>
                 ))}
               </View>
             </View>
@@ -143,6 +147,15 @@ const styles = StyleSheet.create({
   },
   list: {
     gap: spacing.md,
+  },
+  desktopList: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  desktopListItem: {
+    flexBasis: '48%',
+    flexGrow: 1,
+    maxWidth: '49%',
   },
   empty: {
     flex: 1,

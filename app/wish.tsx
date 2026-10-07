@@ -20,6 +20,7 @@ import { DateEventIcon } from '@/types/domain';
 import { AppScreen } from '@/components/AppScreen';
 import { useApp } from '@/context/AppContext';
 import { useDialog } from '@/context/DialogContext';
+import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import {
   addWishComment,
   deleteWish,
@@ -44,6 +45,7 @@ export default function WishScreen() {
   const wishId = Array.isArray(params.id) ? params.id[0] : params.id;
   const { user, couple } = useApp();
   const { showDialog } = useDialog();
+  const { largeModalMaxWidth, mediaThumbnailSize } = useResponsiveLayout();
   const wishlists = getWishlists(user, couple);
 
   const [wish, setWish] = useState<Wish | null>(null);
@@ -351,7 +353,7 @@ export default function WishScreen() {
         <Text style={styles.sectionTitle}>Фотографии</Text>
         <View style={styles.photos}>
           {photos.map((path) => (
-            <View key={path} style={styles.photoFrame}>
+            <View key={path} style={[styles.photoFrame, { width: mediaThumbnailSize, height: mediaThumbnailSize }]}>
               {isFocused && photoUrls[path] ? (
                 <Pressable
                   accessibilityRole="button"
@@ -382,7 +384,7 @@ export default function WishScreen() {
               accessibilityLabel="Добавить фото"
               disabled={busy}
               onPress={() => void addPhoto()}
-              style={styles.addPhoto}
+              style={[styles.addPhoto, { width: mediaThumbnailSize, height: mediaThumbnailSize }]}
             >
               <Ionicons name="camera-outline" size={24} color={colors.primary} />
               <Text style={styles.addPhotoLabel}>Добавить</Text>
@@ -405,7 +407,7 @@ export default function WishScreen() {
             style={StyleSheet.absoluteFill}
             onPress={() => setPreviewUrl(null)}
           />
-          <View style={styles.previewCard} pointerEvents="box-none">
+          <View style={[styles.previewCard, { maxWidth: largeModalMaxWidth }]} pointerEvents="box-none">
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Закрыть"
@@ -515,8 +517,6 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   photoFrame: {
-    width: 96,
-    height: 96,
     borderRadius: radii.md,
     overflow: 'hidden',
     backgroundColor: colors.softRose,
@@ -541,8 +541,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.overlay,
   },
   addPhoto: {
-    width: 96,
-    height: 96,
     borderRadius: radii.md,
     borderWidth: 1,
     borderColor: colors.border,
@@ -561,7 +559,6 @@ const styles = StyleSheet.create({
   },
   previewCard: {
     width: '100%',
-    maxWidth: 480,
     alignSelf: 'center',
     aspectRatio: 1,
     borderRadius: radii.xl,

@@ -4,6 +4,7 @@ import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppButton, ButtonVariant } from '@/components/AppButton';
+import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { colors, radii, shadow, spacing, typography } from '@/theme/tokens';
 
 type DialogTone = 'info' | 'warning' | 'danger' | 'success';
@@ -46,6 +47,7 @@ const DialogContext = createContext<DialogContextValue | null>(null);
 
 export function DialogProvider({ children }: PropsWithChildren) {
   const [dialog, setDialog] = useState<DialogOptions | null>(null);
+  const { modalMaxWidth } = useResponsiveLayout();
   const hideDialog = useCallback(() => setDialog(null), []);
   const showDialog = useCallback((options: DialogOptions) => setDialog(options), []);
   const value = useMemo(() => ({ showDialog, hideDialog }), [hideDialog, showDialog]);
@@ -75,7 +77,7 @@ export function DialogProvider({ children }: PropsWithChildren) {
               onPress={hideDialog}
             />
           ) : null}
-          <View style={styles.card}>
+          <View style={[styles.card, { maxWidth: modalMaxWidth }]}>
             <View style={[styles.icon, { backgroundColor: tone === 'warning' ? colors.soft : colors.softRose }]}>
               <Ionicons name={toneIcons[tone]} size={32} color={toneColors[tone]} />
             </View>
@@ -121,7 +123,6 @@ const styles = StyleSheet.create({
   },
   card: {
     width: '100%',
-    maxWidth: 420,
     padding: spacing.xxl,
     gap: spacing.xl,
     borderRadius: radii.xl,

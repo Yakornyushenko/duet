@@ -11,6 +11,7 @@ import { DateEventIcon } from '@/types/domain';
 import { eventIcons } from '@/utils/eventIcons';
 import { useApp } from '@/context/AppContext';
 import { useDialog } from '@/context/DialogContext';
+import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { supabase } from '@/lib/supabase';
 import {
   getNotificationPermission,
@@ -25,6 +26,7 @@ export default function WishlistsScreen() {
   const { user, couple } = useApp();
   const wishlists = getWishlists(user, couple);
   const { showDialog } = useDialog();
+  const { horizontalPadding, isDesktop } = useResponsiveLayout();
   const [list, setList] = useState<Wishlist>(
     wishlists.find((item) => item.value === params.list)?.value ?? 'together',
   );
@@ -144,7 +146,7 @@ export default function WishlistsScreen() {
       accessibilityLabel={wish.title}
       accessibilityHint="Открыть желание"
       onPress={() => router.push(`/wish?id=${wish.id}` as Href)}
-      style={({ pressed }) => [styles.card, styles.wishCard, pressed && styles.pressed]}
+      style={({ pressed }) => [styles.card, styles.wishCard, isDesktop && styles.desktopWishCard, pressed && styles.pressed]}
     >
       <View style={styles.wishRow}>
         <Ionicons name={eventIcons[wish.icon] ?? eventIcons.heart} size={22} color={colors.primary} />
@@ -155,11 +157,12 @@ export default function WishlistsScreen() {
         <Ionicons name="chevron-forward" size={20} color={colors.muted} />
       </View>
     </Pressable>
-  ), []);
+  ), [isDesktop]);
 
   return (
-    <AppScreen scroll={false} contentContainerStyle={styles.screen}>
+    <AppScreen scroll={false} wide contentContainerStyle={styles.screen}>
       <FlatList
+        key={isDesktop ? 'desktop' : 'compact'}
         data={!loading && loadedFor.current === scope ? visible : []}
         keyExtractor={(wish) => wish.id}
         renderItem={renderWish}
@@ -169,7 +172,9 @@ export default function WishlistsScreen() {
         keyboardDismissMode="on-drag"
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.listContent}
+        numColumns={isDesktop ? 2 : 1}
+        columnWrapperStyle={isDesktop ? styles.desktopColumns : undefined}
+        contentContainerStyle={[styles.listContent, { paddingHorizontal: horizontalPadding }]}
         ListHeaderComponent={<>
       <View style={styles.header}>
         <Pressable
@@ -250,7 +255,8 @@ export default function WishlistsScreen() {
 
 const styles = StyleSheet.create({
   screen: { paddingHorizontal: 0, paddingTop: 0, paddingBottom: 0 },
-  listContent: { paddingHorizontal: spacing.xl, paddingTop: spacing.lg, paddingBottom: spacing.huge },
+  listContent: { paddingTop: spacing.lg, paddingBottom: spacing.huge },
+  desktopColumns: { gap: spacing.md },
   header: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   icon: {
     width: 44,
@@ -282,6 +288,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   wishCard: { gap: 0 },
+  desktopWishCard: { flex: 1 },
   wishRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   wishTitle: { ...typography.cardTitle, color: colors.text, flex: 1 },
   body: { ...typography.body, color: colors.text },

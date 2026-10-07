@@ -14,16 +14,23 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { colors, spacing } from '@/theme/tokens';
 
 type AppScreenProps = PropsWithChildren<{
   scroll?: boolean;
+  wide?: boolean;
   contentContainerStyle?: StyleProp<ViewStyle>;
 }>;
 
-export function AppScreen({ children, scroll = true, contentContainerStyle }: AppScreenProps) {
+export function AppScreen({ children, scroll = true, wide = false, contentContainerStyle }: AppScreenProps) {
   const scrollView = useRef<ScrollView>(null);
   const keyboardSpacerHeight = useRef(new Animated.Value(0)).current;
+  const { contentMaxWidth, horizontalPadding, wideContentMaxWidth } = useResponsiveLayout();
+  const responsiveContentStyle = {
+    maxWidth: wide ? wideContentMaxWidth : contentMaxWidth,
+    paddingHorizontal: horizontalPadding,
+  };
 
   const scrollFocusedInputIntoView = useCallback(() => {
     const input = TextInput.State.currentlyFocusedInput();
@@ -61,7 +68,7 @@ export function AppScreen({ children, scroll = true, contentContainerStyle }: Ap
     <ScrollView
       ref={scrollView}
       automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
-      contentContainerStyle={[styles.content, contentContainerStyle]}
+      contentContainerStyle={[styles.content, responsiveContentStyle, contentContainerStyle]}
       keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
       keyboardShouldPersistTaps="handled"
       showsVerticalScrollIndicator={false}
@@ -72,7 +79,7 @@ export function AppScreen({ children, scroll = true, contentContainerStyle }: Ap
       ) : null}
     </ScrollView>
   ) : (
-    <View style={[styles.content, styles.fill, contentContainerStyle]}>{children}</View>
+    <View style={[styles.content, responsiveContentStyle, styles.fill, contentContainerStyle]}>{children}</View>
   );
 
   return (
@@ -99,9 +106,7 @@ const styles = StyleSheet.create({
   content: {
     flexGrow: 1,
     width: '100%',
-    maxWidth: 480,
     alignSelf: 'center',
-    paddingHorizontal: spacing.xl,
     paddingTop: spacing.lg,
     paddingBottom: spacing.huge,
   },

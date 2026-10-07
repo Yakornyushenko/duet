@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Platform, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { colors } from '@/theme/tokens';
 
 function MoreTabButton(props: BottomTabBarButtonProps) {
@@ -60,6 +61,7 @@ function MoreTabButton(props: BottomTabBarButtonProps) {
 
 export default function TabsLayout() {
   const insets = useSafeAreaInsets();
+  const { tabBarMaxWidth } = useResponsiveLayout();
   const bottomInset = Math.max(insets.bottom, Platform.OS === 'android' ? 12 : 0);
 
   return (
@@ -79,7 +81,7 @@ export default function TabsLayout() {
           paddingTop: 8,
           paddingBottom: bottomInset,
           width: '100%',
-          maxWidth: 480,
+          maxWidth: tabBarMaxWidth,
           alignSelf: 'center',
         },
       }}
