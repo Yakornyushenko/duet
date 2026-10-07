@@ -233,12 +233,14 @@ export default function WishlistsScreen() {
               maxLength={200}
             />
             <EventIconPicker value={icon} onChange={setIcon} disabled={busy} />
-            <AppButton
-              label="Добавить желание"
-              disabled={!title.trim()}
-              loading={busy}
-              onPress={() => void addWish()}
-            />
+            <View style={isDesktop ? styles.desktopAddButton : undefined}>
+              <AppButton
+                label="Добавить желание"
+                disabled={!title.trim()}
+                loading={busy}
+                onPress={() => void addWish()}
+              />
+            </View>
           </View>
 
           {!error && !visible.length ? (
@@ -257,6 +259,7 @@ const styles = StyleSheet.create({
   screen: { paddingHorizontal: 0, paddingTop: 0, paddingBottom: 0 },
   listContent: { paddingTop: spacing.lg, paddingBottom: spacing.huge },
   desktopColumns: { gap: spacing.md },
+  desktopAddButton: { width: '100%', maxWidth: 360, alignSelf: 'center' },
   header: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   icon: {
     width: 44,
