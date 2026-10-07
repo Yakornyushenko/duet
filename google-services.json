@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "932710418366",
+    "project_id": "duet-b7757",
+    "storage_bucket": "duet-b7757.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:932710418366:android:2b1e0131cbd9871b8b9bef",
+        "android_client_info": {
+          "package_name": "app.duet.mobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC_hSmeKGVIq4CakC9kyVx-PkJu4qO0S00"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
