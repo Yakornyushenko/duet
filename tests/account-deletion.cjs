@@ -34,7 +34,11 @@ const ts = require('typescript');
         } };
       },
     },
-    auth: { admin: { async deleteUser(id) { deletedUsers.push(id); return { error: null }; } } },
+    auth: { admin: { async deleteUser(id, shouldSoftDelete) {
+      assert.equal(shouldSoftDelete, false);
+      deletedUsers.push(id);
+      return { error: null };
+    } } },
   };
   const code = ts.transpileModule(fs.readFileSync('supabase/functions/delete-account/index.ts', 'utf8'), {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },

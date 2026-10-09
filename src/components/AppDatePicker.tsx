@@ -25,6 +25,7 @@ const monthNames = [
 ];
 
 const weekDays = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+const yearsPerPage = 12;
 
 type CalendarDay = {
   key: string;
@@ -45,6 +46,10 @@ type AppDatePickerProps = {
 function getMonthStart(value: string): Date {
   const date = parseDateOnly(value);
   return new Date(date.getFullYear(), date.getMonth(), 1, 12);
+}
+
+function getYearPageStart(year: number): number {
+  return Math.floor(year / yearsPerPage) * yearsPerPage;
 }
 
 function getCalendarDays(month: Date): CalendarDay[] {
@@ -73,15 +78,27 @@ export function AppDatePicker({
   onClose,
 }: AppDatePickerProps) {
   const [visibleMonth, setVisibleMonth] = useState(() => getMonthStart(value));
+  const [selectingYear, setSelectingYear] = useState(false);
+  const [yearPageStart, setYearPageStart] = useState(() => getYearPageStart(getMonthStart(value).getFullYear()));
   const { isTablet, modalMaxWidth } = useResponsiveLayout();
   const days = useMemo(() => getCalendarDays(visibleMonth), [visibleMonth]);
+  const years = useMemo(
+    () => Array.from({ length: yearsPerPage }, (_, index) => yearPageStart + index),
+    [yearPageStart],
+  );
   const today = toDateOnly(new Date());
+  const maximumMonth = maximumDate ? getMonthStart(maximumDate) : null;
+  const maximumYear = maximumMonth?.getFullYear();
   const nextMonth = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() + 1, 1, 12);
-  const canNavigateNext = !maximumDate || nextMonth <= getMonthStart(maximumDate);
+  const canNavigateNext = !maximumMonth || nextMonth <= maximumMonth;
+  const canNavigateNextYearPage = maximumYear === undefined || yearPageStart + yearsPerPage <= maximumYear;
 
   useEffect(() => {
     if (visible) {
-      setVisibleMonth(getMonthStart(value));
+      const selectedMonth = getMonthStart(value);
+      setVisibleMonth(selectedMonth);
+      setYearPageStart(getYearPageStart(selectedMonth.getFullYear()));
+      setSelectingYear(false);
     }
   }, [value, visible]);
 
@@ -93,6 +110,15 @@ export function AppDatePicker({
 
   const changeMonth = (offset: number) => {
     setVisibleMonth((current) => new Date(current.getFullYear(), current.getMonth() + offset, 1, 12));
+  };
+
+  const selectYear = (year: number) => {
+    const month = maximumMonth && year === maximumYear
+      ? Math.min(visibleMonth.getMonth(), maximumMonth.getMonth())
+      : visibleMonth.getMonth();
+    setVisibleMonth(new Date(year, month, 1, 12));
+    setSelectingYear(false);
+    void Haptics.selectionAsync();
   };
 
   return (
@@ -115,74 +141,141 @@ export function AppDatePicker({
             </View>
           </View>
 
-          <View style={styles.monthHeader}>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Предыдущий месяц"
-              onPress={() => changeMonth(-1)}
-              style={({ pressed }) => [styles.monthButton, pressed && styles.pressed]}
-            >
-              <AppIcon name="chevron-back" size={22} color={colors.secondary} />
-            </Pressable>
-            <Text style={styles.monthTitle}>
-              {monthNames[visibleMonth.getMonth()]} {visibleMonth.getFullYear()}
-            </Text>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Следующий месяц"
-              disabled={!canNavigateNext}
-              onPress={() => changeMonth(1)}
-              style={({ pressed }) => [styles.monthButton, !canNavigateNext && styles.disabled, pressed && styles.pressed]}
-            >
-              <AppIcon name="chevron-forward" size={22} color={colors.secondary} />
-            </Pressable>
-          </View>
+          {selectingYear ? (
+            <>
+              <View style={styles.monthHeader}>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Предыдущие годы"
+                  onPress={() => setYearPageStart((current) => current - yearsPerPage)}
+                  style={({ pressed }) => [styles.monthButton, pressed && styles.pressed]}
+                >
+                  <AppIcon name="chevron-back" size={22} color={colors.secondary} />
+                </Pressable>
+                <Text style={styles.monthTitle}>{yearPageStart}–{yearPageStart + yearsPerPage - 1}</Text>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Следующие годы"
+                  disabled={!canNavigateNextYearPage}
+                  onPress={() => setYearPageStart((current) => current + yearsPerPage)}
+                  style={({ pressed }) => [
+                    styles.monthButton,
+                    !canNavigateNextYearPage && styles.disabled,
+                    pressed && canNavigateNextYearPage && styles.pressed,
+                  ]}
+                >
+                  <AppIcon name="chevron-forward" size={22} color={colors.secondary} />
+                </Pressable>
+              </View>
+              <View style={styles.yearGrid}>
+                {years.map((year) => {
+                  const selected = year === visibleMonth.getFullYear();
+                  const disabled = maximumYear !== undefined && year > maximumYear;
+                  return (
+                    <View key={year} style={styles.yearSlot}>
+                      <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel={`Выбрать ${year} год`}
+                        accessibilityState={{ selected, disabled }}
+                        disabled={disabled}
+                        onPress={() => selectYear(year)}
+                        style={({ pressed }) => [
+                          styles.yearButton,
+                          selected && styles.selectedDay,
+                          disabled && styles.disabled,
+                          pressed && !disabled && styles.pressed,
+                        ]}
+                      >
+                        <Text style={[styles.dayText, selected && styles.selectedDayText]}>{year}</Text>
+                      </Pressable>
+                    </View>
+                  );
+                })}
+              </View>
+            </>
+          ) : (
+            <>
+              <View style={styles.monthHeader}>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Предыдущий месяц"
+                  onPress={() => changeMonth(-1)}
+                  style={({ pressed }) => [styles.monthButton, pressed && styles.pressed]}
+                >
+                  <AppIcon name="chevron-back" size={22} color={colors.secondary} />
+                </Pressable>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Выбрать год"
+                  accessibilityHint="Открыть список годов"
+                  onPress={() => {
+                    setYearPageStart(getYearPageStart(visibleMonth.getFullYear()));
+                    setSelectingYear(true);
+                  }}
+                  style={({ pressed }) => [styles.monthTitleButton, pressed && styles.pressed]}
+                >
+                  <Text style={styles.monthTitle}>
+                    {monthNames[visibleMonth.getMonth()]} {visibleMonth.getFullYear()}
+                  </Text>
+                </Pressable>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Следующий месяц"
+                  disabled={!canNavigateNext}
+                  onPress={() => changeMonth(1)}
+                  style={({ pressed }) => [styles.monthButton, !canNavigateNext && styles.disabled, pressed && styles.pressed]}
+                >
+                  <AppIcon name="chevron-forward" size={22} color={colors.secondary} />
+                </Pressable>
+              </View>
 
-          <View style={styles.weekRow}>
-            {weekDays.map((day) => (
-              <Text key={day} style={styles.weekDay}>{day}</Text>
-            ))}
-          </View>
+              <View style={styles.weekRow}>
+                {weekDays.map((day) => (
+                  <Text key={day} style={styles.weekDay}>{day}</Text>
+                ))}
+              </View>
 
-          <View style={styles.grid}>
-            {days.map((day) => {
-              const selected = day.value === value;
-              const isToday = day.value === today;
-              const disabled = Boolean(maximumDate && day.value > maximumDate);
-              return (
-                <View key={day.key} style={[styles.daySlot, isTablet && styles.tabletDaySlot]}>
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel={formatRelationshipDate(day.value)}
-                    accessibilityState={{ selected, disabled }}
-                    disabled={disabled}
-                    onPress={() => selectDate(day.value)}
-                    style={({ pressed }) => [
-                      styles.day,
-                      isTablet && styles.tabletDay,
-                      isToday && !selected && styles.today,
-                      selected && styles.selectedDay,
-                      disabled && styles.disabled,
-                      pressed && !disabled && styles.pressed,
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        styles.dayText,
-                        !day.isCurrentMonth && styles.outsideDayText,
-                        selected && styles.selectedDayText,
-                      ]}
-                    >
-                      {day.label}
-                    </Text>
-                  </Pressable>
-                </View>
-              );
-            })}
-          </View>
+              <View style={styles.grid}>
+                {days.map((day) => {
+                  const selected = day.value === value;
+                  const isToday = day.value === today;
+                  const disabled = Boolean(maximumDate && day.value > maximumDate);
+                  return (
+                    <View key={day.key} style={[styles.daySlot, isTablet && styles.tabletDaySlot]}>
+                      <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel={formatRelationshipDate(day.value)}
+                        accessibilityState={{ selected, disabled }}
+                        disabled={disabled}
+                        onPress={() => selectDate(day.value)}
+                        style={({ pressed }) => [
+                          styles.day,
+                          isTablet && styles.tabletDay,
+                          isToday && !selected && styles.today,
+                          selected && styles.selectedDay,
+                          disabled && styles.disabled,
+                          pressed && !disabled && styles.pressed,
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.dayText,
+                            !day.isCurrentMonth && styles.outsideDayText,
+                            selected && styles.selectedDayText,
+                          ]}
+                        >
+                          {day.label}
+                        </Text>
+                      </Pressable>
+                    </View>
+                  );
+                })}
+              </View>
+            </>
+          )}
 
           <View style={styles.actions}>
-            {(!maximumDate || today <= maximumDate) && value !== today ? (
+            {!selectingYear && (!maximumDate || today <= maximumDate) && value !== today ? (
               <AppButton label="Сегодня" variant="secondary" onPress={() => selectDate(today)} />
             ) : null}
             <AppButton label="Отмена" variant="ghost" onPress={onClose} />
@@ -253,6 +346,13 @@ const styles = StyleSheet.create({
     color: colors.secondary,
     textTransform: 'capitalize',
   },
+  monthTitleButton: {
+    flex: 1,
+    minHeight: 42,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: spacing.sm,
+  },
   weekRow: {
     flexDirection: 'row',
   },
@@ -266,6 +366,22 @@ const styles = StyleSheet.create({
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+  },
+  yearGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    paddingVertical: spacing.sm,
+  },
+  yearSlot: {
+    width: '33.3333%',
+    padding: spacing.xs,
+  },
+  yearButton: {
+    minHeight: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: radii.md,
+    backgroundColor: colors.surface,
   },
   daySlot: {
     width: '14.2857%',

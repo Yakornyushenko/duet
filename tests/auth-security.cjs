@@ -6,7 +6,7 @@ function load(path, dependencies = {}) {
   const exports = {};
   vm.runInNewContext(ts.transpileModule(fs.readFileSync(path, 'utf8'), {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
-  }).outputText, { exports, URL, console, require: name => {
+  }).outputText, { exports, URL, URLSearchParams, console, require: name => {
     assert.ok(name in dependencies, `Unexpected dependency ${name}`); return dependencies[name];
   } });
   return exports;
@@ -42,11 +42,21 @@ function memory() {
   const manifest = JSON.parse(await secure.getItem('duet.secure.session'));
   await secure.removeItem(`duet.secure.session.${manifest.generation}.0`);
   await assert.rejects(storage.getItem('session'), 'Missing encrypted chunk fails closed');
-  const { isAuthConfirmationLink } = load('src/utils/authLink.ts');
+  const { isAuthConfirmationLink, getEmailConfirmationError } = load('src/utils/authLink.ts');
   assert.equal(isAuthConfirmationLink('duet://auth#access_token=attacker'),true);
   for (const url of ['https://auth','duet://evil','duet://auth.evil','duet://auth/other','duet://user@auth','garbage']) {
     assert.equal(isAuthConfirmationLink(url),false);
   }
+  assert.equal(getEmailConfirmationError('https://duet.by/email-confirmed#access_token=test'), null);
+  assert.match(
+    getEmailConfirmationError('https://duet.by/email-confirmed#error=access_denied&error_code=otp_expired'),
+    /самую свежую ссылку/,
+  );
+  const { localizeAuthError, isEmailNotConfirmedError } = load('src/utils/authErrors.ts');
+  const emailNotConfirmed = localizeAuthError({ code: 'email_not_confirmed', message: 'Email not confirmed' });
+  assert.equal(emailNotConfirmed.message, 'Почта не подтверждена. Запросите новое письмо и откройте самую свежую ссылку.');
+  assert.equal(isEmailNotConfirmedError(emailNotConfirmed), true);
+  assert.equal(localizeAuthError({ code: 'invalid_credentials', message: 'Invalid login credentials' }).message, 'Неверный email или пароль.');
   const backend = fs.readFileSync('src/services/backend.ts','utf8');
   const context = fs.readFileSync('src/context/AppContext.tsx','utf8');
   assert.ok(!backend.includes('setSession('), 'No token adoption from links');

@@ -12,6 +12,7 @@ import { SegmentedControl } from '@/components/SegmentedControl';
 import { useApp } from '@/context/AppContext';
 import { useDialog } from '@/context/DialogContext';
 import { colors, radii, shadow, spacing, typography } from '@/theme/tokens';
+import { isEmailNotConfirmedError } from '@/utils/authErrors';
 
 type AuthMode = 'signin' | 'signup';
 
@@ -80,11 +81,16 @@ export default function AuthScreen() {
         }
       }
     } catch (error) {
-      showDialog({
-        title: 'Не получилось войти',
-        message: error instanceof Error ? error.message : 'Попробуйте ещё раз.',
-        tone: 'danger',
-      });
+      if (isEmailNotConfirmedError(error)) {
+        setConfirmationStatus('Почта пока не подтверждена. Запросите новое письмо и откройте в нём самую свежую ссылку.');
+        setConfirmationVisible(true);
+      } else {
+        showDialog({
+          title: mode === 'signin' ? 'Не получилось войти' : 'Не получилось создать аккаунт',
+          message: error instanceof Error ? error.message : 'Попробуйте ещё раз.',
+          tone: 'danger',
+        });
+      }
     } finally {
       setLoading(false);
     }

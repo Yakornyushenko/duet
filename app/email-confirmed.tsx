@@ -1,15 +1,29 @@
 import { Stack } from 'expo-router';
-import { Image, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Image, Linking, StyleSheet, Text, View } from 'react-native';
 
 import { AppScreen } from '@/components/AppScreen';
 import { colors, radii, shadow, spacing, typography } from '@/theme/tokens';
+import { getEmailConfirmationError } from '@/utils/authLink';
 
 const duetLogo = require('../assets/duet-birds.png') as ReturnType<typeof Image.resolveAssetSource>;
 
 export default function EmailConfirmedScreen() {
+  const [confirmationError, setConfirmationError] = useState<string | null>();
+
+  useEffect(() => {
+    void Linking.getInitialURL()
+      .then((url) => setConfirmationError(getEmailConfirmationError(url)))
+      .catch(() => setConfirmationError(null));
+  }, []);
+
+  const checking = confirmationError === undefined;
+  const failed = Boolean(confirmationError);
+  const title = checking ? 'Проверяем подтверждение' : failed ? 'Почта не подтверждена' : 'Почта подтверждена';
+
   return (
     <AppScreen scroll={false} contentContainerStyle={styles.content}>
-      <Stack.Screen options={{ title: 'Почта подтверждена — Duet' }} />
+      <Stack.Screen options={{ title: `${title} — Duet` }} />
 
       <View style={styles.brandRow}>
         <Image source={duetLogo} resizeMode="contain" style={styles.logo} accessible={false} />
@@ -17,14 +31,16 @@ export default function EmailConfirmedScreen() {
       </View>
 
       <View style={styles.card}>
-        <View style={styles.successIcon}>
-          <Text style={styles.successIconText}>✓</Text>
+        <View style={[styles.statusIcon, failed && styles.failureIcon]}>
+          <Text style={styles.statusIconText}>{checking ? '…' : failed ? '!' : '✓'}</Text>
         </View>
-        <Text style={styles.title}>Почта подтверждена</Text>
+        <Text style={styles.title}>{title}</Text>
         <Text style={styles.body}>
-          Теперь вы можете вернуться в приложение Duet и войти с вашим email и паролем.
+          {checking
+            ? 'Пожалуйста, подождите.'
+            : confirmationError ?? 'Теперь вы можете вернуться в приложение Duet и войти с вашим email и паролем.'}
         </Text>
-        <Text style={styles.hint}>Эту страницу можно закрыть.</Text>
+        {!checking ? <Text style={styles.hint}>Эту страницу можно закрыть.</Text> : null}
       </View>
     </AppScreen>
   );
@@ -55,7 +71,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     ...shadow,
   },
-  successIcon: {
+  statusIcon: {
     width: 64,
     height: 64,
     alignItems: 'center',
@@ -63,7 +79,10 @@ const styles = StyleSheet.create({
     borderRadius: radii.round,
     backgroundColor: colors.primary,
   },
-  successIconText: {
+  failureIcon: {
+    backgroundColor: colors.danger,
+  },
+  statusIconText: {
     color: colors.white,
     fontSize: 38,
     lineHeight: 44,

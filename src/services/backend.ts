@@ -2,6 +2,7 @@ import { Session } from '@supabase/supabase-js';
 
 import { enableSession, supabase } from '@/lib/supabase';
 import { AppUser, Couple, DateEvent, DateEventInput, DateCategoryOption } from '@/types/domain';
+import { localizeAuthError } from '@/utils/authErrors';
 
 const emailRedirectTo = 'https://duet.by/email-confirmed';
 
@@ -51,7 +52,7 @@ export async function signInRemote(email: string, password: string): Promise<voi
   enableSession();
   const { error } = await getClient().auth.signInWithPassword({ email, password });
   if (error) {
-    throw error;
+    throw localizeAuthError(error);
   }
   await getClient().auth.startAutoRefresh();
 }
@@ -67,7 +68,7 @@ export async function signUpRemote(displayName: string, email: string, password:
     },
   });
   if (error) {
-    throw error;
+    throw localizeAuthError(error);
   }
   return Boolean(data.session);
 }
@@ -79,7 +80,7 @@ export async function resendSignUpConfirmationRemote(email: string): Promise<voi
     options: { emailRedirectTo },
   });
   if (error) {
-    throw error;
+    throw localizeAuthError(error);
   }
 }
 

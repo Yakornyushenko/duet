@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, ViewStyle } from 'react-native';
 
 import { colors, radii, spacing, typography } from '@/theme/tokens';
@@ -37,14 +38,21 @@ export function AppButton({
   fullWidth = true,
   accessibilityHint,
 }: AppButtonProps) {
+  const [pressed, setPressed] = useState(false);
+
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityHint={accessibilityHint}
       accessibilityState={{ disabled: disabled || loading, busy: loading }}
       disabled={disabled || loading}
-      onPress={onPress}
-      style={({ pressed }) => [
+      onPressIn={() => setPressed(true)}
+      onPressOut={() => setPressed(false)}
+      onPress={() => {
+        setPressed(false);
+        onPress();
+      }}
+      style={[
         styles.base,
         {
           backgroundColor: pressed && variant === 'primary' ? colors.primaryPressed : backgrounds[variant],
