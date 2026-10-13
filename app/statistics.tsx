@@ -95,7 +95,7 @@ export default function StatisticsScreen() {
       </View>
       <View style={[styles.summaryGrid, isDesktop && styles.desktopSummaryGrid]}>
       <View style={[styles.card, styles.summaryCard]}>
-        <Text style={styles.sectionTitle}>Наши желания сбылись</Text>
+        <Text style={styles.sectionTitle}>{couple?.partnerName ? 'Наши желания сбылись' : 'Желания сбылись'}</Text>
         {wishlists.map((list) => <View key={list.value} style={styles.row}>
           <Text style={styles.copy}>{list.label}</Text><Text style={styles.count}>{stats.wishLists[list.value]}</Text>
         </View>)}

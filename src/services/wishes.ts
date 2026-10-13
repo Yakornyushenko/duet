@@ -105,10 +105,21 @@ export async function getWish(coupleId: string, wishId: string, signal?: AbortSi
   return data ? mapWish(data as WishRow) : null;
 }
 
-export async function createWish(coupleId: string, list: Wishlist, title: string, icon: DateEventIcon = 'heart'): Promise<Wish> {
+export async function createWish(
+  coupleId: string,
+  input: Pick<Wish, 'title' | 'list' | 'description' | 'photos' | 'fulfilled' | 'icon'>,
+): Promise<Wish> {
   const { data, error } = await getClient()
     .from('wishes')
-    .insert({ couple_id: coupleId, list, icon, title: title.trim() })
+    .insert({
+      couple_id: coupleId,
+      list: input.list,
+      icon: input.icon,
+      title: input.title.trim(),
+      description: input.description,
+      photos: input.photos,
+      fulfilled: input.fulfilled,
+    })
     .select('id, title, list, fulfilled, description, photos, version, created_by, icon')
     .single();
   if (error) {

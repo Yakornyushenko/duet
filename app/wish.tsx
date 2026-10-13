@@ -1,8 +1,9 @@
 import { AppIcon } from '@/components/AppIcon';
-import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { Href, router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import {
   Image,
+  BackHandler,
   Modal,
   Pressable,
   StyleSheet,
@@ -23,6 +24,7 @@ import { useDialog } from '@/context/DialogContext';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import {
   addWishComment,
+  createWish,
   deleteWish,
   deleteWishComment,
   getWish,
@@ -41,8 +43,10 @@ const maxPhotos = 1;
 
 export default function WishScreen() {
   const isFocused = useIsFocused();
-  const params = useLocalSearchParams<{ id?: string | string[] }>();
+  const params = useLocalSearchParams<{ id?: string | string[]; list?: string | string[] }>();
   const wishId = Array.isArray(params.id) ? params.id[0] : params.id;
+  const requestedList = Array.isArray(params.list) ? params.list[0] : params.list;
+  const isCreating = !wishId;
   const { user, couple } = useApp();
   const { showDialog } = useDialog();
   const { largeModalMaxWidth, mediaThumbnailSize } = useResponsiveLayout();
@@ -68,9 +72,15 @@ export default function WishScreen() {
   useFocusEffect(useCallback(() => {
     let active = true;
     const controller = new AbortController();
-    if (!couple || !wishId) {
+    if (!couple) {
       setLoading(false);
       setError(true);
+      return;
+    }
+    if (isCreating) {
+      setLoading(false);
+      setError(false);
+      setCommentsLoading(false);
       return;
     }
     setLoading(true);
@@ -127,27 +137,72 @@ export default function WishScreen() {
     return () => { active = false; };
   }, [photos, isFocused]);
 
-  const listLabel = wishlists.find((item) => item.value === wish?.list)?.label ?? 'Список';
+  const list = wish?.list
+    ?? wishlists.find((item) => item.value === requestedList)?.value
+    ?? wishlists[0]?.value
+    ?? 'together';
+  const listLabel = wishlists.find((item) => item.value === list)?.label ?? 'Список';
+  const hasUnsavedChanges = isCreating
+    ? title !== '' || icon !== 'heart' || description !== '' || photos.length > 0 || fulfilled
+    : Boolean(wish && (
+      title !== wish.title
+      || icon !== wish.icon
+      || description !== wish.description
+      || fulfilled !== wish.fulfilled
+      || photos.length !== wish.photos.length
+      || photos.some((path, index) => path !== wish.photos[index])
+    ));
+
+  const leaveWish = useCallback(async () => {
+    const savedPhotos = new Set(wish?.photos ?? []);
+    await Promise.allSettled(
+      photos.filter((path) => !savedPhotos.has(path)).map(removeDraftWishPhoto),
+    );
+    router.back();
+  }, [photos, wish?.photos]);
+
+  const handleBack = useCallback(() => {
+    if (busy) {
+      return;
+    }
+    if (!hasUnsavedChanges) {
+      router.back();
+      return;
+    }
+    showDialog({
+      title: 'Выйти без сохранения?',
+      message: isCreating
+        ? 'Если выйти сейчас, новое желание не сохранится.'
+        : 'Если выйти сейчас, изменения в желании не сохранятся.',
+      tone: 'warning',
+      dismissible: false,
+      actions: [
+        { label: 'Продолжить редактирование', variant: 'secondary' },
+        { label: 'Выйти без сохранения', variant: 'danger', onPress: leaveWish },
+      ],
+    });
+  }, [busy, hasUnsavedChanges, isCreating, leaveWish, showDialog]);
+
+  useFocusEffect(useCallback(() => {
+    const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
+      handleBack();
+      return true;
+    });
+    return () => subscription.remove();
+  }, [handleBack]));
 
   const saveWish = async () => {
-    if (!couple || !wish || busy || !title.trim()) {
+    if (!couple || busy || !title.trim() || (!isCreating && !wish)) {
       return;
     }
     setBusy(true);
     try {
-      const next = await updateWish(couple.id, wish.id, {
-        title,
-        description,
-        photos,
-        fulfilled,
-        icon,
-      });
-      setWish(next);
-      showDialog({
-        title: 'Сохранено',
-        message: 'Желание обновлено у вас обоих.',
-        tone: 'success',
-      });
+      if (isCreating) {
+        await createWish(couple.id, { title, description, photos, fulfilled, icon, list });
+      } else if (wish) {
+        await updateWish(couple.id, wish.id, { title, description, photos, fulfilled, icon });
+      }
+      router.dismissTo(`/wishlists?list=${list}` as Href);
     } catch {
       showDialog({
         title: 'Не получилось сохранить',
@@ -287,7 +342,7 @@ export default function WishScreen() {
     return (
       <AppScreen>
         <View style={styles.header}>
-          <Pressable accessibilityRole="button" accessibilityLabel="Назад" onPress={() => router.back()} style={styles.icon}>
+          <Pressable accessibilityRole="button" accessibilityLabel="Назад" onPress={handleBack} style={styles.icon}>
             <AppIcon name="chevron-back" size={24} color={colors.primary} />
           </Pressable>
           <Text style={styles.heading}>Желание</Text>
@@ -297,14 +352,14 @@ export default function WishScreen() {
     );
   }
 
-  if (error || !wish) {
+  if (error || (!isCreating && !wish)) {
     return (
       <AppScreen>
         <View style={styles.header}>
-          <Pressable accessibilityRole="button" accessibilityLabel="Назад" onPress={() => router.back()} style={styles.icon}>
+          <Pressable accessibilityRole="button" accessibilityLabel="Назад" onPress={handleBack} style={styles.icon}>
             <AppIcon name="chevron-back" size={24} color={colors.primary} />
           </Pressable>
-          <Text style={styles.heading}>Желание</Text>
+          <Text style={styles.heading}>{isCreating ? 'Новое желание' : 'Желание'}</Text>
         </View>
         <View style={styles.card}>
           <Text style={styles.body}>Не удалось открыть желание.</Text>
@@ -317,11 +372,18 @@ export default function WishScreen() {
   return (
     <AppScreen>
       <View style={styles.header}>
-        <Pressable accessibilityRole="button" accessibilityLabel="Назад" onPress={() => router.back()} style={styles.icon}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Назад"
+          accessibilityState={{ disabled: busy }}
+          disabled={busy}
+          onPress={handleBack}
+          style={styles.icon}
+        >
           <AppIcon name="chevron-back" size={24} color={colors.primary} />
         </Pressable>
         <View style={styles.headerCopy}>
-          <Text style={styles.heading} numberOfLines={1}>Желание</Text>
+          <Text style={styles.heading} numberOfLines={1}>{isCreating ? 'Новое желание' : 'Желание'}</Text>
           <Text style={styles.listLabel} numberOfLines={1}>{listLabel}</Text>
         </View>
       </View>
@@ -338,15 +400,6 @@ export default function WishScreen() {
           style={styles.description}
           placeholder="Всё, что поможет исполнить желание, например ссылки"
         />
-        <View style={styles.fulfilledRow}>
-          <Text style={styles.body}>Исполнено</Text>
-          <Switch
-            value={fulfilled}
-            onValueChange={setFulfilled}
-            trackColor={{ false: colors.border, true: colors.soft }}
-            thumbColor={fulfilled ? colors.primary : colors.white}
-          />
-        </View>
       </View>
 
       <View style={styles.card}>
@@ -393,6 +446,42 @@ export default function WishScreen() {
         </View>
       </View>
 
+      {!isCreating ? (
+        <Pressable
+          accessibilityRole="switch"
+          accessibilityLabel={`Статус желания: ${fulfilled ? 'исполнено' : 'не исполнено'}`}
+          accessibilityHint="Изменить статус желания"
+          accessibilityState={{ checked: fulfilled, disabled: busy }}
+          disabled={busy}
+          onPress={() => setFulfilled((current) => !current)}
+          style={({ pressed }) => [
+            styles.statusCard,
+            fulfilled && styles.statusCardFulfilled,
+            pressed && styles.statusCardPressed,
+            busy && styles.statusCardDisabled,
+          ]}
+        >
+          <AppIcon
+            name={fulfilled ? 'checkmark-circle' : 'ellipse-outline'}
+            size={28}
+            color={fulfilled ? colors.primary : colors.secondary}
+          />
+          <View style={styles.statusCopy}>
+            <Text style={styles.statusLabel}>Статус желания</Text>
+            <Text style={[styles.statusValue, fulfilled && styles.statusValueFulfilled]}>
+              {fulfilled ? 'Исполнено' : 'Не исполнено'}
+            </Text>
+          </View>
+          <Switch
+            value={fulfilled}
+            pointerEvents="none"
+            accessible={false}
+            trackColor={{ false: colors.border, true: colors.primary }}
+            thumbColor={colors.white}
+          />
+        </Pressable>
+      ) : null}
+
       <Modal
         transparent
         animationType="fade"
@@ -425,7 +514,7 @@ export default function WishScreen() {
 
       <AppButton label="Сохранить" loading={busy} disabled={!title.trim()} onPress={() => void saveWish()} />
 
-      <View style={styles.card}>
+      {!isCreating ? <View style={[styles.card, styles.commentsCard]}>
         <Text style={styles.sectionTitle}>Комментарии</Text>
         {commentsLoading ? (
           <Text style={styles.muted}>Загружаем комментарии…</Text>
@@ -464,9 +553,25 @@ export default function WishScreen() {
           loading={busy}
           onPress={() => void submitComment()}
         />
-      </View>
+      </View> : null}
 
-      <AppButton label="Удалить желание" variant="danger" disabled={busy} onPress={confirmDelete} />
+      {!isCreating ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Удалить желание"
+          accessibilityState={{ disabled: busy }}
+          disabled={busy}
+          onPress={confirmDelete}
+          style={({ pressed }) => [
+            styles.deleteAction,
+            pressed && styles.deleteActionPressed,
+            busy && styles.deleteActionDisabled,
+          ]}
+        >
+          <AppIcon name="trash-outline" size={18} color={colors.danger} />
+          <Text style={styles.deleteActionText}>Удалить желание</Text>
+        </Pressable>
+      ) : null}
     </AppScreen>
   );
 }
@@ -505,12 +610,22 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.md,
     textAlignVertical: 'top',
   },
-  fulfilledRow: {
+  statusCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     gap: spacing.md,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
+    borderRadius: radii.lg,
+    backgroundColor: colors.softRose,
   },
+  statusCardFulfilled: { backgroundColor: colors.soft },
+  statusCardPressed: { opacity: 0.78 },
+  statusCardDisabled: { opacity: 0.5 },
+  statusCopy: { flex: 1, gap: spacing.xs },
+  statusLabel: { ...typography.caption, color: colors.muted },
+  statusValue: { ...typography.cardTitle, color: colors.secondary },
+  statusValueFulfilled: { color: colors.primary },
   photos: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -587,6 +702,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.border,
   },
+  commentsCard: { marginTop: spacing.xxxl },
   commentHeader: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -601,4 +717,17 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.md,
     textAlignVertical: 'top',
   },
+  deleteAction: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'center',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    marginTop: spacing.md,
+    marginBottom: spacing.md,
+  },
+  deleteActionPressed: { opacity: 0.6 },
+  deleteActionDisabled: { opacity: 0.45 },
+  deleteActionText: { ...typography.caption, color: colors.danger },
 });

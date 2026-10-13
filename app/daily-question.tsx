@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, ActivityIndicator, Animated, AppState, Easing, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 import { AppScreen } from '@/components/AppScreen';
 import { AppButton } from '@/components/AppButton';
+import { InvitePartnerCallout } from '@/components/InvitePartnerCallout';
 import { QuestionCard } from '@/components/QuestionCard';
 import { AppTimePicker } from '@/components/AppTimePicker';
 import { IntimateQuestionSettings } from '@/components/IntimateQuestionSettings';
@@ -104,7 +105,12 @@ export default function DailyQuestionScreen() {
     </View>
     {error ? <View style={styles.card}><Text style={styles.copy}>{error}</Text><AppButton label="Повторить" onPress={() => void perform(refresh)} /></View> : null}
     {!state && !error && <ActivityIndicator color={colors.primary} />}
-    {!couple?.partnerName && <View style={styles.card}><Text style={styles.title}>Разговор для двоих</Text><Text style={styles.copy}>Пригласи партнёра, чтобы отвечать на общие вопросы.</Text><AppButton label="Пригласить партнёра" onPress={() => router.push('/pair')} /></View>}
+    {!couple?.partnerName && (
+      <InvitePartnerCallout
+        description="Пригласите партнёра, чтобы отвечать на общие вопросы вместе."
+        onPress={() => router.push('/pair')}
+      />
+    )}
     {state && <>
       <View style={styles.card}>
         <View style={styles.row}><Text style={styles.flexTitle}>Ежедневные вопросы</Text><Switch accessibilityLabel="Ежедневные вопросы" disabled={busy}

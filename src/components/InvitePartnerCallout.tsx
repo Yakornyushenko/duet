@@ -1,0 +1,71 @@
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+
+import { AppIcon } from '@/components/AppIcon';
+import { colors, radii, shadow, spacing, typography } from '@/theme/tokens';
+
+type InvitePartnerCalloutProps = {
+  onPress: () => void;
+  description?: string;
+};
+
+export function InvitePartnerCallout({
+  onPress,
+  description = 'Создайте общее пространство для ваших дат, желаний и заметок.',
+}: InvitePartnerCalloutProps) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel="Пригласить партнёра"
+      accessibilityHint={description}
+      onPress={onPress}
+      style={({ pressed }) => [styles.callout, pressed && styles.pressed]}
+    >
+      <Image
+        source={require('../../assets/invite-partner.png')}
+        style={styles.illustration}
+        resizeMode="contain"
+        accessible={false}
+      />
+      <View style={styles.copy}>
+        <Text style={styles.title}>Пригласить партнёра</Text>
+        <Text style={styles.description}>{description}</Text>
+      </View>
+      <AppIcon name="chevron-forward" size={22} color={colors.white} />
+    </Pressable>
+  );
+}
+
+const styles = StyleSheet.create({
+  callout: {
+    ...shadow,
+    minHeight: 88,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    padding: spacing.lg,
+    borderRadius: radii.lg,
+    backgroundColor: colors.primary,
+  },
+  illustration: {
+    width: 64,
+    height: 64,
+    flexShrink: 0,
+  },
+  copy: {
+    flex: 1,
+    gap: spacing.xs,
+  },
+  title: {
+    ...typography.cardTitle,
+    color: colors.white,
+  },
+  description: {
+    ...typography.caption,
+    color: colors.white,
+    opacity: 0.88,
+  },
+  pressed: {
+    opacity: 0.86,
+    transform: [{ scale: 0.99 }],
+  },
+});

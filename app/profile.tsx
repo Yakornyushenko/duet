@@ -7,6 +7,7 @@ import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 import { AppButton } from '@/components/AppButton';
 import { AppInput } from '@/components/AppInput';
 import { AppScreen } from '@/components/AppScreen';
+import { InvitePartnerCallout } from '@/components/InvitePartnerCallout';
 import { PairAvatars } from '@/components/PairAvatars';
 import { IntimateQuestionSettings } from '@/components/IntimateQuestionSettings';
 import { RelationshipDateEditor } from '@/components/RelationshipDateEditor';
@@ -107,7 +108,11 @@ export default function ProfileScreen() {
         </View>
       </View>
 
-      {!couple.partnerName && <AppButton label="Пригласить партнёра" variant="secondary" onPress={() => router.push('/pair')} />}
+      {!couple.partnerName && (
+        <View style={styles.partnerInvite}>
+          <InvitePartnerCallout onPress={() => router.push('/pair')} />
+        </View>
+      )}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>О паре</Text>
         <View style={styles.detailsCard}>
@@ -294,6 +299,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderRadius: radii.xl,
     padding: spacing.xxl,
+  },
+  partnerInvite: {
+    marginTop: spacing.lg,
   },
   centeredCopy: {
     alignItems: 'center',

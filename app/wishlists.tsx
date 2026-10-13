@@ -5,19 +5,15 @@ import { FlatList, Platform, Pressable, StyleSheet, Text, View } from 'react-nat
 
 import { AppScreen } from '@/components/AppScreen';
 import { AppButton } from '@/components/AppButton';
-import { AppInput } from '@/components/AppInput';
-import { EventIconPicker } from '@/components/EventIconPicker';
-import { DateEventIcon } from '@/types/domain';
 import { eventIcons } from '@/utils/eventIcons';
 import { useApp } from '@/context/AppContext';
-import { useDialog } from '@/context/DialogContext';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { supabase } from '@/lib/supabase';
 import {
   getNotificationPermission,
   requestNotificationPermission,
 } from '@/services/notificationApi';
-import { createWish, listWishes, Wish } from '@/services/wishes';
+import { listWishes, Wish } from '@/services/wishes';
 import { colors, radii, spacing, typography } from '@/theme/tokens';
 import { Wishlist, getWishlists } from '@/utils/wishlists';
 
@@ -25,15 +21,11 @@ export default function WishlistsScreen() {
   const params = useLocalSearchParams<{ list?: string }>();
   const { user, couple } = useApp();
   const wishlists = getWishlists(user, couple);
-  const { showDialog } = useDialog();
   const { horizontalPadding, isDesktop } = useResponsiveLayout();
   const [list, setList] = useState<Wishlist>(
     wishlists.find((item) => item.value === params.list)?.value ?? 'together',
   );
   const [wishes, setWishes] = useState<Wish[]>([]);
-  const [title, setTitle] = useState('');
-  const [icon, setIcon] = useState<DateEventIcon>('heart');
-  const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [revision, setRevision] = useState(0);
@@ -114,28 +106,6 @@ export default function WishlistsScreen() {
     };
   }, [couple?.id, revision, scope]));
 
-  const addWish = async () => {
-    if (!couple || busy || !title.trim()) {
-      return;
-    }
-    setBusy(true);
-    try {
-      const wish = await createWish(couple.id, list, title, icon);
-      setIcon('heart');
-      setTitle('');
-      setRevision((current) => current + 1);
-      router.push(`/wish?id=${wish.id}` as Href);
-    } catch {
-      showDialog({
-        title: 'Не получилось сохранить',
-        message: 'Проверьте подключение и попробуйте ещё раз.',
-        tone: 'danger',
-      });
-    } finally {
-      setBusy(false);
-    }
-  };
-
   const visible = useMemo(() => wishes
     .filter((wish) => wish.list === list)
     .sort((a, b) => Number(a.fulfilled) - Number(b.fulfilled)), [wishes, list]);
@@ -185,7 +155,15 @@ export default function WishlistsScreen() {
         >
           <AppIcon name="chevron-back" size={24} color={colors.primary} />
         </Pressable>
-        <Text style={styles.heading}>Наши желания</Text>
+        <Text style={styles.heading}>{couple?.partnerName ? 'Наши желания' : 'Желания'}</Text>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Добавить желание"
+          onPress={() => router.push(`/wish?list=${list}` as Href)}
+          style={styles.icon}
+        >
+          <AppIcon name="add" size={26} color={colors.primary} />
+        </Pressable>
       </View>
       <Text style={styles.subtitle}>Маленькие радости и большие мечты</Text>
       <View style={styles.tabs}>
@@ -194,10 +172,7 @@ export default function WishlistsScreen() {
             key={item.value}
             accessibilityRole="tab"
             accessibilityState={{ selected: list === item.value }}
-            onPress={() => {
-              setList(item.value);
-              setTitle('');
-            }}
+            onPress={() => setList(item.value)}
             style={[styles.tab, list === item.value && styles.selected]}
           >
             <AppIcon name={item.icon} size={21} color={list === item.value ? colors.white : colors.primary} />
@@ -218,31 +193,6 @@ export default function WishlistsScreen() {
         <Text style={styles.subtitle}>Загружаем желания…</Text>
       ) : (
         <>
-          <View style={styles.card}>
-            <AppInput
-              label="О чём мечтаете?"
-              placeholder={
-                list === 'together'
-                  ? 'Встретить рассвет у моря'
-                  : list === 'creator'
-                    ? 'Прыжок с парашютом'
-                    : 'Теннисная ракетка'
-              }
-              value={title}
-              onChangeText={setTitle}
-              maxLength={200}
-            />
-            <EventIconPicker value={icon} onChange={setIcon} disabled={busy} />
-            <View style={isDesktop ? styles.desktopAddButton : undefined}>
-              <AppButton
-                label="Добавить желание"
-                disabled={!title.trim()}
-                loading={busy}
-                onPress={() => void addWish()}
-              />
-            </View>
-          </View>
-
           {!error && !visible.length ? (
             <Text style={styles.empty}>Здесь найдётся место каждой мечте. Добавьте первое желание ♥</Text>
           ) : null}
@@ -259,7 +209,6 @@ const styles = StyleSheet.create({
   screen: { paddingHorizontal: 0, paddingTop: 0, paddingBottom: 0 },
   listContent: { paddingTop: spacing.lg, paddingBottom: spacing.huge },
   desktopColumns: { gap: spacing.md },
-  desktopAddButton: { width: '100%', maxWidth: 360, alignSelf: 'center' },
   header: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   icon: {
     width: 44,
@@ -269,7 +218,7 @@ const styles = StyleSheet.create({
     borderRadius: radii.md,
     backgroundColor: colors.softRose,
   },
-  heading: { ...typography.sectionTitle, color: colors.text },
+  heading: { ...typography.sectionTitle, color: colors.text, flex: 1 },
   subtitle: { ...typography.body, color: colors.muted, marginVertical: spacing.lg },
   tabs: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.xxl },
   tab: {

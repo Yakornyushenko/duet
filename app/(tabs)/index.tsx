@@ -7,6 +7,7 @@ import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { AppButton } from '@/components/AppButton';
 import { AppScreen } from '@/components/AppScreen';
 import { DateCard } from '@/components/DateCard';
+import { InvitePartnerCallout } from '@/components/InvitePartnerCallout';
 import { PairAvatars } from '@/components/PairAvatars';
 import { RelationshipDateEditor } from '@/components/RelationshipDateEditor';
 import { useApp } from '@/context/AppContext';
@@ -54,6 +55,7 @@ export default function HomeScreen() {
   const upcomingEvents = getUpcomingEvents(events);
   const nextEvent = upcomingEvents[0];
   const otherEvents = upcomingEvents.slice(1, 5);
+  const wishesTitle = couple?.partnerName ? 'Наши желания' : 'Желания';
 
   if (!user || !couple) {
     return null;
@@ -87,7 +89,11 @@ export default function HomeScreen() {
         </Pressable>
       </View>
 
-      {!couple.partnerName && <AppButton label="Пригласить партнёра" variant="ghost" onPress={() => router.push('/pair')} />}
+      {!couple.partnerName && (
+        <View style={styles.partnerInvite}>
+          <InvitePartnerCallout onPress={() => router.push('/pair')} />
+        </View>
+      )}
       <View style={isDesktop && styles.desktopDashboard}>
       <View style={styles.primaryColumn}>
       <View style={styles.hero}>
@@ -108,12 +114,12 @@ export default function HomeScreen() {
         </View>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Наши желания"
+          accessibilityLabel={wishesTitle}
           accessibilityHint="Открыть общие и личные списки желаний"
           onPress={() => router.push('/wishlists')}
           style={({ pressed }) => [styles.wishlists, isDesktop && styles.desktopWishlists, pressed && styles.pressed]}
         >
-          <Text style={styles.wishesTitle}>Наши желания</Text>
+          <Text style={styles.wishesTitle}>{wishesTitle}</Text>
           <View style={styles.envelopeFrame}>
             <Image source={require('../../assets/wishes-envelope-soft.png')} style={styles.envelope} resizeMode="contain" accessible={false} />
           </View>
@@ -164,7 +170,9 @@ export default function HomeScreen() {
           </View>
         </View>
       ) : nextEvent ? (
-        <AppButton label="Добавить ещё одну дату" variant="secondary" onPress={() => router.push('/date-form')} />
+        <View style={[styles.addDateAction, isDesktop && styles.desktopAddDateAction]}>
+          <AppButton label="Добавить ещё одну дату" variant="secondary" onPress={() => router.push('/date-form')} />
+        </View>
       ) : null}
       </View>
       </View>
@@ -208,6 +216,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.softRose,
+  },
+  partnerInvite: {
+    marginBottom: spacing.xxl,
   },
   desktopDashboard: {
     flexDirection: 'row',
@@ -256,6 +267,12 @@ const styles = StyleSheet.create({
     marginTop: spacing.xxxl,
   },
   desktopSection: {
+    marginTop: 0,
+  },
+  addDateAction: {
+    marginTop: spacing.xxxl,
+  },
+  desktopAddDateAction: {
     marginTop: 0,
   },
   sectionHeader: {
