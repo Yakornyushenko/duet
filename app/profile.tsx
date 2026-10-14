@@ -7,6 +7,7 @@ import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 import { AppButton } from '@/components/AppButton';
 import { AppInput } from '@/components/AppInput';
 import { AppScreen } from '@/components/AppScreen';
+import { quotedAppName } from '@/config/app';
 import { InvitePartnerCallout } from '@/components/InvitePartnerCallout';
 import { PairAvatars } from '@/components/PairAvatars';
 import { IntimateQuestionSettings } from '@/components/IntimateQuestionSettings';
@@ -69,7 +70,7 @@ export default function ProfileScreen() {
     if (!updated) {
       showDialog({
         title: 'Разрешите уведомления',
-        message: 'Включите уведомления для Duet в настройках телефона.',
+        message: `Включите уведомления для приложения ${quotedAppName} в настройках телефона.`,
         tone: 'warning',
         actions: [
           { label: 'Открыть настройки', onPress: openSystemSettings },

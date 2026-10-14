@@ -6,6 +6,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { AppButton } from '@/components/AppButton';
 import { AppScreen } from '@/components/AppScreen';
+import { appName, quotedAppName } from '@/config/app';
 import { useDialog } from '@/context/DialogContext';
 import { useReminders } from '@/context/ReminderContext';
 import {
@@ -73,7 +74,7 @@ export default function RemindersScreen() {
     if (!permissionGranted) {
       showDialog({
         title: 'Разрешите уведомления',
-        message: 'Включите уведомления для Duet в настройках телефона.',
+        message: `Включите уведомления для приложения ${quotedAppName} в настройках телефона.`,
         tone: 'warning',
         actions: [
           { label: 'Открыть настройки', onPress: openSystemSettings },
@@ -111,8 +112,8 @@ export default function RemindersScreen() {
             </Text>
             <Text style={styles.emptyText}>
               {permissionStatus === 'denied'
-                ? 'Разрешите уведомления для Duet в настройках телефона.'
-                : 'Выберите даты и время — Duet напомнит заранее.'}
+                ? `Разрешите уведомления для приложения ${quotedAppName} в настройках телефона.`
+                : `Выберите даты и время — ${appName} напомнит заранее.`}
             </Text>
           </View>
           <AppButton

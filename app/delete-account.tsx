@@ -2,6 +2,7 @@ import { Href, Stack, router } from 'expo-router';
 import { Image, Linking, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { AppScreen } from '@/components/AppScreen';
+import { appName, quotedAppName } from '@/config/app';
 import { supportEmail } from '@/config/support';
 import { colors, radii, shadow, spacing, typography } from '@/theme/tokens';
 
@@ -32,14 +33,14 @@ const retainedData = [
 const deletionEmailBody = [
   'Здравствуйте!',
   '',
-  'Прошу удалить мой аккаунт Duet и связанные с ним данные.',
+  `Прошу удалить мой аккаунт ${quotedAppName} и связанные с ним данные.`,
   'Email аккаунта: ',
 ].join('\n');
 
 export default function DeleteAccountScreen() {
   return (
     <AppScreen contentContainerStyle={styles.content}>
-      <Stack.Screen options={{ title: 'Удаление аккаунта Duet' }} />
+      <Stack.Screen options={{ title: `Удаление аккаунта ${quotedAppName}` }} />
 
       {Platform.OS !== 'web' ? (
         <Pressable
@@ -54,7 +55,7 @@ export default function DeleteAccountScreen() {
 
       <View style={styles.header}>
         <Image source={duetLogo} resizeMode="contain" style={styles.logo} accessible={false} />
-        <Text style={styles.brand}>Duet</Text>
+        <Text style={styles.brand}>{appName}</Text>
         <Text style={styles.title}>Удаление аккаунта и данных</Text>
         <Text style={styles.subtitle}>Выберите удобный способ отправить запрос</Text>
       </View>
@@ -70,7 +71,7 @@ export default function DeleteAccountScreen() {
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Удалить аккаунт в приложении</Text>
-        <Text style={styles.body}>Это самый быстрый способ, если вы можете войти в Duet.</Text>
+        <Text style={styles.body}>Это самый быстрый способ, если вы можете войти в приложение {quotedAppName}.</Text>
         {deletionSteps.map((step, index) => (
           <View key={step} style={styles.stepRow}>
             <View style={styles.stepNumber}>
@@ -84,7 +85,7 @@ export default function DeleteAccountScreen() {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Запросить удаление без доступа к приложению</Text>
         <Text style={styles.body}>
-          Напишите с адреса, который использовался для регистрации. В теме письма укажите «Удаление аккаунта Duet». Мы можем запросить подтверждение владения аккаунтом, но пароль сообщать не нужно.
+          Напишите с адреса, который использовался для регистрации. В теме письма укажите «Удаление аккаунта „{appName}“». Мы можем запросить подтверждение владения аккаунтом, но пароль сообщать не нужно.
         </Text>
         <Text style={styles.body}>
           После подтверждения владения аккаунтом запрос будет выполнен не позднее 30 календарных дней. Когда удаление завершится, мы ответим на ваше письмо.
@@ -97,7 +98,7 @@ export default function DeleteAccountScreen() {
             accessibilityRole="link"
             accessibilityLabel={`Запросить удаление через ${supportEmail}`}
             onPress={() => void Linking.openURL(
-              `mailto:${supportEmail}?subject=${encodeURIComponent('Удаление аккаунта Duet')}&body=${encodeURIComponent(deletionEmailBody)}`,
+              `mailto:${supportEmail}?subject=${encodeURIComponent(`Удаление аккаунта ${quotedAppName}`)}&body=${encodeURIComponent(deletionEmailBody)}`,
             )}
             style={({ pressed }) => [styles.emailButton, pressed && styles.pressed]}
           >
@@ -140,7 +141,7 @@ export default function DeleteAccountScreen() {
       >
         <View style={styles.privacyLinkCopy}>
           <Text style={styles.privacyLinkLabel}>Подробнее об обработке данных</Text>
-          <Text style={styles.privacyLinkText}>Политика конфиденциальности Duet</Text>
+          <Text style={styles.privacyLinkText}>Политика конфиденциальности {quotedAppName}</Text>
         </View>
         <Text style={styles.privacyLinkArrow}>→</Text>
       </Pressable>

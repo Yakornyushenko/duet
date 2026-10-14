@@ -75,7 +75,7 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Duet использует фото, чтобы добавить их к желанию.",
+          "photosPermission": "Приложение использует фото, чтобы добавить их к желанию.",
           "cameraPermission": false,
           "microphonePermission": false
         }

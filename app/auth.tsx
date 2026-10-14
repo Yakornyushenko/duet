@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppButton } from '@/components/AppButton';
 import { AppInput } from '@/components/AppInput';
+import { appName } from '@/config/app';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { AppScreen } from '@/components/AppScreen';
 import { SegmentedControl } from '@/components/SegmentedControl';
@@ -100,7 +101,7 @@ export default function AuthScreen() {
     <AppScreen contentContainerStyle={styles.content}>
       <Image source={duetLogo} resizeMode="contain" style={styles.brandLogo} accessible={false} />
       <View style={styles.heading}>
-        <Text style={styles.brand}>Duet</Text>
+        <Text style={styles.brand}>{appName}</Text>
         <Text style={styles.subtitle}>Место для ваших общих воспоминаний и важных дат</Text>
       </View>
 

@@ -4,6 +4,7 @@ import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { AppScreen } from '@/components/AppScreen';
 import { NotesIcon } from '@/components/NotesIcon';
+import { appName } from '@/config/app';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { colors, radii, spacing, typography } from '@/theme/tokens';
 
@@ -112,7 +113,7 @@ export default function MoreScreen() {
         </View>
         <View style={styles.copy}>
           <Text style={styles.label}>Конфиденциальность</Text>
-          <Text style={styles.description}>Как Duet использует и защищает данные</Text>
+          <Text style={styles.description}>Как {appName} использует и защищает данные</Text>
         </View>
         <AppIcon name="chevron-forward" size={20} color={colors.muted} />
       </Pressable>
