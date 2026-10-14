@@ -2,6 +2,7 @@ import { router, usePathname } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
+import { appName } from '@/config/app';
 import { colors, radii, spacing, typography } from '@/theme/tokens';
 
 type DesktopSection = 'home' | 'dates' | 'more';
@@ -28,12 +29,12 @@ export function DesktopHeader() {
       <View style={[styles.content, { maxWidth: wideContentMaxWidth, paddingHorizontal: horizontalPadding }]}>
         <Pressable
           accessibilityRole="link"
-          accessibilityLabel="Duet — на главную"
+          accessibilityLabel={`${appName} — на главную`}
           onPress={() => router.replace('/(tabs)')}
           style={({ pressed }) => [styles.brand, pressed && styles.pressed]}
         >
           <Text style={styles.brandMark}>D</Text>
-          <Text style={styles.brandText}>Duet</Text>
+          <Text style={styles.brandText}>{appName}</Text>
         </Pressable>
 
         <View accessibilityRole="tablist" style={styles.navigation}>

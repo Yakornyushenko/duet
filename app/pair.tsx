@@ -4,6 +4,7 @@ import { Share, StyleSheet, Text, View } from 'react-native';
 import { AppButton } from '@/components/AppButton';
 import { AppInput } from '@/components/AppInput';
 import { AppScreen } from '@/components/AppScreen';
+import { quotedAppName } from '@/config/app';
 import { useApp } from '@/context/AppContext';
 import { useDialog } from '@/context/DialogContext';
 import { colors, radii, spacing, typography } from '@/theme/tokens';
@@ -42,7 +43,7 @@ export default function PairScreen() {
         <Text style={styles.subtitle}>После подключения все ваши даты, желания, фото и заметки, включая корзину, станут доступны вам обоим.</Text>
         {inviteActive && <Text selectable style={styles.code}>{couple.inviteCode}</Text>}
         {inviteActive && <Text style={styles.codeHint}>Код действует до {new Date(couple.inviteExpiresAt!).toLocaleString('ru-RU')}</Text>}
-        {inviteActive && <AppButton label="Поделиться кодом" onPress={() => void Share.share({message: `Присоединяйся ко мне в приложении «Duet». Код нашей пары: ${couple.inviteCode}`})} />}
+        {inviteActive && <AppButton label="Поделиться кодом" onPress={() => void Share.share({message: `Присоединяйся ко мне в приложении ${quotedAppName}. Код нашей пары: ${couple.inviteCode}`})} />}
         <AppButton label={inviteActive ? 'Обновить код' : 'Создать код приглашения'} loading={loading} variant="secondary"
           onPress={() => showDialog({title:'Открыть общее пространство?',message:'Подключившийся по коду человек получит доступ ко всем данным вашего пространства. Передавайте код только своему партнёру. Новый код отменит предыдущий.',
             actions:[{label:'Создать код',onPress:()=>perform(createCouple)},{label:'Отмена',variant:'ghost'}]})} />

@@ -1,3 +1,5 @@
+import { quotedAppName } from '@/config/app';
+
 // Confirmation is performed by Supabase before redirect. Never accept bearer
 // credentials from a deep link: an unsolicited link must not change accounts.
 export function isAuthConfirmationLink(value: string): boolean {
@@ -19,9 +21,9 @@ export function getEmailConfirmationError(value: string | null): string | null {
     if (!errorCode && !error) return null;
 
     if (errorCode === 'otp_expired') {
-      return 'Ссылка устарела, уже была использована или относится к удалённому аккаунту. Запросите новое письмо в Duet и откройте самую свежую ссылку.';
+      return `Ссылка устарела, уже была использована или относится к удалённому аккаунту. Запросите новое письмо в приложении ${quotedAppName} и откройте самую свежую ссылку.`;
     }
-    return 'Подтверждение не завершено. Вернитесь в Duet, запросите новое письмо и попробуйте ещё раз.';
+    return `Подтверждение не завершено. Вернитесь в приложение ${quotedAppName}, запросите новое письмо и попробуйте ещё раз.`;
   } catch {
     return null;
   }

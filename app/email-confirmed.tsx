@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { Image, Linking, StyleSheet, Text, View } from 'react-native';
 
 import { AppScreen } from '@/components/AppScreen';
+import { appName, quotedAppName } from '@/config/app';
 import { colors, radii, shadow, spacing, typography } from '@/theme/tokens';
 import { getEmailConfirmationError } from '@/utils/authLink';
 
@@ -23,11 +24,11 @@ export default function EmailConfirmedScreen() {
 
   return (
     <AppScreen scroll={false} contentContainerStyle={styles.content}>
-      <Stack.Screen options={{ title: `${title} — Duet` }} />
+      <Stack.Screen options={{ title: `${title} — ${appName}` }} />
 
       <View style={styles.brandRow}>
         <Image source={duetLogo} resizeMode="contain" style={styles.logo} accessible={false} />
-        <Text style={styles.brand}>Duet</Text>
+        <Text style={styles.brand}>{appName}</Text>
       </View>
 
       <View style={styles.card}>
@@ -38,7 +39,7 @@ export default function EmailConfirmedScreen() {
         <Text style={styles.body}>
           {checking
             ? 'Пожалуйста, подождите.'
-            : confirmationError ?? 'Теперь вы можете вернуться в приложение Duet и войти с вашим email и паролем.'}
+            : confirmationError ?? `Теперь вы можете вернуться в приложение ${quotedAppName} и войти с вашим email и паролем.`}
         </Text>
         {!checking ? <Text style={styles.hint}>Эту страницу можно закрыть.</Text> : null}
       </View>

@@ -13,6 +13,7 @@ import { EventIconPicker } from '@/components/EventIconPicker';
 import { AppInput } from '@/components/AppInput';
 import { AppScreen } from '@/components/AppScreen';
 import { SegmentedControl } from '@/components/SegmentedControl';
+import { quotedAppName } from '@/config/app';
 import { useApp } from '@/context/AppContext';
 import { useDialog } from '@/context/DialogContext';
 import { useReminders } from '@/context/ReminderContext';
@@ -69,7 +70,7 @@ export default function DateFormScreen() {
   const showNotificationSettingsDialog = () => {
     showDialog({
       title: 'Разрешите уведомления',
-      message: 'Включите уведомления для Duet в настройках телефона.',
+      message: `Включите уведомления для приложения ${quotedAppName} в настройках телефона.`,
       tone: 'warning',
       actions: [
         { label: 'Открыть настройки', onPress: openSystemSettings },

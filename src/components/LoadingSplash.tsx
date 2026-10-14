@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { ActivityIndicator, Animated, Easing, Image, StyleSheet, Text, View } from 'react-native';
 
+import { appName } from '@/config/app';
 import { colors, spacing, typography } from '@/theme/tokens';
 
 const birds = require('../../assets/duet-birds.png') as ReturnType<typeof Image.resolveAssetSource>;
@@ -59,7 +60,7 @@ export function LoadingSplash() {
         ]}
       />
       <Animated.View style={{ opacity: copyOpacity, transform: [{ translateY: copyOffset }] }}>
-        <Text style={styles.title}>Duet</Text>
+        <Text style={styles.title}>{appName}</Text>
         <Text style={styles.subtitle}>Навстречу друг другу</Text>
       </Animated.View>
       <ActivityIndicator color={colors.primary} style={styles.indicator} />

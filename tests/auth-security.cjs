@@ -42,7 +42,9 @@ function memory() {
   const manifest = JSON.parse(await secure.getItem('duet.secure.session'));
   await secure.removeItem(`duet.secure.session.${manifest.generation}.0`);
   await assert.rejects(storage.getItem('session'), 'Missing encrypted chunk fails closed');
-  const { isAuthConfirmationLink, getEmailConfirmationError } = load('src/utils/authLink.ts');
+  const { isAuthConfirmationLink, getEmailConfirmationError } = load('src/utils/authLink.ts', {
+    '@/config/app': { quotedAppName: '«Duet»' },
+  });
   assert.equal(isAuthConfirmationLink('duet://auth#access_token=attacker'),true);
   for (const url of ['https://auth','duet://evil','duet://auth.evil','duet://auth/other','duet://user@auth','garbage']) {
     assert.equal(isAuthConfirmationLink(url),false);
