@@ -50,10 +50,36 @@ vm.runInNewContext(ts.transpileModule(fs.readFileSync('src/services/notes.ts', '
   assert.equal(merged.body, 'Typed during save');
   assert.equal(merged.version, 3);
   assert.equal(merged.deleted_at, result.deleted_at);
+
+  let current = { ...note, body: 'First edit' };
+  let confirmed = note;
+  let finishFirstSave;
+  const writes = [];
+  const firstSave = new Promise((resolve) => { finishFirstSave = resolve; });
+  const saving = exportsObject.saveLatestNote({
+    getCurrent: () => current,
+    getSaved: () => confirmed,
+    acceptSaved: (saved, reconciled) => { confirmed = saved; current = reconciled; },
+    persist: async (value) => {
+      writes.push(value);
+      if (writes.length === 1) return firstSave;
+      return { ...value, version: 4, updated_at: '2026-10-15T12:01:00.000Z' };
+    },
+  });
+  await Promise.resolve();
+  current = { ...current, body: 'Edit typed while saving' };
+  finishFirstSave({ ...writes[0], version: 3, updated_at: '2026-10-15T12:00:00.000Z' });
+  await saving;
+  assert.equal(writes.length, 2, 'An edit made while the request is pending must trigger another save');
+  assert.equal(writes[1].body, 'Edit typed while saving');
+  assert.equal(writes[1].version, 3, 'The follow-up save must use the confirmed server version');
+  assert.equal(confirmed.body, 'Edit typed while saving');
+  assert.equal(current.body, 'Edit typed while saving');
+
   rpcError = null;
   await exportsObject.emptyNotesTrash('pair', [note, result]);
   assert.equal(args.p_notes.length, 1, 'Active notes must not be submitted for permanent deletion');
   assert.equal(args.p_notes[0].version, 3, 'Only confirmed versions can be deleted');
   assert.equal(args.p_couple_id, 'pair');
-  console.log('PASS: note content tracking, version forwarding, create, trash, conflict propagation');
+  console.log('PASS: note content tracking, pending edits, version forwarding, create, trash, conflict propagation');
 })().catch((error) => { console.error(error); process.exitCode = 1; });

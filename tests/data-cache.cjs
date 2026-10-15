@@ -37,13 +37,39 @@ vm.runInNewContext(ts.transpileModule(fs.readFileSync('src/lib/dataCache.ts', 'u
   assert.deepEqual(await exportsObject.readCachedData(key), ['fresh']);
 
   const fallback = await exportsObject.loadWithCache(key, async () => {
-    throw new Error('network unavailable');
+    throw new TypeError('Network request failed');
   });
   assert.deepEqual(fallback, ['fresh']);
+
+  assert.deepEqual(await exportsObject.loadWithCache(key, async () => {
+    throw { code: '', details: '', hint: '', message: 'TypeError: Network request failed' };
+  }), ['fresh'], 'Supabase wraps fetch failures in a PostgREST-shaped object');
+
+  const timeout = new Error('request timed out');
+  timeout.name = 'TimeoutError';
+  assert.deepEqual(await exportsObject.loadWithCache(key, async () => {
+    throw timeout;
+  }), ['fresh']);
+
+  assert.deepEqual(await exportsObject.loadWithCache(key, async () => {
+    throw { status: 503, message: 'service unavailable' };
+  }), ['fresh']);
+
+  await assert.rejects(exportsObject.loadWithCache(key, async () => {
+    throw new Error('unexpected application failure');
+  }), /unexpected application failure/);
 
   await assert.rejects(exportsObject.loadWithCache(key, async () => {
     throw { status: 401, message: 'unauthorized' };
   }), (error) => error.status === 401);
+
+  await assert.rejects(exportsObject.loadWithCache(key, async () => {
+    throw { code: '42501', details: null, hint: null, message: 'permission denied' };
+  }), (error) => error.code === '42501');
+
+  await assert.rejects(exportsObject.loadWithCache(key, async () => {
+    throw { code: 'PGRST204', details: null, hint: null, message: 'column not found' };
+  }), (error) => error.code === 'PGRST204');
 
   const controller = new AbortController();
   controller.abort();
@@ -55,5 +81,5 @@ vm.runInNewContext(ts.transpileModule(fs.readFileSync('src/lib/dataCache.ts', 'u
   await exportsObject.clearDataCache();
   assert.equal(storage.has(key), false);
   assert.equal(storage.get('unrelated'), 'keep');
-  console.log('PASS: network fallback, authorization safety, cancellation, scoped cleanup');
+  console.log('PASS: explicit network fallback, PostgREST safety, cancellation, scoped cleanup');
 })().catch((error) => { console.error(error); process.exitCode = 1; });

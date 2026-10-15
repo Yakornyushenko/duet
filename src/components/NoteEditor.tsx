@@ -11,7 +11,7 @@ import { EntityIconPicker } from '@/components/EntityIconPicker';
 import { NotePinIcon } from '@/components/NotePinIcon';
 import { useApp } from '@/context/AppContext';
 import { useDialog } from '@/context/DialogContext';
-import { Note, noteContent, reconcileSavedNote, saveNote } from '@/services/notes';
+import { Note, noteContent, saveLatestNote, saveNote } from '@/services/notes';
 import { colors, radii, spacing, typography } from '@/theme/tokens';
 
 type Props = { initial: Note; remote?: Note; onSaved: (note: Note) => void; onClose: () => void };
@@ -63,6 +63,7 @@ export function NoteEditor({ initial, remote, onSaved, onClose }: Props) {
   }, [backupKey, initial, trashView]);
 
   const change = (patch: Partial<Note>) => {
+    if (saving || pending.current) return;
     const updated = { ...current.current, ...patch };
     current.current = updated;
     setDraft(updated);
@@ -74,14 +75,16 @@ export function NoteEditor({ initial, remote, onSaved, onClose }: Props) {
     const task = (async () => {
       setSaving(true);
       try {
-        if (!saved.current.id || noteContent(current.current) !== noteContent(saved.current)) {
-          const snapshot = { ...current.current, version: saved.current.version };
-          const result = await saveNote(snapshot);
-          saved.current = result;
-          current.current = { ...reconcileSavedNote(current.current, snapshot, result), id: result.id };
-          if (alive.current) { setDraft(current.current); onSaved(result); }
-          if (!alive.current) return true;
-        }
+        await saveLatestNote({
+          getCurrent: () => current.current,
+          getSaved: () => saved.current,
+          acceptSaved: (result, reconciled) => {
+            saved.current = result;
+            current.current = reconciled;
+            if (alive.current) { setDraft(reconciled); onSaved(result); }
+          },
+        });
+        if (!alive.current) return true;
         await AsyncStorage.removeItem(backupKey);
         if (alive.current) {
           setError('');
@@ -231,29 +234,29 @@ export function NoteEditor({ initial, remote, onSaved, onClose }: Props) {
           </>}
           <AppButton label="Закрыть и оставить черновик" variant="ghost" disabled={saving} onPress={() => void persistAndClose()} />
         </View> : null}
-        <AppInput label="Название" placeholder="Без названия" value={draft.title} maxLength={120} editable={ready && !trashView && !draft.deleted_at} onChangeText={(title) => change({ title })} />
+        <AppInput label="Название" placeholder="Без названия" value={draft.title} maxLength={120} editable={ready && !saving && !trashView && !draft.deleted_at} onChangeText={(title) => change({ title })} />
         <EntityIconPicker
           kind="note"
           value={draft.icon}
-          disabled={!ready || trashView || Boolean(draft.deleted_at)}
+          disabled={!ready || saving || trashView || Boolean(draft.deleted_at)}
           onChange={(icon) => change({ icon })}
         />
         <View style={styles.content}>
           {draft.kind === 'text' ? <AppInput label="" accessibilityLabel="Текст заметки" placeholder="Что хочется записать?" multiline textAlignVertical="top" style={styles.body}
-            value={draft.body} maxLength={20000} editable={ready && !trashView && !draft.deleted_at} onChangeText={(body) => change({ body })} /> : <>
+            value={draft.body} maxLength={20000} editable={ready && !saving && !trashView && !draft.deleted_at} onChangeText={(body) => change({ body })} /> : <>
             {draft.items.map((item) => <View key={item.id} style={styles.row}>
-              <Pressable disabled={!ready || trashView || !!draft.deleted_at} accessibilityRole="checkbox" accessibilityState={{ checked: item.done }} accessibilityLabel={item.text || 'Пункт списка'}
+              <Pressable disabled={!ready || saving || trashView || !!draft.deleted_at} accessibilityRole="checkbox" accessibilityState={{ checked: item.done }} accessibilityLabel={item.text || 'Пункт списка'}
                 onPress={() => change({ items: draft.items.map((entry) => entry.id === item.id ? { ...entry, done: !entry.done } : entry) })} style={styles.check}>
                 <AppIcon name={item.done ? 'checkbox' : 'square-outline'} size={25} color={colors.primary} />
               </Pressable>
               <View style={styles.itemInput}><AppInput label="" accessibilityLabel="Текст пункта" placeholder="Новый пункт" value={item.text} maxLength={500}
                 autoFocus={item.id === focusedItemId}
-                editable={ready && !trashView && !draft.deleted_at} style={item.done ? styles.done : undefined}
+                editable={ready && !saving && !trashView && !draft.deleted_at} style={item.done ? styles.done : undefined}
                 onChangeText={(text) => change({ items: draft.items.map((entry) => entry.id === item.id ? { ...entry, text } : entry) })} /></View>
-              {!trashView && !draft.deleted_at && <Pressable accessibilityRole="button" accessibilityLabel="Удалить пункт" style={styles.check}
+              {!trashView && !draft.deleted_at && <Pressable disabled={saving} accessibilityRole="button" accessibilityLabel="Удалить пункт" style={styles.check}
                 onPress={() => change({ items: draft.items.filter((entry) => entry.id !== item.id) })}><AppIcon name="close" size={20} color={colors.muted} /></Pressable>}
             </View>)}
-            {!trashView && !draft.deleted_at && draft.items.length < 100 && <AppButton label="Добавить пункт" variant="ghost" disabled={!ready} onPress={() => {
+            {!trashView && !draft.deleted_at && draft.items.length < 100 && <AppButton label="Добавить пункт" variant="ghost" disabled={!ready || saving} onPress={() => {
               const item = { id: `${Date.now()}-${Math.random().toString(36).slice(2)}`, text: '', done: false };
               setFocusedItemId(item.id);
               change({ items: [...draft.items, item] });

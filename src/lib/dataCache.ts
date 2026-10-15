@@ -51,12 +51,35 @@ export async function clearDataCache(): Promise<void> {
   }
 }
 
+const retryableNetworkCodes = new Set([
+  'ECONNABORTED',
+  'ECONNREFUSED',
+  'ECONNRESET',
+  'ENETDOWN',
+  'ENETUNREACH',
+  'ENOTFOUND',
+  'ETIMEDOUT',
+]);
+
 function canUseCachedData(error: unknown, signal?: AbortSignal): boolean {
   if (signal?.aborted) return false;
-  const status = typeof error === 'object' && error && 'status' in error
-    ? Number((error as { status?: unknown }).status)
-    : 0;
-  return !status || status === 408 || status === 429 || status >= 500;
+  if (typeof error !== 'object' || !error) return false;
+
+  const candidate = error as { code?: unknown; message?: unknown; name?: unknown; status?: unknown };
+  const code = typeof candidate.code === 'string' ? candidate.code.trim().toUpperCase() : '';
+  if (code) return retryableNetworkCodes.has(code);
+
+  const status = Number(candidate.status);
+  if (Number.isFinite(status) && status > 0) {
+    return status === 408 || status === 429 || (status >= 500 && status < 600);
+  }
+
+  const name = typeof candidate.name === 'string' ? candidate.name : '';
+  if (name === 'TimeoutError') return true;
+
+  const message = typeof candidate.message === 'string' ? candidate.message : '';
+  const isFetchError = name === 'TypeError' || /^TypeError:/i.test(message);
+  return isFetchError && /network request failed|failed to fetch|fetch failed|load failed/i.test(message);
 }
 
 export async function loadWithCache<T>(

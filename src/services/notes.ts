@@ -48,6 +48,27 @@ export async function saveNote(note: Note): Promise<Note> {
   return saved;
 }
 
+type SaveLatestNoteOptions = {
+  getCurrent: () => Note;
+  getSaved: () => Note;
+  acceptSaved: (saved: Note, current: Note) => void;
+  persist?: (note: Note) => Promise<Note>;
+};
+
+export async function saveLatestNote({
+  getCurrent,
+  getSaved,
+  acceptSaved,
+  persist = saveNote,
+}: SaveLatestNoteOptions): Promise<void> {
+  while (!getSaved().id || noteContent(getCurrent()) !== noteContent(getSaved())) {
+    const snapshot = { ...getCurrent(), version: getSaved().version };
+    const result = await persist(snapshot);
+    const current = { ...reconcileSavedNote(getCurrent(), snapshot, result), id: result.id };
+    acceptSaved(result, current);
+  }
+}
+
 export async function emptyNotesTrash(coupleId: string, notes: Note[]): Promise<string[]> {
   if (!supabase) throw new Error('Supabase не настроен');
   const { data, error } = await supabase.rpc('empty_notes_trash', {
