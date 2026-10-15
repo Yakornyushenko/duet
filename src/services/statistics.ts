@@ -1,3 +1,4 @@
+import { dataCacheKey, loadWithCache } from '@/lib/dataCache';
 import { supabase } from '@/lib/supabase';
 import type { DateCompletion } from '@/services/dateCompletions';
 import type { DateEventIcon } from '@/types/domain';
@@ -22,10 +23,12 @@ async function readStatisticsRows<T>(table: string, columns: string, coupleId: s
 }
 
 export async function loadStatistics(coupleId: string, signal: AbortSignal): Promise<StatisticsData> {
-  const [wishes, completions, dates] = await Promise.all([
-    readStatisticsRows<StatisticsData['wishes'][number]>('wishes', 'id,title,list,fulfilled,fulfilled_at', coupleId, signal),
-    readStatisticsRows<StatisticsData['completions'][number]>('date_completions', 'id,event_id,happened_on', coupleId, signal),
-    readStatisticsRows<StatisticsData['dates'][number]>('date_events', 'id,title,icon,category', coupleId, signal),
-  ]);
-  return { wishes, completions, dates };
+  return loadWithCache(dataCacheKey('statistics', coupleId), async () => {
+    const [wishes, completions, dates] = await Promise.all([
+      readStatisticsRows<StatisticsData['wishes'][number]>('wishes', 'id,title,list,fulfilled,fulfilled_at', coupleId, signal),
+      readStatisticsRows<StatisticsData['completions'][number]>('date_completions', 'id,event_id,happened_on', coupleId, signal),
+      readStatisticsRows<StatisticsData['dates'][number]>('date_events', 'id,title,icon,category', coupleId, signal),
+    ]);
+    return { wishes, completions, dates };
+  }, signal);
 }

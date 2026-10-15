@@ -1,70 +1,50 @@
-import { AppIcon } from '@/components/AppIcon';
-import { Href, router, useFocusEffect, useLocalSearchParams } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
-import {
-  Image,
-  BackHandler,
-  Modal,
-  Pressable,
-  StyleSheet,
-  Switch,
-  Text,
-  View,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useIsFocused } from 'expo-router';
-
+import { AppIcon, type AppIconName } from '@/components/AppIcon';
 import { AppButton } from '@/components/AppButton';
 import { AppInput } from '@/components/AppInput';
-import { EventIconPicker } from '@/components/EventIconPicker';
-import { DateEventIcon } from '@/types/domain';
 import { AppScreen } from '@/components/AppScreen';
+import { BackButton } from '@/components/BackButton';
 import { useApp } from '@/context/AppContext';
 import { useDialog } from '@/context/DialogContext';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import {
   addWishComment,
-  createWish,
-  deleteWish,
   deleteWishComment,
   getWish,
   getWishPhotoUrls,
   listWishComments,
-  pickAndUploadWishPhoto,
-  removeDraftWishPhoto,
+  updateWishComment,
   updateWish,
   Wish,
   WishComment,
 } from '@/services/wishes';
-import { colors, radii, spacing, typography } from '@/theme/tokens';
-import { getWishlists } from '@/utils/wishlists';
-
-const maxPhotos = 1;
+import { colors, radii, shadow, spacing, typography } from '@/theme/tokens';
+import { entityIcons } from '@/utils/entityIcons';
+import { canManageWishlist, getWishlists } from '@/utils/wishlists';
+import { Href, router, useFocusEffect, useIsFocused, useLocalSearchParams } from 'expo-router';
+import { useCallback, useEffect, useState } from 'react';
+import { ActivityIndicator, Image, Modal, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function WishScreen() {
-  const isFocused = useIsFocused();
-  const params = useLocalSearchParams<{ id?: string | string[]; list?: string | string[] }>();
+  const params = useLocalSearchParams<{ id?: string | string[] }>();
   const wishId = Array.isArray(params.id) ? params.id[0] : params.id;
-  const requestedList = Array.isArray(params.list) ? params.list[0] : params.list;
-  const isCreating = !wishId;
+  const isFocused = useIsFocused();
   const { user, couple } = useApp();
   const { showDialog } = useDialog();
-  const { largeModalMaxWidth, mediaThumbnailSize } = useResponsiveLayout();
-  const wishlists = getWishlists(user, couple);
-
+  const { largeModalMaxWidth } = useResponsiveLayout();
   const [wish, setWish] = useState<Wish | null>(null);
-  const [title, setTitle] = useState('');
-  const [icon, setIcon] = useState<DateEventIcon>('heart');
-  const [description, setDescription] = useState('');
-  const [photos, setPhotos] = useState<string[]>([]);
+  const [comments, setComments] = useState<WishComment[]>([]);
+  const [comment, setComment] = useState('');
   const [photoUrls, setPhotoUrls] = useState<Record<string, string>>({});
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [fulfilled, setFulfilled] = useState(false);
-  const [comments, setComments] = useState<WishComment[]>([]);
+  const [loading, setLoading] = useState(true);
   const [commentsLoading, setCommentsLoading] = useState(true);
   const [commentsError, setCommentsError] = useState(false);
-  const [comment, setComment] = useState('');
-  const [loading, setLoading] = useState(true);
+  const [commentMutationId, setCommentMutationId] = useState<string | null>(null);
+  const [commentMenuId, setCommentMenuId] = useState<string | null>(null);
+  const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
+  const [editingComment, setEditingComment] = useState('');
+  const [replyingToId, setReplyingToId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(false);
   const [revision, setRevision] = useState(0);
@@ -72,46 +52,24 @@ export default function WishScreen() {
   useFocusEffect(useCallback(() => {
     let active = true;
     const controller = new AbortController();
-    if (!couple) {
+    if (!couple || !wishId) {
       setLoading(false);
       setError(true);
-      return;
-    }
-    if (isCreating) {
-      setLoading(false);
-      setError(false);
-      setCommentsLoading(false);
       return;
     }
     setLoading(true);
     setError(false);
     setCommentsLoading(true);
     setCommentsError(false);
-    setComments([]);
-    const loadWish = async () => {
-      try {
-      const nextWish = await getWish(couple.id, wishId, controller.signal);
+    void getWish(couple.id, wishId, controller.signal).then((nextWish) => {
       if (!active) return;
-      if (!nextWish) {
-        setError(true);
-        setWish(null);
-        return;
-      }
       setWish(nextWish);
-      setTitle(nextWish.title);
-      setIcon(nextWish.icon);
-      setDescription(nextWish.description);
-      setPhotos(nextWish.photos);
-      setFulfilled(nextWish.fulfilled);
-      setError(false);
-    } catch {
+      setError(!nextWish);
+    }).catch(() => {
       if (active) setError(true);
-    } finally {
+    }).finally(() => {
       if (active) setLoading(false);
-    }
-    };
-
-    void loadWish();
+    });
     void listWishComments(wishId, controller.signal).then((items) => {
       if (active) setComments(items);
     }).catch(() => {
@@ -126,86 +84,110 @@ export default function WishScreen() {
   }, [couple?.id, wishId, revision]));
 
   useEffect(() => {
-    if (!isFocused) return;
+    if (!isFocused || !wish?.photos.length) {
+      setPhotoUrls({});
+      return;
+    }
     let active = true;
-    // Signed photo URLs are optional content, not a prerequisite for opening.
-    void getWishPhotoUrls(photos).then((urls) => {
+    void getWishPhotoUrls(wish.photos).then((urls) => {
       if (active) setPhotoUrls(urls);
-    }).catch(() => {
-      // Keep placeholders; a photo failure must not hide the wish's text.
-    });
+    }).catch(() => {});
     return () => { active = false; };
-  }, [photos, isFocused]);
+  }, [isFocused, wish?.photos]);
 
-  const list = wish?.list
-    ?? wishlists.find((item) => item.value === requestedList)?.value
-    ?? wishlists[0]?.value
-    ?? 'together';
-  const listLabel = wishlists.find((item) => item.value === list)?.label ?? 'Список';
-  const hasUnsavedChanges = isCreating
-    ? title !== '' || icon !== 'heart' || description !== '' || photos.length > 0 || fulfilled
-    : Boolean(wish && (
-      title !== wish.title
-      || icon !== wish.icon
-      || description !== wish.description
-      || fulfilled !== wish.fulfilled
-      || photos.length !== wish.photos.length
-      || photos.some((path, index) => path !== wish.photos[index])
-    ));
+  const submitComment = async () => {
+    if (!couple || !wish || commentMutationId || editingCommentId || !comment.trim()) return;
+    setCommentMutationId('new');
+    try {
+      const next = await addWishComment(couple.id, wish.id, comment, replyingToId);
+      setComments((current) => [...current, next]);
+      setComment('');
+      setReplyingToId(null);
+    } catch {
+      showDialog({ title: 'Не удалось отправить', message: 'Комментарий не сохранился. Попробуйте ещё раз.', tone: 'danger' });
+    } finally {
+      setCommentMutationId(null);
+    }
+  };
 
-  const leaveWish = useCallback(async () => {
-    const savedPhotos = new Set(wish?.photos ?? []);
-    await Promise.allSettled(
-      photos.filter((path) => !savedPhotos.has(path)).map(removeDraftWishPhoto),
-    );
-    router.back();
-  }, [photos, wish?.photos]);
+  const startEditingComment = (item: WishComment) => {
+    if (commentMutationId) return;
+    setCommentMenuId(null);
+    setReplyingToId(null);
+    setEditingCommentId(item.id);
+    setEditingComment(item.body);
+  };
 
-  const handleBack = useCallback(() => {
-    if (busy) {
+  const cancelEditingComment = () => {
+    if (commentMutationId) return;
+    setEditingCommentId(null);
+    setEditingComment('');
+  };
+
+  const saveComment = async (item: WishComment) => {
+    const body = editingComment.trim();
+    if (!body || commentMutationId) return;
+    if (body === item.body) {
+      cancelEditingComment();
       return;
     }
-    if (!hasUnsavedChanges) {
-      router.back();
-      return;
+    setCommentMutationId(item.id);
+    try {
+      const updated = await updateWishComment(item.id, item.wishId, body);
+      setComments((current) => current.map((commentItem) =>
+        commentItem.id === updated.id ? updated : commentItem));
+      setEditingCommentId(null);
+      setEditingComment('');
+    } catch {
+      showDialog({ title: 'Не удалось изменить комментарий', message: 'Проверьте подключение и попробуйте ещё раз.', tone: 'danger' });
+    } finally {
+      setCommentMutationId(null);
     }
+  };
+
+  const removeComment = (item: WishComment) => {
+    if (commentMutationId) return;
+    setCommentMenuId(null);
     showDialog({
-      title: 'Выйти без сохранения?',
-      message: isCreating
-        ? 'Если выйти сейчас, новое желание не сохранится.'
-        : 'Если выйти сейчас, изменения в желании не сохранятся.',
+      title: 'Удалить комментарий?',
+      message: 'Его больше не увидит никто из вас.',
       tone: 'warning',
-      dismissible: false,
       actions: [
-        { label: 'Продолжить редактирование', variant: 'secondary' },
-        { label: 'Выйти без сохранения', variant: 'danger', onPress: leaveWish },
+        { label: 'Удалить', variant: 'danger', onPress: async () => {
+          setCommentMutationId(item.id);
+          try {
+            await deleteWishComment(item.id, item.wishId);
+            setComments((current) => current.filter((commentItem) => commentItem.id !== item.id)
+              .map((commentItem) => commentItem.replyToId === item.id ? { ...commentItem, replyToId: null } : commentItem));
+            setReplyingToId((current) => current === item.id ? null : current);
+          } catch {
+            showDialog({ title: 'Не удалось удалить', message: 'Попробуйте ещё раз чуть позже.', tone: 'danger' });
+          } finally {
+            setCommentMutationId(null);
+          }
+        } },
+        { label: 'Отмена', variant: 'ghost' },
       ],
     });
-  }, [busy, hasUnsavedChanges, isCreating, leaveWish, showDialog]);
+  };
 
-  useFocusEffect(useCallback(() => {
-    const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
-      handleBack();
-      return true;
-    });
-    return () => subscription.remove();
-  }, [handleBack]));
+  const startReply = (item: WishComment) => {
+    if (commentMutationId) return;
+    setCommentMenuId(null);
+    setEditingCommentId(null);
+    setEditingComment('');
+    setReplyingToId(item.id);
+  };
 
-  const saveWish = async () => {
-    if (!couple || busy || !title.trim() || (!isCreating && !wish)) {
-      return;
-    }
+  const toggleFulfilled = async () => {
+    if (!couple || !wish || busy || !canManageWishlist(user, couple, wish.list)) return;
     setBusy(true);
     try {
-      if (isCreating) {
-        await createWish(couple.id, { title, description, photos, fulfilled, icon, list });
-      } else if (wish) {
-        await updateWish(couple.id, wish.id, { title, description, photos, fulfilled, icon });
-      }
-      router.dismissTo(`/wishlists?list=${list}` as Href);
+      const updated = await updateWish(couple.id, wish.id, { fulfilled: !wish.fulfilled });
+      setWish(updated);
     } catch {
       showDialog({
-        title: 'Не получилось сохранить',
+        title: 'Не удалось изменить статус',
         message: 'Проверьте подключение и попробуйте ещё раз.',
         tone: 'danger',
       });
@@ -214,520 +196,338 @@ export default function WishScreen() {
     }
   };
 
-  const addPhoto = async () => {
-    if (!couple || !user || busy || photos.length >= maxPhotos) {
-      return;
-    }
-    setBusy(true);
-    try {
-      const path = await pickAndUploadWishPhoto(couple.id, user.id);
-      setPhotos((current) => [...current, path]);
-    } catch (uploadError) {
-      if (uploadError instanceof Error && uploadError.message === 'CANCELLED') {
-        return;
-      }
-      showDialog({
-        title: 'Не удалось добавить фото',
-        message: uploadError instanceof Error && uploadError.message === 'Нужен доступ к фотографиям'
-          ? 'Разрешите доступ к галерее в настройках телефона.'
-          : 'Проверьте подключение и попробуйте ещё раз.',
-        tone: 'danger',
-      });
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const removePhoto = async (path: string) => {
-    if (busy) {
-      return;
-    }
-    const wasSaved = wish?.photos.includes(path);
-    setPhotos((current) => current.filter((item) => item !== path));
-    setPhotoUrls((current) => {
-      const next = { ...current };
-      delete next[path];
-      return next;
-    });
-    if (!wasSaved) {
-      try {
-        await removeDraftWishPhoto(path);
-      } catch {
-        // Draft cleanup is best-effort; save will keep the wish consistent.
-      }
-    }
-  };
-
-  const submitComment = async () => {
-    if (!couple || !wish || busy || !comment.trim()) {
-      return;
-    }
-    setBusy(true);
-    try {
-      const next = await addWishComment(couple.id, wish.id, comment);
-      setComments((current) => [...current, next]);
-      setComment('');
-    } catch {
-      showDialog({
-        title: 'Не удалось отправить',
-        message: 'Комментарий не сохранился. Попробуйте ещё раз.',
-        tone: 'danger',
-      });
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const removeComment = (item: WishComment) => {
-    showDialog({
-      title: 'Удалить комментарий?',
-      message: 'Его больше не увидит никто из вас.',
-      tone: 'warning',
-      actions: [
-        {
-          label: 'Удалить',
-          variant: 'danger',
-          onPress: async () => {
-            try {
-              await deleteWishComment(item.id);
-              setComments((current) => current.filter((commentItem) => commentItem.id !== item.id));
-            } catch {
-              showDialog({
-                title: 'Не удалось удалить',
-                message: 'Попробуйте ещё раз чуть позже.',
-                tone: 'danger',
-              });
-            }
-          },
-        },
-        { label: 'Отмена', variant: 'ghost' },
-      ],
-    });
-  };
-
-  const confirmDelete = () => {
-    if (!couple || !wish) {
-      return;
-    }
-    showDialog({
-      title: 'Удалить желание?',
-      message: 'Оно исчезнет из списка у вас обоих.',
-      tone: 'warning',
-      actions: [
-        {
-          label: 'Удалить',
-          variant: 'danger',
-          onPress: async () => {
-            setBusy(true);
-            try {
-              await deleteWish(couple.id, wish.id);
-              router.back();
-            } catch {
-              showDialog({
-                title: 'Не удалось удалить',
-                message: 'Проверьте подключение и попробуйте ещё раз.',
-                tone: 'danger',
-              });
-            } finally {
-              setBusy(false);
-            }
-          },
-        },
-        { label: 'Отмена', variant: 'ghost' },
-      ],
-    });
-  };
-
   if (loading) {
-    return (
-      <AppScreen>
-        <View style={styles.header}>
-          <Pressable accessibilityRole="button" accessibilityLabel="Назад" onPress={handleBack} style={styles.icon}>
-            <AppIcon name="chevron-back" size={24} color={colors.primary} />
-          </Pressable>
-          <Text style={styles.heading}>Желание</Text>
-        </View>
-        <Text style={styles.muted}>Загружаем…</Text>
-      </AppScreen>
-    );
+    return <AppScreen><View style={styles.header}>
+      <BackButton onPress={() => router.back()} />
+      <Text style={styles.heading}>Желание</Text>
+    </View><Text style={styles.muted}>Загружаем…</Text></AppScreen>;
   }
 
-  if (error || (!isCreating && !wish)) {
-    return (
-      <AppScreen>
-        <View style={styles.header}>
-          <Pressable accessibilityRole="button" accessibilityLabel="Назад" onPress={handleBack} style={styles.icon}>
-            <AppIcon name="chevron-back" size={24} color={colors.primary} />
-          </Pressable>
-          <Text style={styles.heading}>{isCreating ? 'Новое желание' : 'Желание'}</Text>
-        </View>
-        <View style={styles.card}>
-          <Text style={styles.body}>Не удалось открыть желание.</Text>
-          <AppButton label="Повторить" onPress={() => setRevision((current) => current + 1)} />
-        </View>
-      </AppScreen>
-    );
+  if (error || !wish) {
+    return <AppScreen><View style={styles.header}>
+      <BackButton onPress={() => router.back()} />
+      <Text style={styles.heading}>Желание</Text>
+    </View><View style={styles.card}>
+      <Text style={styles.body}>Не удалось открыть желание.</Text>
+      <AppButton label="Повторить" onPress={() => setRevision((current) => current + 1)} />
+    </View></AppScreen>;
   }
+
+  const listLabel = getWishlists(user, couple).find((item) => item.value === wish.list)?.label ?? 'Список';
+  const canEdit = canManageWishlist(user, couple, wish.list);
+  const photoUrl = wish.photos[0] ? photoUrls[wish.photos[0]] : undefined;
+  const replyingTo = comments.find((item) => item.id === replyingToId);
 
   return (
     <AppScreen>
       <View style={styles.header}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Назад"
-          accessibilityState={{ disabled: busy }}
-          disabled={busy}
-          onPress={handleBack}
-          style={styles.icon}
-        >
-          <AppIcon name="chevron-back" size={24} color={colors.primary} />
-        </Pressable>
+        <BackButton onPress={() => router.back()} />
         <View style={styles.headerCopy}>
-          <Text style={styles.heading} numberOfLines={1}>{isCreating ? 'Новое желание' : 'Желание'}</Text>
-          <Text style={styles.listLabel} numberOfLines={1}>{listLabel}</Text>
+          <Text style={styles.heading}>Желание</Text>
+          <Text style={styles.listLabel}>{listLabel}</Text>
         </View>
-      </View>
-
-      <View style={styles.card}>
-        <AppInput label="Название" value={title} onChangeText={setTitle} maxLength={200} />
-        <EventIconPicker value={icon} onChange={setIcon} disabled={busy} />
-        <AppInput
-          label="Описание"
-          value={description}
-          onChangeText={setDescription}
-          maxLength={2000}
-          multiline
-          style={styles.description}
-          placeholder="Всё, что поможет исполнить желание, например ссылки"
-        />
-      </View>
-
-      <View style={styles.card}>
-        <Text style={styles.sectionTitle}>Фотографии</Text>
-        <View style={styles.photos}>
-          {photos.map((path) => (
-            <View key={path} style={[styles.photoFrame, { width: mediaThumbnailSize, height: mediaThumbnailSize }]}>
-              {isFocused && photoUrls[path] ? (
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel="Открыть фото"
-                  onPress={() => setPreviewUrl(photoUrls[path])}
-                  style={styles.photo}
-                >
-                  <Image source={{ uri: photoUrls[path] }} style={styles.photo} resizeMethod="resize" />
-                </Pressable>
-              ) : (
-                <View style={[styles.photo, styles.photoPlaceholder]}>
-                  <AppIcon name="image-outline" size={22} color={colors.muted} />
-                </View>
-              )}
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Удалить фото"
-                onPress={() => void removePhoto(path)}
-                style={styles.photoRemove}
-              >
-                <AppIcon name="close" size={16} color={colors.white} />
-              </Pressable>
-            </View>
-          ))}
-          {photos.length < maxPhotos ? (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Добавить фото"
-              disabled={busy}
-              onPress={() => void addPhoto()}
-              style={[styles.addPhoto, { width: mediaThumbnailSize, height: mediaThumbnailSize }]}
-            >
-              <AppIcon name="camera-outline" size={24} color={colors.primary} />
-              <Text style={styles.addPhotoLabel}>Добавить</Text>
-            </Pressable>
-          ) : null}
-        </View>
-      </View>
-
-      {!isCreating ? (
-        <Pressable
-          accessibilityRole="switch"
-          accessibilityLabel={`Статус желания: ${fulfilled ? 'исполнено' : 'не исполнено'}`}
-          accessibilityHint="Изменить статус желания"
-          accessibilityState={{ checked: fulfilled, disabled: busy }}
-          disabled={busy}
-          onPress={() => setFulfilled((current) => !current)}
-          style={({ pressed }) => [
-            styles.statusCard,
-            fulfilled && styles.statusCardFulfilled,
-            pressed && styles.statusCardPressed,
-            busy && styles.statusCardDisabled,
-          ]}
+        {canEdit ? <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Редактировать желание"
+          onPress={() => router.push(`/wish-edit?id=${wish.id}` as Href)}
+          style={styles.iconButton}
         >
-          <AppIcon
-            name={fulfilled ? 'checkmark-circle' : 'ellipse-outline'}
-            size={28}
-            color={fulfilled ? colors.primary : colors.secondary}
-          />
-          <View style={styles.statusCopy}>
-            <Text style={styles.statusLabel}>Статус желания</Text>
-            <Text style={[styles.statusValue, fulfilled && styles.statusValueFulfilled]}>
-              {fulfilled ? 'Исполнено' : 'Не исполнено'}
-            </Text>
-          </View>
-          <Switch
-            value={fulfilled}
-            pointerEvents="none"
-            accessible={false}
-            trackColor={{ false: colors.border, true: colors.primary }}
-            thumbColor={colors.white}
-          />
-        </Pressable>
-      ) : null}
+          <AppIcon name="create-outline" size={28} color={colors.primary} />
+        </Pressable> : null}
+      </View>
 
-      <Modal
-        transparent
-        animationType="fade"
-        visible={isFocused && Boolean(previewUrl)}
-        statusBarTranslucent
-        onRequestClose={() => setPreviewUrl(null)}
+      <View style={styles.card}>
+        <View style={styles.titleRow}>
+          <View style={styles.wishIcon}>
+            <AppIcon name={entityIcons[wish.icon] ?? entityIcons.sparkles} size={26} color={colors.primary} />
+          </View>
+          <Text style={styles.title}>{wish.title}</Text>
+        </View>
+        {wish.description.trim() ? <Text style={styles.body}>{wish.description}</Text> : null}
+      </View>
+
+      {wish.photos.length ? <View style={styles.card}>
+        <Text style={styles.sectionTitle}>Фотография</Text>
+        {photoUrl ? <Pressable accessibilityRole="button" accessibilityLabel="Открыть фото" onPress={() => setPreviewUrl(photoUrl)}>
+          <Image source={{ uri: photoUrl }} style={styles.photo} resizeMode="cover" resizeMethod="resize" />
+        </Pressable> : <View style={[styles.photo, styles.photoPlaceholder]}>
+          <AppIcon name="image-outline" size={28} color={colors.muted} />
+        </View>}
+      </View> : null}
+
+      <Pressable
+        accessibilityRole={canEdit ? 'switch' : undefined}
+        accessibilityLabel={`Статус желания: ${wish.fulfilled ? 'исполнено' : 'не исполнено'}`}
+        accessibilityHint={canEdit ? 'Изменить статус желания' : undefined}
+        accessibilityState={{ checked: wish.fulfilled, disabled: !canEdit || busy }}
+        disabled={!canEdit || busy}
+        onPress={() => void toggleFulfilled()}
+        style={({ pressed }) => [
+          styles.statusCard,
+          wish.fulfilled && styles.statusCardFulfilled,
+          !canEdit && !wish.fulfilled && styles.statusCardReadOnly,
+          pressed && canEdit && styles.statusCardPressed,
+          busy && styles.statusCardDisabled,
+        ]}
       >
+        <AppIcon name={wish.fulfilled ? 'checkmark-circle' : 'ellipse-outline'} size={28}
+          color={wish.fulfilled ? colors.primary : canEdit ? colors.secondary : colors.muted} />
+        <View style={styles.statusCopy}>
+          <Text style={styles.statusLabel}>Статус желания</Text>
+          <Text style={[styles.statusValue, wish.fulfilled && styles.statusValueFulfilled,
+            !canEdit && !wish.fulfilled && styles.statusValueReadOnly]}>
+            {wish.fulfilled ? 'Исполнено' : 'Не исполнено'}
+          </Text>
+        </View>
+        {canEdit ? <Switch value={wish.fulfilled} pointerEvents="none" accessible={false}
+          trackColor={{ false: colors.border, true: colors.primary }} thumbColor={colors.white} /> : null}
+      </Pressable>
+
+      <View style={[styles.card, styles.commentsCard]}>
+        <View style={styles.commentsHeader}>
+          <Text style={styles.sectionTitle}>Комментарии</Text>
+          {!commentsLoading && !commentsError ? <Text style={styles.commentCount}>{comments.length}</Text> : null}
+        </View>
+
+        {commentsLoading ? <View style={styles.commentsState}>
+          <ActivityIndicator color={colors.primary} />
+          <Text style={styles.muted}>Загружаем комментарии…</Text>
+        </View> : commentsError ? <View style={styles.commentsState}>
+          <Text style={styles.muted}>Не удалось загрузить комментарии.</Text>
+          <Pressable accessibilityRole="button" onPress={() => setRevision((current) => current + 1)}>
+            <Text style={styles.retryLink}>Попробовать снова</Text>
+          </Pressable>
+        </View> : !comments.length ? <Text style={styles.muted}>Пока нет комментариев.</Text>
+          : <View style={styles.commentsList}>
+          {comments.map((item, index) => <WishCommentItem
+            key={item.id}
+            item={item}
+            own={item.authorId === user?.id}
+            replyTo={comments.find((candidate) => candidate.id === item.replyToId)}
+            last={index === comments.length - 1}
+            editing={editingCommentId === item.id}
+            menuOpen={commentMenuId === item.id}
+            draft={editingComment}
+            busy={commentMutationId === item.id}
+            onDraftChange={setEditingComment}
+            onReply={() => startReply(item)}
+            onToggleMenu={() => setCommentMenuId((current) => current === item.id ? null : item.id)}
+            onEdit={() => startEditingComment(item)}
+            onCancel={cancelEditingComment}
+            onSave={() => void saveComment(item)}
+            onDelete={() => removeComment(item)}
+          />)}
+        </View>}
+
+        {replyingTo ? <View style={styles.replyComposerContext}>
+          <View style={styles.replyComposerCopy}>
+            <Text style={styles.replyComposerAuthor}>Ответ для {replyingTo.authorId === user?.id ? 'себя' : replyingTo.authorName}</Text>
+            <Text style={styles.replyComposerText} numberOfLines={1}>{replyingTo.body}</Text>
+          </View>
+          <CommentIconButton label="Отменить ответ" icon="close" onPress={() => setReplyingToId(null)} />
+        </View> : null}
+        <AppInput label="" value={comment} onChangeText={setComment} maxLength={1000}
+          editable={!commentsLoading && !commentsError && !editingCommentId && !commentMutationId}
+          multiline style={styles.commentInput} placeholder={editingCommentId ? 'Сначала завершите редактирование' : 'Ваш комментарий'}
+          rightElement={<CommentIconButton label="Отправить комментарий" icon="send" tone="primary"
+            loading={commentMutationId === 'new'}
+            disabled={!comment.trim() || commentsLoading || commentsError || Boolean(editingCommentId) || Boolean(commentMutationId)}
+            onPress={() => void submitComment()} />} />
+      </View>
+
+      <Modal transparent animationType="fade" visible={isFocused && Boolean(previewUrl)} statusBarTranslucent
+        onRequestClose={() => setPreviewUrl(null)}>
         <SafeAreaView style={styles.previewBackdrop}>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Закрыть фото"
-            style={StyleSheet.absoluteFill}
-            onPress={() => setPreviewUrl(null)}
-          />
+          <Pressable accessibilityRole="button" accessibilityLabel="Закрыть фото" style={StyleSheet.absoluteFill}
+            onPress={() => setPreviewUrl(null)} />
           <View style={[styles.previewCard, { maxWidth: largeModalMaxWidth }]} pointerEvents="box-none">
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Закрыть"
-              onPress={() => setPreviewUrl(null)}
-              style={styles.previewClose}
-            >
+            <Pressable accessibilityRole="button" accessibilityLabel="Закрыть" onPress={() => setPreviewUrl(null)} style={styles.previewClose}>
               <AppIcon name="close" size={22} color={colors.white} />
             </Pressable>
-            {isFocused && previewUrl ? (
-              <Image source={{ uri: previewUrl }} style={styles.previewImage} resizeMode="contain" resizeMethod="resize" />
-            ) : null}
+            {isFocused && previewUrl ? <Image source={{ uri: previewUrl }} style={styles.previewImage} resizeMode="contain" resizeMethod="resize" /> : null}
           </View>
         </SafeAreaView>
       </Modal>
-
-      <AppButton label="Сохранить" loading={busy} disabled={!title.trim()} onPress={() => void saveWish()} />
-
-      {!isCreating ? <View style={[styles.card, styles.commentsCard]}>
-        <Text style={styles.sectionTitle}>Комментарии</Text>
-        {commentsLoading ? (
-          <Text style={styles.muted}>Загружаем комментарии…</Text>
-        ) : commentsError ? (
-          <Text style={styles.muted}>Не удалось загрузить комментарии. Откройте желание ещё раз, чтобы повторить.</Text>
-        ) : !comments.length ? (
-          <Text style={styles.muted}>Оставьте первую заметку для партнёра.</Text>
-        ) : (
-          comments.map((item) => (
-            <View key={item.id} style={styles.comment}>
-              <View style={styles.commentHeader}>
-                <Text style={styles.commentAuthor}>{item.authorName}</Text>
-                {item.authorId === user?.id ? (
-                  <Pressable accessibilityRole="button" accessibilityLabel="Удалить комментарий" onPress={() => removeComment(item)}>
-                    <Text style={styles.deleteLink}>Удалить</Text>
-                  </Pressable>
-                ) : null}
-              </View>
-              <Text style={styles.body}>{item.body}</Text>
-            </View>
-          ))
-        )}
-        <AppInput
-          label="Новый комментарий"
-          value={comment}
-          onChangeText={setComment}
-          maxLength={1000}
-          multiline
-          style={styles.commentInput}
-          placeholder="Идея, вопрос или уточнение"
-        />
-        <AppButton
-          label="Отправить"
-          variant="secondary"
-          disabled={!comment.trim() || commentsLoading}
-          loading={busy}
-          onPress={() => void submitComment()}
-        />
-      </View> : null}
-
-      {!isCreating ? (
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Удалить желание"
-          accessibilityState={{ disabled: busy }}
-          disabled={busy}
-          onPress={confirmDelete}
-          style={({ pressed }) => [
-            styles.deleteAction,
-            pressed && styles.deleteActionPressed,
-            busy && styles.deleteActionDisabled,
-          ]}
-        >
-          <AppIcon name="trash-outline" size={18} color={colors.danger} />
-          <Text style={styles.deleteActionText}>Удалить желание</Text>
-        </Pressable>
-      ) : null}
     </AppScreen>
   );
 }
 
+function formatCommentTime(value: string): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  const now = new Date();
+  const time = date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+  const dateDay = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const daysAgo = Math.round((today - dateDay) / 86_400_000);
+  if (daysAgo === 0) return `Сегодня, ${time}`;
+  if (daysAgo === 1) return `Вчера, ${time}`;
+  return `${date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })}, ${time}`;
+}
+
+function WishCommentItem({ item, replyTo, own, last, editing, menuOpen, draft, busy, onDraftChange,
+  onReply, onToggleMenu, onEdit, onCancel, onSave, onDelete }: {
+  item: WishComment;
+  replyTo?: WishComment;
+  own: boolean;
+  last: boolean;
+  editing: boolean;
+  menuOpen: boolean;
+  draft: string;
+  busy: boolean;
+  onDraftChange: (value: string) => void;
+  onReply: () => void;
+  onToggleMenu: () => void;
+  onEdit: () => void;
+  onCancel: () => void;
+  onSave: () => void;
+  onDelete: () => void;
+}) {
+  return <View style={[styles.commentItem, !last && styles.commentItemDivider, menuOpen && styles.commentItemMenuOpen]}>
+    <Text style={styles.commentAuthor}>{own ? 'Вы' : item.authorName}</Text>
+    {replyTo ? <View style={styles.replyReference}>
+      <Text style={styles.replyReferenceAuthor}>{replyTo.authorId === item.authorId ? 'Свой комментарий' : replyTo.authorName}</Text>
+      <Text style={styles.replyReferenceText} numberOfLines={1}>{replyTo.body}</Text>
+    </View> : null}
+    {editing ? <>
+      <AppInput label="" value={draft} onChangeText={onDraftChange} maxLength={1000} autoFocus
+        editable={!busy} multiline style={styles.editCommentInput} />
+      <View style={styles.editCommentFooter}>
+        <Text style={styles.commentCounter}>{draft.length}/1000</Text>
+        <View style={styles.commentActions}>
+          <CommentIconButton label="Отменить редактирование" icon="close" disabled={busy} onPress={onCancel} />
+          <CommentIconButton label="Сохранить комментарий" icon="checkmark" tone="confirm"
+            loading={busy} disabled={!draft.trim() || busy} onPress={onSave} />
+        </View>
+      </View>
+    </> : <Text style={styles.commentBody}>{item.body}</Text>}
+    <View style={styles.commentFooter}>
+      <Text style={styles.commentTime}>{formatCommentTime(item.createdAt)}</Text>
+      {!editing ? <Pressable accessibilityRole="button" accessibilityLabel={`Ответить ${own ? 'на свой комментарий' : item.authorName}`}
+        disabled={busy} onPress={onReply} style={({ pressed }) => [styles.commentFooterButton, pressed && styles.commentFooterButtonPressed]}>
+        <AppIcon name="arrow-undo-outline" size={17} color={colors.muted} />
+      </Pressable> : null}
+      <View style={styles.commentFooterSpacer} />
+      {own && !editing ? <View style={styles.commentMenuAnchor}>
+        <Pressable accessibilityRole="button" accessibilityLabel="Действия с комментарием" accessibilityState={{ expanded: menuOpen }}
+          disabled={busy} onPress={onToggleMenu} style={({ pressed }) => [styles.commentFooterButton, pressed && styles.commentFooterButtonPressed]}>
+          {busy ? <ActivityIndicator size="small" color={colors.muted} />
+            : <AppIcon name="ellipsis-horizontal" size={19} color={colors.muted} />}
+        </Pressable>
+        {menuOpen ? <View style={styles.commentMenu}>
+          <Pressable accessibilityRole="button" onPress={onEdit} style={({ pressed }) => [styles.commentMenuAction, pressed && styles.commentMenuActionPressed]}>
+            <AppIcon name="pencil-outline" size={17} color={colors.secondary} />
+            <Text style={styles.commentMenuText}>Редактировать</Text>
+          </Pressable>
+          <Pressable accessibilityRole="button" onPress={onDelete} style={({ pressed }) => [styles.commentMenuAction, pressed && styles.commentMenuActionPressed]}>
+            <AppIcon name="trash-outline" size={17} color={colors.danger} />
+            <Text style={styles.commentMenuDanger}>Удалить</Text>
+          </Pressable>
+        </View> : null}
+      </View> : null}
+    </View>
+  </View>;
+}
+
+function CommentIconButton({ label, icon, tone = 'neutral', loading = false, disabled = false, onPress }: {
+  label: string;
+  icon: AppIconName;
+  tone?: 'neutral' | 'primary' | 'danger' | 'confirm';
+  loading?: boolean;
+  disabled?: boolean;
+  onPress: () => void;
+}) {
+  const color = tone === 'primary' ? colors.white
+    : tone === 'danger' ? colors.danger
+      : tone === 'confirm' ? colors.success : colors.secondary;
+  return <Pressable accessibilityRole="button" accessibilityLabel={label}
+    accessibilityState={{ disabled: disabled || loading, busy: loading }}
+    disabled={disabled || loading} onPress={onPress}
+    style={({ pressed }) => [styles.commentIconButton, tone === 'primary' && styles.commentIconButtonPrimary,
+      tone === 'danger' && styles.commentIconButtonDanger, tone === 'confirm' && styles.commentIconButtonConfirm,
+      pressed && styles.commentIconButtonPressed, (disabled || loading) && styles.commentIconButtonDisabled]}>
+    {loading ? <ActivityIndicator size="small" color={color} /> : <AppIcon name={icon} size={tone === 'primary' ? 20 : 18} color={color} />}
+  </Pressable>;
+}
+
 const styles = StyleSheet.create({
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    marginBottom: spacing.xl,
-  },
+  header: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, marginBottom: spacing.xl },
   headerCopy: { flex: 1, minWidth: 0 },
-  icon: {
-    width: 44,
-    height: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: radii.md,
-    backgroundColor: colors.softRose,
-  },
+  iconButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center',
+    borderRadius: radii.md, backgroundColor: colors.softRose },
   heading: { ...typography.sectionTitle, color: colors.text },
   listLabel: { ...typography.caption, color: colors.muted, marginTop: 2 },
-  card: {
-    backgroundColor: colors.surface,
-    borderRadius: radii.lg,
-    padding: spacing.lg,
-    gap: spacing.md,
-    marginBottom: spacing.md,
-  },
+  card: { backgroundColor: colors.surface, borderRadius: radii.lg, padding: spacing.lg,
+    gap: spacing.md, marginBottom: spacing.md },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  wishIcon: { width: 48, height: 48, borderRadius: radii.md, alignItems: 'center',
+    justifyContent: 'center', backgroundColor: colors.softRose },
+  title: { ...typography.sectionTitle, color: colors.text, flex: 1 },
   sectionTitle: { ...typography.cardTitle, color: colors.text },
   body: { ...typography.body, color: colors.text },
   muted: { ...typography.body, color: colors.muted },
-  description: {
-    minHeight: 110,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.md,
-    textAlignVertical: 'top',
-  },
-  statusCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    padding: spacing.lg,
-    marginBottom: spacing.md,
-    borderRadius: radii.lg,
-    backgroundColor: colors.softRose,
-  },
+  photo: { width: '100%', aspectRatio: 4 / 3, borderRadius: radii.md, backgroundColor: colors.softRose },
+  photoPlaceholder: { alignItems: 'center', justifyContent: 'center' },
+  statusCard: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.lg,
+    marginBottom: spacing.md, borderRadius: radii.lg, backgroundColor: colors.softRose },
   statusCardFulfilled: { backgroundColor: colors.soft },
+  statusCardReadOnly: { backgroundColor: colors.border },
   statusCardPressed: { opacity: 0.78 },
   statusCardDisabled: { opacity: 0.5 },
   statusCopy: { flex: 1, gap: spacing.xs },
   statusLabel: { ...typography.caption, color: colors.muted },
   statusValue: { ...typography.cardTitle, color: colors.secondary },
   statusValueFulfilled: { color: colors.primary },
-  photos: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.md,
-  },
-  photoFrame: {
-    borderRadius: radii.md,
-    overflow: 'hidden',
-    backgroundColor: colors.softRose,
-  },
-  photo: {
-    width: '100%',
-    height: '100%',
-  },
-  photoPlaceholder: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  photoRemove: {
-    position: 'absolute',
-    top: 6,
-    right: 6,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.overlay,
-  },
-  addPhoto: {
-    borderRadius: radii.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderStyle: 'dashed',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.xs,
-    backgroundColor: colors.softRose,
-  },
-  addPhotoLabel: { ...typography.caption, color: colors.primary, fontWeight: '500' },
-  previewBackdrop: {
-    flex: 1,
-    backgroundColor: colors.overlay,
-    justifyContent: 'center',
-    padding: spacing.lg,
-  },
-  previewCard: {
-    width: '100%',
-    alignSelf: 'center',
-    aspectRatio: 1,
-    borderRadius: radii.xl,
-    overflow: 'hidden',
-    backgroundColor: colors.text,
-  },
-  previewImage: {
-    width: '100%',
-    height: '100%',
-  },
-  previewClose: {
-    position: 'absolute',
-    top: spacing.md,
-    right: spacing.md,
-    zIndex: 2,
-    width: 40,
-    height: 40,
-    borderRadius: radii.round,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.overlay,
-  },
-  comment: {
-    gap: spacing.xs,
-    paddingBottom: spacing.md,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
-  },
-  commentsCard: { marginTop: spacing.xxxl },
-  commentHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: spacing.md,
-  },
-  commentAuthor: { ...typography.label, color: colors.secondary },
-  deleteLink: { ...typography.caption, color: colors.danger },
-  commentInput: {
-    minHeight: 84,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.md,
-    textAlignVertical: 'top',
-  },
-  deleteAction: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'center',
-    gap: spacing.sm,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    marginTop: spacing.md,
-    marginBottom: spacing.md,
-  },
-  deleteActionPressed: { opacity: 0.6 },
-  deleteActionDisabled: { opacity: 0.45 },
-  deleteActionText: { ...typography.caption, color: colors.danger },
+  statusValueReadOnly: { color: colors.muted },
+  commentsCard: { marginTop: spacing.xl, gap: spacing.lg },
+  commentsHeader: { flexDirection: 'row', alignItems: 'baseline', gap: spacing.sm },
+  commentCount: { ...typography.caption, color: colors.muted },
+  commentsList: { zIndex: 1 },
+  commentsState: { minHeight: 90, alignItems: 'center', justifyContent: 'center', gap: spacing.sm },
+  retryLink: { ...typography.label, color: colors.primary, fontWeight: '600' },
+  commentItem: { position: 'relative', paddingVertical: spacing.lg, gap: spacing.sm },
+  commentItemDivider: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
+  commentItemMenuOpen: { zIndex: 10 },
+  commentAuthor: { ...typography.label, color: colors.primary, fontWeight: '600' },
+  commentBody: { ...typography.body, color: colors.text },
+  replyReference: { gap: 2, paddingLeft: spacing.md, borderLeftWidth: 2, borderLeftColor: colors.soft },
+  replyReferenceAuthor: { ...typography.caption, color: colors.secondary, fontWeight: '600' },
+  replyReferenceText: { ...typography.caption, color: colors.muted },
+  commentFooter: { minHeight: 36, flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  commentTime: { ...typography.caption, color: colors.muted },
+  commentFooterSpacer: { flex: 1 },
+  commentFooterButton: { width: 36, height: 36, borderRadius: radii.round, alignItems: 'center', justifyContent: 'center' },
+  commentFooterButtonPressed: { backgroundColor: colors.softRose, opacity: 0.72 },
+  commentMenuAnchor: { position: 'relative' },
+  commentMenu: { position: 'absolute', top: 38, right: 0, width: 178, padding: spacing.xs,
+    borderRadius: radii.md, backgroundColor: colors.surface, zIndex: 20, ...shadow },
+  commentMenuAction: { minHeight: 42, flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
+    paddingHorizontal: spacing.md, borderRadius: radii.sm },
+  commentMenuActionPressed: { backgroundColor: colors.softRose },
+  commentMenuText: { ...typography.label, color: colors.text },
+  commentMenuDanger: { ...typography.label, color: colors.danger },
+  commentActions: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
+  replyComposerContext: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
+    padding: spacing.md, borderRadius: radii.md, backgroundColor: colors.softRose },
+  replyComposerCopy: { flex: 1, minWidth: 0, gap: 2 },
+  replyComposerAuthor: { ...typography.caption, color: colors.secondary, fontWeight: '600' },
+  replyComposerText: { ...typography.caption, color: colors.muted },
+  commentInput: { minHeight: 60, paddingTop: spacing.md, paddingBottom: spacing.md, textAlignVertical: 'center' },
+  editCommentInput: { minHeight: 82, paddingTop: spacing.md, paddingBottom: spacing.md, textAlignVertical: 'top' },
+  editCommentFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm },
+  commentCounter: { ...typography.caption, color: colors.muted },
+  commentIconButton: { width: 34, height: 34, borderRadius: radii.round, alignItems: 'center',
+    justifyContent: 'center', backgroundColor: colors.background },
+  commentIconButtonPrimary: { width: 44, height: 44, backgroundColor: colors.primary },
+  commentIconButtonDanger: { backgroundColor: colors.softRose },
+  commentIconButtonConfirm: { backgroundColor: colors.soft },
+  commentIconButtonPressed: { opacity: 0.68, transform: [{ scale: 0.94 }] },
+  commentIconButtonDisabled: { opacity: 0.42 },
+  previewBackdrop: { flex: 1, backgroundColor: colors.overlay, justifyContent: 'center', padding: spacing.lg },
+  previewCard: { width: '100%', alignSelf: 'center', aspectRatio: 1, borderRadius: radii.xl,
+    overflow: 'hidden', backgroundColor: colors.text },
+  previewImage: { width: '100%', height: '100%' },
+  previewClose: { position: 'absolute', top: spacing.md, right: spacing.md, zIndex: 2,
+    width: 40, height: 40, borderRadius: radii.round, alignItems: 'center',
+    justifyContent: 'center', backgroundColor: colors.overlay },
 });

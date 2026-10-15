@@ -1,4 +1,5 @@
 import { PropsWithChildren, useCallback, useEffect, useRef } from 'react';
+import { useIsFocused } from 'expo-router';
 import {
   Animated,
   Easing,
@@ -24,29 +25,45 @@ type AppScreenProps = PropsWithChildren<{
 }>;
 
 export function AppScreen({ children, scroll = true, wide = false, contentContainerStyle }: AppScreenProps) {
+  const isFocused = useIsFocused();
   const scrollView = useRef<ScrollView>(null);
   const keyboardSpacerHeight = useRef(new Animated.Value(0)).current;
+  const scrollOffsetY = useRef(0);
   const { contentMaxWidth, horizontalPadding, wideContentMaxWidth } = useResponsiveLayout();
   const responsiveContentStyle = {
     maxWidth: wide ? wideContentMaxWidth : contentMaxWidth,
     paddingHorizontal: horizontalPadding,
   };
 
-  const scrollFocusedInputIntoView = useCallback(() => {
+  const scrollFocusedInputIntoView = useCallback((keyboardTop: number) => {
     const input = TextInput.State.currentlyFocusedInput();
-    if (input === null) return;
+    const currentScrollView = scrollView.current;
+    const nativeScrollView = currentScrollView?.getNativeScrollRef();
+    if (input === null || currentScrollView === null || nativeScrollView == null) return;
 
     requestAnimationFrame(() => {
-      scrollView.current?.scrollResponderScrollNativeHandleToKeyboard(input, spacing.huge, true);
+      input.measureLayout(
+        currentScrollView.getInnerViewNode(),
+        (_left, top, _width, height) => {
+          nativeScrollView.measureInWindow((_x, scrollTop) => {
+            const visibleHeight = Math.max(0, keyboardTop - scrollTop);
+            const nextOffset = top + height + spacing.huge - visibleHeight;
+            if (nextOffset > scrollOffsetY.current) {
+              currentScrollView.scrollTo({ y: nextOffset, animated: true });
+            }
+          });
+        },
+        () => undefined,
+      );
     });
   }, []);
 
   useEffect(() => {
-    if (!scroll || Platform.OS === 'web') return;
+    if (!scroll || !isFocused || Platform.OS === 'web') return;
 
     const keyboardShownSubscription = Keyboard.addListener('keyboardDidShow', (event) => {
       if (Platform.OS === 'android') keyboardSpacerHeight.setValue(event.endCoordinates.height);
-      scrollFocusedInputIntoView();
+      scrollFocusedInputIntoView(event.endCoordinates.screenY);
     });
     const keyboardHiddenSubscription = Keyboard.addListener('keyboardDidHide', (event) => {
       if (Platform.OS !== 'android') return;
@@ -62,7 +79,7 @@ export function AppScreen({ children, scroll = true, wide = false, contentContai
       keyboardHiddenSubscription.remove();
       keyboardSpacerHeight.stopAnimation();
     };
-  }, [keyboardSpacerHeight, scroll, scrollFocusedInputIntoView]);
+  }, [isFocused, keyboardSpacerHeight, scroll, scrollFocusedInputIntoView]);
 
   const content = scroll ? (
     <ScrollView
@@ -71,6 +88,8 @@ export function AppScreen({ children, scroll = true, wide = false, contentContai
       contentContainerStyle={[styles.content, responsiveContentStyle, contentContainerStyle]}
       keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
       keyboardShouldPersistTaps="handled"
+      onScroll={(event) => { scrollOffsetY.current = event.nativeEvent.contentOffset.y; }}
+      scrollEventThrottle={16}
       showsVerticalScrollIndicator={false}
     >
       {children}

@@ -68,7 +68,7 @@ const { PGlite } = require('../.android-bootstrap/merge-test/node_modules/@elect
     await db.query("insert into storage.objects(bucket_id,name) values('wish-photos',$1)",[photo]);
     const wish = await scalar("insert into public.wishes(couple_id,list,title,photos,fulfilled) values($1,'creator','Моё желание',array[$2],true) returning id",[source,photo]);
     const sharedWish = await scalar("insert into public.wishes(couple_id,list,title) values($1,'together','Общее желание') returning id",[source]);
-    await db.query("insert into public.wish_comments(couple_id,wish_id,body) values($1,$2,'Комментарий')",[source,wish]);
+    const ownComment = await scalar("insert into public.wish_comments(couple_id,wish_id,body) values($1,$2,'Комментарий') returning id",[source,wish]);
     const event = await scalar("insert into public.date_events(couple_id,title,event_date,category) values($1,'Моя дата',current_date,'important') returning id",[source]);
     await db.query('select public.set_date_completion($1,current_date,true)',[event]);
     const note = await scalar("select (public.save_shared_note($1,null,0,'text','Запись','Текст','[]',true,false)).id",[source]);
@@ -123,7 +123,21 @@ const { PGlite } = require('../.android-bootstrap/merge-test/node_modules/@elect
     await db.query("update public.wishes set title='Новое имя' where id=$1",[wish]);
     await asUser(ids[1]);
     assert.equal(await scalar('select count(*)::int from storage.objects where name=$1',[photo]),1);
-    await db.query("update public.wishes set description='После объединения' where id=$1",[wish]);
+    const partnerUpdate = await db.query("update public.wishes set description='После объединения' where id=$1 returning id",[wish]);
+    assert.equal(partnerUpdate.rows.length,0,'partner must not update another personal wishlist');
+    await assert.rejects(db.query("insert into public.wishes(couple_id,list,title) values($1,'partner','Чужое желание')",[target]),
+      /row-level security/);
+    const partnerComment = await scalar("insert into public.wish_comments(couple_id,wish_id,body,reply_to) values($1,$2,'Комментарий партнёра',$3) returning id",[target,wish,ownComment]);
+    assert.equal(await scalar('select count(*)::int from public.wish_comments where wish_id=$1',[wish]),2);
+    assert.equal(await scalar('select reply_to=$1 from public.wish_comments where id=$2',[ownComment,partnerComment]),true);
+    await assert.rejects(
+      db.query("insert into public.wish_comments(couple_id,wish_id,body,reply_to) values($1,$2,'Неверный ответ',$3)",[target,targetWish,ownComment]),
+      /row-level security/,
+    );
+    await db.query("update public.wish_comments set body='Комментарий партнёра изменён' where id=$1",[partnerComment]);
+    assert.equal(await scalar('select body from public.wish_comments where id=$1',[partnerComment]),'Комментарий партнёра изменён');
+    const foreignCommentUpdate = await db.query("update public.wish_comments set body='Нельзя' where id=$1 returning id",[ownComment]);
+    assert.equal(foreignCommentUpdate.rows.length,0,'partner must not edit another author comment');
     await assert.rejects(db.query("select public.manage_date_category($1,'add',null,'Седьмая')",[target]),/6 категорий/);
     await asUser(ids[2]);
     assert.equal(await scalar('select count(*)::int from storage.objects where name=$1',[photo]),0);

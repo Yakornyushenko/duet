@@ -23,6 +23,32 @@ export function getDaysTogether(startDate: string, now = new Date()): number {
   return Math.max(1, Math.floor((getUtcDayNumber(today) - getUtcDayNumber(start)) / dayInMilliseconds));
 }
 
+export type RelationshipDuration = {
+  valueLabel: string;
+  unitLabel: string;
+  detailLabel: string | null;
+};
+
+export function getRelationshipDuration(startDate: string, now = new Date()): RelationshipDuration {
+  const days = getDaysTogether(startDate, now);
+  const formattedDays = new Intl.NumberFormat('ru-RU').format(days);
+  if (days < 10_000) {
+    return { valueLabel: formattedDays, unitLabel: pluralizeDays(days), detailLabel: null };
+  }
+
+  const start = parseDateOnly(startDate);
+  const today = parseDateOnly(toDateOnly(now));
+  let years = today.getFullYear() - start.getFullYear();
+  const anniversary = new Date(today.getFullYear(), start.getMonth(), start.getDate(), 12);
+  if (anniversary > today) years -= 1;
+
+  return {
+    valueLabel: String(Math.max(1, years)),
+    unitLabel: pluralizeYears(years),
+    detailLabel: `${formattedDays} ${pluralizeDays(days)}`,
+  };
+}
+
 export function getNextOccurrence(event: DateEvent, now = new Date()): Date {
   const original = parseDateOnly(event.eventDate);
   if (event.recurrence === 'none') {
@@ -85,4 +111,19 @@ export function pluralizeDays(value: number): string {
     return 'дня';
   }
   return 'дней';
+}
+
+export function pluralizeYears(value: number): string {
+  const lastTwoDigits = value % 100;
+  const lastDigit = value % 10;
+  if (lastTwoDigits >= 11 && lastTwoDigits <= 14) {
+    return 'лет';
+  }
+  if (lastDigit === 1) {
+    return 'год';
+  }
+  if (lastDigit >= 2 && lastDigit <= 4) {
+    return 'года';
+  }
+  return 'лет';
 }

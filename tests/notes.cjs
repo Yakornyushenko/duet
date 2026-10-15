@@ -10,19 +10,28 @@ vm.runInNewContext(ts.transpileModule(fs.readFileSync('src/services/notes.ts', '
   compilerOptions: { module: ts.ModuleKind.CommonJS },
 }).outputText, {
   exports: exportsObject,
-  require: () => ({ supabase: { rpc: async (name, input) => {
-    assert.ok(['save_shared_note', 'empty_notes_trash'].includes(name)); args = input;
-    return { data: { ...input, version: 3 }, error: rpcError };
-  } } }),
+  require(name) {
+    if (name === '@/lib/dataCache') return {
+      dataCacheKey: (...parts) => parts.join(':'),
+      loadWithCache: (_key, load) => load(),
+      updateCachedData: async () => undefined,
+    };
+    if (name === '@/lib/supabase') return { supabase: { rpc: async (method, input) => {
+      assert.ok(['save_shared_note', 'empty_notes_trash'].includes(method)); args = input;
+      return { data: { ...input, version: 3 }, error: rpcError };
+    } } };
+    throw new Error('Unexpected import: ' + name);
+  },
 });
 
 (async () => {
   const note = { id: 'note', couple_id: 'pair', kind: 'checklist', title: 'Покупки', body: '',
-    items: [{ id: 'item', text: 'Чай', done: false }], pinned: false, deleted_at: null, version: 2 };
+    items: [{ id: 'item', text: 'Чай', done: false }], icon: 'cart', pinned: false, deleted_at: null, version: 2 };
   await exportsObject.saveNote(note);
   assert.equal(args.p_version, 2, 'Must send expected version');
   assert.equal(args.p_couple_id, 'pair');
   assert.equal(args.p_items[0].done, false);
+  assert.equal(args.p_icon, 'cart');
   assert.equal(args.p_deleted, false);
   await exportsObject.saveNote({ ...note, deleted_at: '2026-09-30' });
   assert.equal(args.p_deleted, true);
@@ -31,7 +40,7 @@ vm.runInNewContext(ts.transpileModule(fs.readFileSync('src/services/notes.ts', '
   rpcError = { code: '40001', message: 'NOTE_CONFLICT' };
   await assert.rejects(exportsObject.saveNote(note), (error) => error.code === '40001');
   assert.equal(exportsObject.noteContent(note), exportsObject.noteContent({ ...note, version: 8 }), 'Version alone is not a user edit');
-  for (const patch of [{ title: 'Другое' }, { body: 'Текст' }, { pinned: true }, { deleted_at: 'now' }, { items: [{ id: 'item', text: 'Чай', done: true }] }]) {
+  for (const patch of [{ title: 'Другое' }, { body: 'Текст' }, { icon: 'checklist' }, { pinned: true }, { deleted_at: 'now' }, { items: [{ id: 'item', text: 'Чай', done: true }] }]) {
     assert.notEqual(exportsObject.noteContent(note), exportsObject.noteContent({ ...note, ...patch }));
   }
   const snapshot = { ...note, deleted_at: '2026-09-30T12:00:00.000Z' };

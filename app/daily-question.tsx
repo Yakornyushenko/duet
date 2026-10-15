@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, ActivityIndicator, Animated, AppState, Easing, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 import { AppScreen } from '@/components/AppScreen';
 import { AppButton } from '@/components/AppButton';
+import { BackButton } from '@/components/BackButton';
 import { InvitePartnerCallout } from '@/components/InvitePartnerCallout';
 import { QuestionCard } from '@/components/QuestionCard';
 import { AppTimePicker } from '@/components/AppTimePicker';
@@ -32,19 +33,24 @@ export default function DailyQuestionScreen() {
   const loadedWorkspace = useRef('');
   const introShown = useRef(false);
   const refresh = useCallback(async () => {
+    if (!couple?.id) throw new Error('Пара не найдена');
     const request = scope.current;
     const requestedCursors = [...cursors.current];
-    const next = await loadDailyQuestions();
-    const pages = await Promise.all(requestedCursors.map(loadQuestionHistory));
+    const next = await loadDailyQuestions(couple.id);
     if (request === scope.current) {
       setState(next); setError('');
-      if (cursors.current.length === requestedCursors.length) {
+      if (!requestedCursors.length) setMore(next.has_more);
+    }
+    if (requestedCursors.length) {
+      const pages = await Promise.all(requestedCursors.map((before) =>
+        loadQuestionHistory(couple.id, before)));
+      if (request === scope.current && cursors.current.length === requestedCursors.length) {
         setOlder(pages.flatMap(page => page.questions));
-        setMore(pages.length ? pages[pages.length - 1].has_more : next.has_more);
+        setMore(pages[pages.length - 1].has_more);
       }
     }
     return next;
-  }, []);
+  }, [couple?.id]);
   const perform = async (action: () => Promise<unknown>) => {
     if (busy) return;
     setBusy(true);
@@ -87,7 +93,8 @@ export default function DailyQuestionScreen() {
     historyLock.current = true; setHistoryBusy(true);
     const request = scope.current;
     try {
-      const page = await loadQuestionHistory(before);
+      if (!couple?.id) return;
+      const page = await loadQuestionHistory(couple.id, before);
       if (request !== scope.current) return;
       cursors.current.push(before);
       setOlder(current => [...current, ...page.questions]); setMore(page.has_more);
@@ -98,9 +105,7 @@ export default function DailyQuestionScreen() {
     : state?.questions.find(item => item.day === state.today);
   return <AppScreen contentContainerStyle={styles.screen}>
     <View style={styles.row}>
-      <Pressable accessibilityRole="button" accessibilityLabel="Назад" onPress={() => router.canGoBack() ? router.back() : router.replace('/more')}>
-        <AppIcon name="chevron-back" size={26} color={colors.primary} />
-      </Pressable>
+      <BackButton onPress={() => router.canGoBack() ? router.back() : router.replace('/more')} />
       <Text style={styles.heading}>Вопрос дня</Text>
     </View>
     {error ? <View style={styles.card}><Text style={styles.copy}>{error}</Text><AppButton label="Повторить" onPress={() => void perform(refresh)} /></View> : null}
@@ -123,7 +128,7 @@ export default function DailyQuestionScreen() {
       {question ? <QuestionCard key={`${couple?.id}:${question.id}`} question={question} userId={user?.id ?? ''} busy={busy} perform={perform} />
         : <View style={styles.card}><Text style={styles.copy}>{selected ? 'Этот вопрос пока не загружен. Откройте историю и нажмите «Ещё».' : state.active ? 'На сегодня нового вопроса нет. Все доступные вопросы уже пройдены — банк будет пополняться.' : 'Новый вопрос появится, когда вы оба включите раздел.'}</Text></View>}
       {selected && <AppButton label="К вопросу на сегодня" variant="ghost" onPress={() => setSelected(null)} />}
-      <IntimateQuestionSettings />
+      <IntimateQuestionSettings state={state} onRefresh={refresh} />
       <QuestionHistory questions={history} onSelect={id => router.push({ pathname: '/question-detail', params: { id } })} hasMore={more} loading={historyBusy} onMore={() => void loadMore()} />
       <AppTimePicker visible={timeVisible} value={state.time} onClose={() => setTimeVisible(false)}
         onSelect={time => void perform(() => questionRequest('set_question_schedule', { p_time: time, p_timezone: state.timezone }))} />

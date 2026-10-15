@@ -15,7 +15,7 @@ function load(path, dependencies = {}) {
 }
 
 const { isChecklistComplete } = load('src/utils/notes.ts');
-const { getWishlists } = load('src/utils/wishlists.ts');
+const { canManageWishlist, getWishlists } = load('src/utils/wishlists.ts');
 const soloLists = getWishlists({ id: 'one', displayName: 'Первый' }, { createdBy: 'one', partnerName: null });
 assert.equal(soloLists.length, 2);
 assert.equal(soloLists[1].value, 'creator');
@@ -24,12 +24,23 @@ const pairedLists = getWishlists({ id: 'two', displayName: 'Второй' }, { c
 assert.equal(pairedLists.length, 3);
 assert.equal(pairedLists.find(item => item.value === 'creator').label, 'Первый');
 assert.equal(pairedLists.find(item => item.value === 'partner').label, 'Второй');
+assert.equal(canManageWishlist({ id: 'two' }, { createdBy: 'one' }, 'together'), true);
+assert.equal(canManageWishlist({ id: 'two' }, { createdBy: 'one' }, 'partner'), true);
+assert.equal(canManageWishlist({ id: 'two' }, { createdBy: 'one' }, 'creator'), false);
 assert.equal(isChecklistComplete({ kind: 'checklist', items: [] }), false);
 assert.equal(isChecklistComplete({ kind: 'checklist', items: [{ done: true }, { done: false }] }), false);
 assert.equal(isChecklistComplete({ kind: 'checklist', items: [{ done: true }, { done: true }] }), true);
 assert.equal(isChecklistComplete({ kind: 'text', items: [{ done: true }] }), false);
 
 const dates = load('src/utils/dates.ts');
+const shortDuration = dates.getRelationshipDuration('2024-01-01', new Date(2026, 0, 1, 12));
+assert.equal(shortDuration.valueLabel.replace(/\s/g, ''), '731');
+assert.equal(shortDuration.unitLabel, 'день');
+assert.equal(shortDuration.detailLabel, null);
+const longDuration = dates.getRelationshipDuration('1970-10-20', new Date(2026, 9, 14, 12));
+assert.equal(longDuration.valueLabel, '55');
+assert.equal(longDuration.unitLabel, 'лет');
+assert.match(longDuration.detailLabel.replace(/\s/g, ''), /^20448дней$/);
 const { summarizeStatistics } = load('src/utils/statistics.ts', { '@/utils/dates': dates });
 const data = {
   dates: [

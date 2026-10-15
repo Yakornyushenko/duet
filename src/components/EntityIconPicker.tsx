@@ -2,16 +2,15 @@ import { AppIcon } from '@/components/AppIcon';
 import { useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { DateEventIcon } from '@/types/domain';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
-import { eventIcons, iconLabels } from '@/utils/eventIcons';
 import { colors, radii, spacing, typography } from '@/theme/tokens';
+import { EntityIcon } from '@/types/domain';
+import { entityIconGroups, entityIconLabels, entityIcons, EntityIconKind } from '@/utils/entityIcons';
 
-const icons = Object.keys(eventIcons) as DateEventIcon[];
-
-export function EventIconPicker({ value, onChange, disabled = false }: {
-  value: DateEventIcon;
-  onChange: (value: DateEventIcon) => void;
+export function EntityIconPicker({ kind, value, onChange, disabled = false }: {
+  kind: EntityIconKind;
+  value: EntityIcon;
+  onChange: (value: EntityIcon) => void;
   disabled?: boolean;
 }) {
   const { isTablet } = useResponsiveLayout();
@@ -34,31 +33,35 @@ export function EventIconPicker({ value, onChange, disabled = false }: {
       toValue: expanded ? 1 : 0,
       duration: reduceMotion ? 0 : 280,
       easing: Easing.inOut(Easing.cubic),
-      useNativeDriver: false, // Height must move the content below the picker too.
+      useNativeDriver: false,
     });
     animation.start();
     return () => animation.stop();
   }, [expanded, progress, reduceMotion]);
-  // A previously selected extra icon stays visible even in the compact row.
-  const firstRow = icons.slice(0, 5);
-  if (!firstRow.includes(value)) firstRow[4] = value;
-  const extraIcons = icons.filter((icon) => !firstRow.includes(icon));
 
-  const renderIcon = (icon: DateEventIcon) => <View key={icon} style={styles.cell}>
-        <Pressable
-          accessibilityRole="radio"
-          accessibilityLabel={iconLabels[icon]}
-          accessibilityState={{ checked: value === icon, disabled }}
-          disabled={disabled}
-          onPress={() => onChange(icon)}
-          style={({ pressed }) => [styles.choice, value === icon && styles.selected, pressed && styles.pressed]}
-        >
-          <AppIcon name={eventIcons[icon]} size={24} color={value === icon ? colors.white : colors.primary} />
-        </Pressable>
-      </View>;
+  // Keep a legacy selection available even if it belonged to the old shared set.
+  const group = entityIconGroups[kind];
+  const icons = group.includes(value) ? [...group] : [value, ...group];
+  const firstRow = icons.slice(0, 5);
+  const extraIcons = icons.slice(5);
+
+  const renderIcon = (icon: EntityIcon) => (
+    <View key={icon} style={styles.cell}>
+      <Pressable
+        accessibilityRole="radio"
+        accessibilityLabel={entityIconLabels[icon]}
+        accessibilityState={{ checked: value === icon, disabled }}
+        disabled={disabled}
+        onPress={() => onChange(icon)}
+        style={({ pressed }) => [styles.choice, value === icon && styles.selected, pressed && styles.pressed]}
+      >
+        <AppIcon name={entityIcons[icon]} size={24} color={value === icon ? colors.white : colors.primary} />
+      </Pressable>
+    </View>
+  );
 
   return <View style={styles.field}>
-    <Text style={styles.label}>Значок</Text>
+    <Text style={styles.label}>Иконка</Text>
     <View>
       <View style={[styles.grid, isTablet && styles.wideGrid]}>{firstRow.map(renderIcon)}</View>
       <Animated.View
@@ -78,11 +81,14 @@ export function EventIconPicker({ value, onChange, disabled = false }: {
         </Animated.View>
       </Animated.View>
     </View>
-    <Pressable accessibilityRole="button" accessibilityState={{ expanded }} disabled={disabled}
-      onPress={() => {
-        setExpanded((current) => !current);
-      }} style={[styles.toggle, isTablet && styles.wideToggle]}>
-      <Text style={styles.toggleText}>{expanded ? 'Скрыть значки' : 'Ещё значки'}</Text>
+    <Pressable
+      accessibilityRole="button"
+      accessibilityState={{ expanded }}
+      disabled={disabled}
+      onPress={() => setExpanded((current) => !current)}
+      style={[styles.toggle, isTablet && styles.wideToggle]}
+    >
+      <Text style={styles.toggleText}>{expanded ? 'Скрыть иконки' : 'Ещё иконки'}</Text>
       <AppIcon name={expanded ? 'chevron-up' : 'chevron-down'} size={18} color={colors.primary} />
     </Pressable>
   </View>;

@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { authStorage } from './authStorage';
+import { fetchWithTimeout } from './network';
 
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
 const supabasePublishableKey = process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
@@ -19,6 +20,7 @@ const sessionStorage = {
 
 export const supabase = hasSupabaseConfig
   ? createClient(supabaseUrl!, supabasePublishableKey!, {
+      global: { fetch: fetchWithTimeout },
       auth: {
         storage: sessionStorage,
         storageKey: sessionStorageKey,

@@ -1,15 +1,16 @@
 import { AppIcon } from '@/components/AppIcon';
 import { router, useLocalSearchParams } from 'expo-router';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import { AppButton } from '@/components/AppButton';
 import { AppScreen } from '@/components/AppScreen';
+import { BackButton } from '@/components/BackButton';
 import { useApp } from '@/context/AppContext';
 import { useReminders } from '@/context/ReminderContext';
 import { formatReminderCount } from '@/services/reminders';
 import { colors, radii, spacing, typography } from '@/theme/tokens';
 import { formatEventDate } from '@/utils/dates';
-import { eventIcons } from '@/utils/eventIcons';
+import { entityIcons } from '@/utils/entityIcons';
 
 function getOffsetLabel(offset: number): string {
   if (offset === 0) {
@@ -45,14 +46,7 @@ export default function EventRemindersScreen() {
   return (
     <AppScreen>
       <View style={styles.header}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Назад"
-          onPress={() => router.back()}
-          style={styles.iconButton}
-        >
-          <AppIcon name="chevron-back" size={24} color={colors.text} />
-        </Pressable>
+        <BackButton onPress={() => router.back()} />
         <Text style={styles.headerTitle}>Напоминания</Text>
         <View style={styles.headerSpacer} />
       </View>
@@ -61,7 +55,7 @@ export default function EventRemindersScreen() {
         <>
           <View style={styles.eventCard}>
             <View style={styles.eventIcon}>
-              <AppIcon name={eventIcons[event.icon]} size={26} color={colors.primary} />
+              <AppIcon name={entityIcons[event.icon]} size={26} color={colors.primary} />
             </View>
             <View style={styles.eventCopy}>
               <Text style={styles.eventTitle}>{event.title}</Text>
@@ -114,14 +108,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: spacing.xxxl,
-  },
-  iconButton: {
-    width: 44,
-    height: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: radii.round,
-    backgroundColor: colors.surface,
   },
   headerTitle: {
     ...typography.cardTitle,

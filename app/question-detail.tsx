@@ -1,13 +1,13 @@
-import { AppIcon } from '@/components/AppIcon';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
-import { ActivityIndicator, AppState, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, AppState, StyleSheet, Text, View } from 'react-native';
 import { AppScreen } from '@/components/AppScreen';
 import { AppButton } from '@/components/AppButton';
+import { BackButton } from '@/components/BackButton';
 import { QuestionCard } from '@/components/QuestionCard';
 import { useApp } from '@/context/AppContext';
 import { useDialog } from '@/context/DialogContext';
-import { DailyQuestion, questionRequest } from '@/services/dailyQuestions';
+import { DailyQuestion, loadDailyQuestionDetail } from '@/services/dailyQuestions';
 import { colors, spacing, typography } from '@/theme/tokens';
 
 export default function QuestionDetailScreen() {
@@ -23,8 +23,8 @@ export default function QuestionDetailScreen() {
   const load = useCallback(async () => {
     const request = generation.current;
     try {
-      if (!id) throw new Error('Не указан вопрос');
-      const result = await questionRequest<DailyQuestion | null>('daily_question_detail', { p_id: id });
+      if (!id || !couple?.id) throw new Error('Не указан вопрос');
+      const result = await loadDailyQuestionDetail(couple.id, id);
       if (request !== generation.current) return;
       setQuestion(result); setError(result ? '' : 'Вопрос недоступен.');
     } catch { if (request === generation.current) setError('Не удалось загрузить вопрос. Попробуйте ещё раз.'); }
@@ -46,10 +46,8 @@ export default function QuestionDetailScreen() {
   };
   return <AppScreen contentContainerStyle={styles.screen}>
     <View style={styles.header}>
-      <Pressable accessibilityRole="button" accessibilityLabel="Назад к вопросам" style={styles.back}
-        onPress={() => router.canGoBack() ? router.back() : router.replace('/daily-question')}>
-        <AppIcon name="chevron-back" size={26} color={colors.primary} />
-      </Pressable>
+      <BackButton accessibilityLabel="Назад к вопросам"
+        onPress={() => router.canGoBack() ? router.back() : router.replace('/daily-question')} />
       <Text style={styles.title}>Вопрос и ответы</Text>
     </View>
     {loading && <ActivityIndicator color={colors.primary} />}
@@ -59,6 +57,5 @@ export default function QuestionDetailScreen() {
 }
 const styles = StyleSheet.create({
   screen: { gap: spacing.lg }, header: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  back: { minWidth: 44, minHeight: 44, justifyContent: 'center', alignItems: 'center' },
   title: { ...typography.sectionTitle, color: colors.text }, copy: { ...typography.body, color: colors.muted },
 });

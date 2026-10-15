@@ -5,7 +5,8 @@ import { FlatList, Platform, Pressable, StyleSheet, Text, View } from 'react-nat
 
 import { AppScreen } from '@/components/AppScreen';
 import { AppButton } from '@/components/AppButton';
-import { eventIcons } from '@/utils/eventIcons';
+import { BackButton } from '@/components/BackButton';
+import { entityIcons } from '@/utils/entityIcons';
 import { useApp } from '@/context/AppContext';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { supabase } from '@/lib/supabase';
@@ -15,7 +16,7 @@ import {
 } from '@/services/notificationApi';
 import { listWishes, Wish } from '@/services/wishes';
 import { colors, radii, spacing, typography } from '@/theme/tokens';
-import { Wishlist, getWishlists } from '@/utils/wishlists';
+import { canManageWishlist, Wishlist, getWishlists } from '@/utils/wishlists';
 
 export default function WishlistsScreen() {
   const params = useLocalSearchParams<{ list?: string }>();
@@ -109,6 +110,7 @@ export default function WishlistsScreen() {
   const visible = useMemo(() => wishes
     .filter((wish) => wish.list === list)
     .sort((a, b) => Number(a.fulfilled) - Number(b.fulfilled)), [wishes, list]);
+  const canManageCurrentList = canManageWishlist(user, couple, list);
 
   const renderWish = useCallback(({ item: wish }: { item: Wish }) => (
     <Pressable
@@ -119,7 +121,7 @@ export default function WishlistsScreen() {
       style={({ pressed }) => [styles.card, styles.wishCard, isDesktop && styles.desktopWishCard, pressed && styles.pressed]}
     >
       <View style={styles.wishRow}>
-        <AppIcon name={eventIcons[wish.icon] ?? eventIcons.heart} size={22} color={colors.primary} />
+        <AppIcon name={entityIcons[wish.icon] ?? entityIcons.sparkles} size={22} color={colors.primary} />
         {wish.fulfilled && <AppIcon name="checkmark-circle" size={16} color={colors.primary} />}
         <Text style={[styles.wishTitle, wish.fulfilled && styles.done]} numberOfLines={2}>
           {wish.title}
@@ -147,40 +149,40 @@ export default function WishlistsScreen() {
         contentContainerStyle={[styles.listContent, { paddingHorizontal: horizontalPadding }]}
         ListHeaderComponent={<>
       <View style={styles.header}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Назад"
-          onPress={() => router.back()}
-          style={styles.icon}
-        >
-          <AppIcon name="chevron-back" size={24} color={colors.primary} />
-        </Pressable>
+        <BackButton onPress={() => router.back()} />
         <Text style={styles.heading}>{couple?.partnerName ? 'Наши желания' : 'Желания'}</Text>
-        <Pressable
+        {canManageCurrentList ? <Pressable
           accessibilityRole="button"
           accessibilityLabel="Добавить желание"
-          onPress={() => router.push(`/wish?list=${list}` as Href)}
+          onPress={() => router.push(`/wish-edit?list=${list}` as Href)}
           style={styles.icon}
         >
           <AppIcon name="add" size={26} color={colors.primary} />
-        </Pressable>
+        </Pressable> : null}
       </View>
       <Text style={styles.subtitle}>Маленькие радости и большие мечты</Text>
       <View style={styles.tabs}>
-        {wishlists.map((item) => (
-          <Pressable
-            key={item.value}
-            accessibilityRole="tab"
-            accessibilityState={{ selected: list === item.value }}
-            onPress={() => setList(item.value)}
-            style={[styles.tab, list === item.value && styles.selected]}
-          >
-            <AppIcon name={item.icon} size={21} color={list === item.value ? colors.white : colors.primary} />
-            <Text style={{ color: list === item.value ? colors.white : colors.secondary }} numberOfLines={1}>
-              {item.label}
-            </Text>
-          </Pressable>
-        ))}
+        {wishlists.map((item) => {
+          const selected = list === item.value;
+          const readOnly = !canManageWishlist(user, couple, item.value);
+          const foreground = selected ? colors.white : readOnly ? colors.secondary : colors.primary;
+          return (
+            <Pressable
+              key={item.value}
+              accessibilityRole="tab"
+              accessibilityHint={readOnly ? 'Можно просматривать и комментировать' : undefined}
+              accessibilityState={{ selected }}
+              onPress={() => setList(item.value)}
+              style={[styles.tab, selected && styles.selected, readOnly && styles.readOnlyTab,
+                selected && readOnly && styles.selectedReadOnlyTab]}
+            >
+              <AppIcon name={item.icon} size={21} color={foreground} />
+              <Text style={{ color: selected ? colors.white : colors.secondary }} numberOfLines={1}>
+                {item.label}
+              </Text>
+            </Pressable>
+          );
+        })}
       </View>
 
       {error && (
@@ -194,7 +196,9 @@ export default function WishlistsScreen() {
       ) : (
         <>
           {!error && !visible.length ? (
-            <Text style={styles.empty}>Здесь найдётся место каждой мечте. Добавьте первое желание ♥</Text>
+            <Text style={styles.empty}>{canManageCurrentList
+              ? 'Здесь найдётся место каждой мечте. Добавьте первое желание ♥'
+              : 'Партнёр пока не добавил сюда желания.'}</Text>
           ) : null}
 
         </>
@@ -232,6 +236,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xs,
   },
   selected: { backgroundColor: colors.primary },
+  readOnlyTab: { backgroundColor: colors.soft },
+  selectedReadOnlyTab: { backgroundColor: colors.secondary },
   card: {
     backgroundColor: colors.surface,
     borderRadius: radii.lg,

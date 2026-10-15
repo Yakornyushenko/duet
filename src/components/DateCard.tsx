@@ -6,7 +6,7 @@ import { colors, radii, spacing, typography } from '@/theme/tokens';
 import { DateEvent } from '@/types/domain';
 import { useApp } from '@/context/AppContext';
 import { formatEventDate, getDaysUntil, pluralizeDays } from '@/utils/dates';
-import { eventIcons } from '@/utils/eventIcons';
+import { entityIcons } from '@/utils/entityIcons';
 
 type DateCardProps = {
   event: DateEvent;
@@ -26,7 +26,7 @@ export function DateCard({ event, highlighted = false, reminderLabel, onPress }:
         reminderLabel && !highlighted && styles.reminderEventIcon,
         highlighted && styles.highlightedIcon,
       ]}>
-        <AppIcon name={eventIcons[event.icon]} size={21} color={highlighted ? colors.white : colors.primary} />
+        <AppIcon name={entityIcons[event.icon]} size={21} color={highlighted ? colors.white : colors.primary} />
       </View>
       <View style={styles.main}>
         {highlighted ? <Text style={styles.eyebrow}>Следующая дата</Text> : null}
