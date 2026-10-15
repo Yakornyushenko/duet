@@ -4,6 +4,7 @@ import { AppState as NativeAppState } from 'react-native';
 import { createContext, PropsWithChildren, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 
 import { clearLocalSession, isSessionEnabled, revokeRemoteSession, supabase } from '@/lib/supabase';
+import { clearDataCache, writeCachedData } from '@/lib/dataCache';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   addEventRemote,
@@ -13,13 +14,16 @@ import {
   joinEmptyCoupleRemote,
   joinCoupleRemote,
   JoinCategory,
+  loadCachedRemoteWorkspace,
   loadRemoteWorkspace,
+  RemoteWorkspace,
   resendSignUpConfirmationRemote,
   signInRemote,
   signUpRemote,
   updateDisplayNameRemote,
   updateEventRemote,
   updateRelationshipDateRemote,
+  workspaceCacheKey,
 } from '@/services/backend';
 import { AppUser, Couple, DateEvent, DateEventInput, DateCategoryOption } from '@/types/domain';
 import { isAuthConfirmationLink } from '@/utils/authLink';
@@ -86,10 +90,7 @@ export function AppProvider({ children }: PropsWithChildren) {
     });
   }, [clearWorkspace]);
 
-  const applyRemoteWorkspace = useCallback(async (activeSession: Session) => {
-    const request = ++workspaceRequest.current;
-    const workspace = await loadRemoteWorkspace(activeSession);
-    if (request !== workspaceRequest.current || !isSessionEnabled()) return;
+  const applyWorkspaceState = useCallback((workspace: RemoteWorkspace) => {
     // Preserve references when server data did not change. In particular, avoid
     // re-scheduling every local reminder on a profile/couple refresh.
     setUser((current) => JSON.stringify(current) === JSON.stringify(workspace.user) ? current : workspace.user);
@@ -97,6 +98,21 @@ export function AppProvider({ children }: PropsWithChildren) {
     setEvents((current) => JSON.stringify(current) === JSON.stringify(workspace.events) ? current : workspace.events);
     setCategories((current) => JSON.stringify(current) === JSON.stringify(workspace.categories) ? current : workspace.categories);
   }, []);
+
+  const applyRemoteWorkspace = useCallback(async (activeSession: Session) => {
+    const request = ++workspaceRequest.current;
+    const workspace = await loadRemoteWorkspace(activeSession);
+    if (request !== workspaceRequest.current || !isSessionEnabled()) return;
+    applyWorkspaceState(workspace);
+  }, [applyWorkspaceState]);
+
+  const applyCachedWorkspace = useCallback(async (activeSession: Session): Promise<boolean> => {
+    const request = ++workspaceRequest.current;
+    const workspace = await loadCachedRemoteWorkspace(activeSession.user.id);
+    if (!workspace || request !== workspaceRequest.current || !isSessionEnabled()) return false;
+    applyWorkspaceState(workspace);
+    return true;
+  }, [applyWorkspaceState]);
 
   const verifyAccountSession = useCallback(async () => {
     const client = supabase;
@@ -127,6 +143,8 @@ export function AppProvider({ children }: PropsWithChildren) {
         await clearRejectedSession();
         return;
       }
+      setSession(activeSession);
+      if (userError && await applyCachedWorkspace(activeSession)) return;
       throw userError;
     }
 
@@ -143,7 +161,12 @@ export function AppProvider({ children }: PropsWithChildren) {
       }
       throw workspaceError;
     }
-  }, [applyRemoteWorkspace, clearRejectedSession, clearWorkspace]);
+  }, [applyCachedWorkspace, applyRemoteWorkspace, clearRejectedSession, clearWorkspace]);
+
+  useEffect(() => {
+    if (!user) return;
+    void writeCachedData(workspaceCacheKey(user.id), { user, couple, events, categories });
+  }, [categories, couple, events, user]);
 
   useEffect(() => {
     const client = supabase;
@@ -301,6 +324,7 @@ export function AppProvider({ children }: PropsWithChildren) {
         const token = await AsyncStorage.getItem('duet:wish-push-token').catch(() => null);
         const accessToken = await clearLocalSession();
         clearWorkspace();
+        await clearDataCache();
         void supabase.removeAllChannels();
         if (accessToken) void revokeRemoteSession(accessToken, token);
       },

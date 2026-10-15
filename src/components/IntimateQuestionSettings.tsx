@@ -1,28 +1,41 @@
 import { useCallback, useState } from 'react';
 import { useFocusEffect } from 'expo-router';
 import { StyleSheet, Switch, Text, View } from 'react-native';
-import { useDialog } from '@/context/DialogContext';
 import { useApp } from '@/context/AppContext';
+import { useDialog } from '@/context/DialogContext';
 import { DailyQuestionState, loadDailyQuestions, questionRequest } from '@/services/dailyQuestions';
 import { colors, radii, spacing, typography } from '@/theme/tokens';
 
-export function IntimateQuestionSettings() {
-  const { user, couple } = useApp();
+export function IntimateQuestionSettings({ state: externalState, onRefresh }: {
+  state?: DailyQuestionState;
+  onRefresh?: () => Promise<unknown>;
+} = {}) {
+  const { couple } = useApp();
   const { showDialog } = useDialog();
-  const [state, setState] = useState<DailyQuestionState | null>(null);
+  const [localState, setLocalState] = useState<DailyQuestionState | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(false);
+  const controlled = externalState !== undefined;
+  const state = externalState ?? localState;
   useFocusEffect(useCallback(() => {
+    if (controlled) return undefined;
     let active = true;
-    setState(null); setError(false);
-    void loadDailyQuestions().then(value => { if (active) setState(value); }).catch(() => { if (active) setError(true); });
+    setLocalState(null); setError(false);
+    if (!couple?.id) {
+      setError(true);
+      return () => { active = false; };
+    }
+    void loadDailyQuestions(couple.id)
+      .then(value => { if (active) setLocalState(value); })
+      .catch(() => { if (active) setError(true); });
     return () => { active = false; };
-  }, [user?.id, couple?.id]));
+  }, [controlled, couple?.id]));
   const change = async (enabled: boolean) => {
     setBusy(true);
     try {
       await questionRequest('set_question_preferences', { p_patch: enabled ? { intimate: true, adult_confirmed: true } : { intimate: false } });
-      setState(await loadDailyQuestions());
+      if (onRefresh) await onRefresh();
+      else if (couple?.id) setLocalState(await loadDailyQuestions(couple.id));
     } catch (cause) { showDialog({ title: 'Не удалось сохранить', message: cause instanceof Error ? cause.message : 'Попробуйте ещё раз.' }); }
     finally { setBusy(false); }
   };
@@ -37,7 +50,7 @@ export function IntimateQuestionSettings() {
           actions: [{ label: 'Мне 18+, включить', onPress: () => change(true) }, { label: 'Отмена', variant: 'ghost' }],
         }) : void change(false)} />
     </View>
-    <Text style={styles.copy}>{error ? 'Настройки недоступны. Проверьте подключение и миграцию «Вопрос дня».'
+    <Text style={styles.copy}>{error ? 'Настройки недоступны. Проверьте подключение и попробуйте снова.'
       : !state ? 'Загружаем настройку…' : state.preferences.intimate ? 'Включены у вас' : 'Выключены у вас'}</Text>
     <Text style={styles.copy}>Личные вопросы доступны при согласии обоих.</Text>
   </View>;

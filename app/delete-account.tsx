@@ -1,6 +1,7 @@
 import { Href, Stack, router } from 'expo-router';
 import { Image, Linking, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { BackButton } from '@/components/BackButton';
 import { AppScreen } from '@/components/AppScreen';
 import { appName, quotedAppName } from '@/config/app';
 import { supportEmail } from '@/config/support';
@@ -43,14 +44,7 @@ export default function DeleteAccountScreen() {
       <Stack.Screen options={{ title: `Удаление аккаунта ${quotedAppName}` }} />
 
       {Platform.OS !== 'web' ? (
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Назад"
-          onPress={() => router.canGoBack() ? router.back() : router.replace('/auth')}
-          style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}
-        >
-          <Text style={styles.backButtonText}>← Назад</Text>
-        </Pressable>
+        <BackButton onPress={() => router.canGoBack() ? router.back() : router.replace('/auth')} />
       ) : null}
 
       <View style={styles.header}>
@@ -152,10 +146,6 @@ export default function DeleteAccountScreen() {
 const styles = StyleSheet.create({
   content: { maxWidth: 720, gap: spacing.xl },
   header: { alignItems: 'center', paddingTop: spacing.sm, paddingBottom: spacing.md },
-  backButton: {
-    alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center', paddingHorizontal: spacing.sm,
-  },
-  backButtonText: { ...typography.label, color: colors.primary },
   logo: { width: 148, height: 96, marginBottom: -spacing.md },
   brand: { ...typography.cardTitle, color: colors.primary, marginBottom: spacing.sm },
   title: { ...typography.title, color: colors.text, textAlign: 'center' },

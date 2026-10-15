@@ -68,7 +68,7 @@ export default function DatesScreen() {
                 <DateCard
                   event={event}
                   reminderLabel={getPlannedReminderLabel(plannedReminders, event.id)}
-                  onPress={() => router.push({ pathname: '/date-form', params: { id: event.id } })}
+                  onPress={() => router.push({ pathname: '/date', params: { id: event.id } })}
                 />
                 </View>
               ))}
@@ -83,7 +83,7 @@ export default function DatesScreen() {
                   <DateCard
                     event={event}
                     reminderLabel={getPlannedReminderLabel(plannedReminders, event.id)}
-                    onPress={() => router.push({ pathname: '/date-form', params: { id: event.id } })}
+                    onPress={() => router.push({ pathname: '/date', params: { id: event.id } })}
                   />
                   </View>
                 ))}

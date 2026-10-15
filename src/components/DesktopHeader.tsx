@@ -15,7 +15,7 @@ const navigation: { label: string; section: DesktopSection; href: '/(tabs)' | '/
 
 function getActiveSection(pathname: string): DesktopSection {
   if (pathname === '/') return 'home';
-  if (pathname === '/dates' || pathname === '/date-form' || pathname === '/event-reminders') return 'dates';
+  if (pathname === '/dates' || pathname === '/date' || pathname === '/date-form' || pathname === '/event-reminders') return 'dates';
   return 'more';
 }
 

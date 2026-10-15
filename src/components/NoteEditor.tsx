@@ -6,6 +6,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AppScreen } from '@/components/AppScreen';
 import { AppInput } from '@/components/AppInput';
 import { AppButton } from '@/components/AppButton';
+import { BackButton } from '@/components/BackButton';
+import { EntityIconPicker } from '@/components/EntityIconPicker';
 import { NotePinIcon } from '@/components/NotePinIcon';
 import { useApp } from '@/context/AppContext';
 import { useDialog } from '@/context/DialogContext';
@@ -24,6 +26,7 @@ export function NoteEditor({ initial, remote, onSaved, onClose }: Props) {
   const [ready, setReady] = useState(false);
   const [error, setError] = useState('');
   const [conflict, setConflict] = useState(false);
+  const [focusedItemId, setFocusedItemId] = useState<string | null>(null);
   const blocked = useRef(false);
   const pending = useRef<Promise<boolean> | null>(null);
   const alive = useRef(true);
@@ -41,7 +44,8 @@ export function NoteEditor({ initial, remote, onSaved, onClose }: Props) {
     void AsyncStorage.getItem(backupKey).then((value) => {
       if (!alive.current) return;
       if (value) {
-        const recovered = JSON.parse(value) as Note;
+        const parsed = JSON.parse(value) as Partial<Note>;
+        const recovered = { ...initial, ...parsed, icon: parsed.icon ?? initial.icon } as Note;
         if (recovered.id === initial.id && recovered.couple_id === initial.couple_id &&
           typeof recovered.title === 'string' && typeof recovered.body === 'string' && Array.isArray(recovered.items) &&
           noteContent(recovered) !== noteContent(initial)) {
@@ -79,7 +83,10 @@ export function NoteEditor({ initial, remote, onSaved, onClose }: Props) {
           if (!alive.current) return true;
         }
         await AsyncStorage.removeItem(backupKey);
-        if (alive.current) setError('');
+        if (alive.current) {
+          setError('');
+          onClose();
+        }
         return true;
       } catch (failure) {
         blocked.current = true;
@@ -96,7 +103,7 @@ export function NoteEditor({ initial, remote, onSaved, onClose }: Props) {
     pending.current = task;
     void task.finally(() => { pending.current = null; });
     return task;
-  }, [onSaved, backupKey]);
+  }, [onSaved, onClose, backupKey]);
 
   useEffect(() => {
     if (!ready || !remote || remote.id !== current.current.id || remote.version <= saved.current.version || pending.current) return;
@@ -158,17 +165,53 @@ export function NoteEditor({ initial, remote, onSaved, onClose }: Props) {
     finally { if (alive.current) setSaving(false); }
   };
 
+  const moveToTrash = async () => {
+    if (pending.current) return;
+    setSaving(true);
+    try {
+      const result = await saveNote({ ...saved.current, deleted_at: new Date().toISOString() });
+      await AsyncStorage.removeItem(backupKey);
+      onSaved(result);
+      onClose();
+    } catch {
+      setError('Не удалось переместить заметку в корзину. Попробуйте ещё раз.');
+    } finally {
+      if (alive.current) setSaving(false);
+    }
+  };
+
   return (
     <Modal visible animationType="slide" onRequestClose={() => void close()}>
       <AppScreen>
         <View style={styles.header}>
-          <Pressable accessibilityRole="button" accessibilityLabel="Закрыть заметку" onPress={() => void close()} style={styles.icon}>
-            <AppIcon name="chevron-back" size={24} color={colors.primary} />
-          </Pressable>
+          <BackButton accessibilityLabel="Закрыть заметку" onPress={() => void close()} />
           <Text style={styles.status}>{trashView ? 'Заметка в корзине' : !ready ? 'Загрузка…' : saving ? 'Сохраняем…' : error ? 'Не синхронизировано' : dirty ? 'Есть изменения' : 'Сохранено'}</Text>
-          {!trashView && <Pressable disabled={!ready || !!draft.deleted_at} accessibilityRole="button" accessibilityState={{ selected: draft.pinned }} accessibilityLabel={draft.pinned ? 'Открепить' : 'Закрепить'} onPress={() => change({ pinned: !draft.pinned })} style={styles.icon}>
-            <NotePinIcon pinned={draft.pinned} />
-          </Pressable>}
+          {!trashView ? <Pressable
+            disabled={!ready || saving || conflict}
+            accessibilityRole="button"
+            accessibilityLabel={draft.pinned ? 'Открепить заметку' : 'Закрепить заметку'}
+            accessibilityState={{ disabled: !ready || saving || conflict, selected: draft.pinned }}
+            onPress={() => change({ pinned: !draft.pinned })}
+            style={({ pressed }) => [styles.icon, (!ready || saving || conflict) && styles.disabled, pressed && styles.pressed]}
+          >
+            <NotePinIcon pinned={draft.pinned} size={26} />
+          </Pressable> : null}
+          {!trashView && saved.current.id ? <Pressable
+            disabled={!ready || saving || conflict}
+            accessibilityRole="button"
+            accessibilityLabel="Переместить заметку в корзину"
+            onPress={() => showDialog({
+              title: 'Переместить в корзину?',
+              message: 'Сохранённая версия заметки исчезнет из общего списка у вас обоих. Несохранённые изменения будут потеряны. Заметку можно будет восстановить.',
+              actions: [
+                { label: 'В корзину', variant: 'danger', onPress: () => void moveToTrash() },
+                { label: 'Отмена', variant: 'ghost' },
+              ],
+            })}
+            style={styles.icon}
+          >
+            <AppIcon name="trash-outline" size={23} color={colors.danger} />
+          </Pressable> : null}
         </View>
         {trashView && <Text style={styles.trashHint}>Здесь можно посмотреть удалённую заметку. Чтобы изменить её, сначала восстановите.</Text>}
         {trashView && error ? <Text style={styles.error}>{error}</Text> : null}
@@ -189,6 +232,12 @@ export function NoteEditor({ initial, remote, onSaved, onClose }: Props) {
           <AppButton label="Закрыть и оставить черновик" variant="ghost" disabled={saving} onPress={() => void persistAndClose()} />
         </View> : null}
         <AppInput label="Название" placeholder="Без названия" value={draft.title} maxLength={120} editable={ready && !trashView && !draft.deleted_at} onChangeText={(title) => change({ title })} />
+        <EntityIconPicker
+          kind="note"
+          value={draft.icon}
+          disabled={!ready || trashView || Boolean(draft.deleted_at)}
+          onChange={(icon) => change({ icon })}
+        />
         <View style={styles.content}>
           {draft.kind === 'text' ? <AppInput label="" accessibilityLabel="Текст заметки" placeholder="Что хочется записать?" multiline textAlignVertical="top" style={styles.body}
             value={draft.body} maxLength={20000} editable={ready && !trashView && !draft.deleted_at} onChangeText={(body) => change({ body })} /> : <>
@@ -198,38 +247,31 @@ export function NoteEditor({ initial, remote, onSaved, onClose }: Props) {
                 <AppIcon name={item.done ? 'checkbox' : 'square-outline'} size={25} color={colors.primary} />
               </Pressable>
               <View style={styles.itemInput}><AppInput label="" accessibilityLabel="Текст пункта" placeholder="Новый пункт" value={item.text} maxLength={500}
+                autoFocus={item.id === focusedItemId}
                 editable={ready && !trashView && !draft.deleted_at} style={item.done ? styles.done : undefined}
                 onChangeText={(text) => change({ items: draft.items.map((entry) => entry.id === item.id ? { ...entry, text } : entry) })} /></View>
               {!trashView && !draft.deleted_at && <Pressable accessibilityRole="button" accessibilityLabel="Удалить пункт" style={styles.check}
                 onPress={() => change({ items: draft.items.filter((entry) => entry.id !== item.id) })}><AppIcon name="close" size={20} color={colors.muted} /></Pressable>}
             </View>)}
-            {!trashView && !draft.deleted_at && draft.items.length < 100 && <AppButton label="Добавить пункт" variant="ghost" disabled={!ready} onPress={() => change({ items: [...draft.items, { id: `${Date.now()}-${Math.random().toString(36).slice(2)}`, text: '', done: false }] })} />}
+            {!trashView && !draft.deleted_at && draft.items.length < 100 && <AppButton label="Добавить пункт" variant="ghost" disabled={!ready} onPress={() => {
+              const item = { id: `${Date.now()}-${Math.random().toString(36).slice(2)}`, text: '', done: false };
+              setFocusedItemId(item.id);
+              change({ items: [...draft.items, item] });
+            }} />}
           </>}
         </View>
-        {!trashView && !draft.deleted_at && <AppButton
-          label="Сохранить"
-          loading={saving}
-          disabled={!ready || conflict || (!dirty && !error)}
-          onPress={() => {
-            blocked.current = false;
-            void flush();
-          }}
-        />}
-        {saved.current.id && <View style={styles.footer}>
-        {trashView || draft.deleted_at ? <AppButton label="Восстановить заметку" disabled={!ready || saving || conflict} onPress={() => void restore()} /> :
-          <AppButton label="В корзину" variant="danger" disabled={!ready || saving || conflict} onPress={() => showDialog({
-            title: 'Переместить в корзину?', message: 'Сохранённая версия заметки исчезнет из общего списка у вас обоих. Несохранённые изменения будут потеряны. Заметку можно будет восстановить.',
-            actions: [{ label: 'В корзину', variant: 'danger', onPress: async () => {
-              if (pending.current) return;
-              setSaving(true);
-              try {
-                const result = await saveNote({ ...saved.current, deleted_at: new Date().toISOString() });
-                await AsyncStorage.removeItem(backupKey);
-                onSaved(result); onClose();
-              } catch { setError('Не удалось переместить заметку в корзину. Попробуйте ещё раз.'); }
-              finally { if (alive.current) setSaving(false); }
-            } }, { label: 'Отмена', variant: 'ghost' }],
-          })} />}
+        {trashView || draft.deleted_at ? <View style={styles.footer}>
+          <AppButton label="Восстановить заметку" disabled={!ready || saving || conflict} onPress={() => void restore()} />
+        </View> : <View style={styles.footer}>
+          <AppButton
+            label="Сохранить"
+            loading={saving}
+            disabled={!ready || conflict || (!dirty && !error)}
+            onPress={() => {
+              blocked.current = false;
+              void flush();
+            }}
+          />
         </View>}
       </AppScreen>
     </Modal>
@@ -247,6 +289,8 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   check: { width: 40, height: 48, alignItems: 'center', justifyContent: 'center' },
   itemInput: { flex: 1 }, done: { textDecorationLine: 'line-through', color: colors.muted },
+  disabled: { opacity: 0.45 },
+  pressed: { opacity: 0.82 },
   notice: { padding: spacing.md, borderRadius: radii.md, backgroundColor: colors.softRose, gap: spacing.sm, marginBottom: spacing.lg },
   error: { ...typography.caption, color: colors.danger },
 });

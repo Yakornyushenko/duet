@@ -7,6 +7,12 @@ const wishlists = [
 ] as const;
 export type Wishlist = typeof wishlists[number]['value'];
 
+export function canManageWishlist(user: AppUser | null, couple: Couple | null, list: Wishlist) {
+  if (!user || !couple) return false;
+  if (list === 'together') return true;
+  return (list === 'creator') === (user.id === couple.createdBy);
+}
+
 export function getWishlists(user: AppUser | null, couple: Couple | null) {
   const isCreator = user?.id === couple?.createdBy;
   return wishlists.filter((list) => couple?.partnerName || list.value === 'together'

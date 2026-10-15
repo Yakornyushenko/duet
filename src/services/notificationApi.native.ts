@@ -2,6 +2,7 @@ import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
 import { Linking, Platform } from 'react-native';
 
+import { withTimeout } from '@/lib/network';
 import {
   NotificationOpenTarget,
   NotificationPermissionSnapshot,
@@ -201,8 +202,10 @@ function getEasProjectId(): string | undefined {
 export async function getExpoPushToken(devicePushToken?: Notifications.DevicePushToken): Promise<string | null> {
   const projectId = getEasProjectId();
   try {
-    const token = await Notifications.getExpoPushTokenAsync(
-      { ...(projectId ? { projectId } : {}), ...(devicePushToken ? { devicePushToken } : {}) },
+    const token = await withTimeout(
+      Notifications.getExpoPushTokenAsync(
+        { ...(projectId ? { projectId } : {}), ...(devicePushToken ? { devicePushToken } : {}) },
+      ),
     );
     return token.data;
   } catch (error) {

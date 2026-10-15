@@ -1,12 +1,13 @@
 import { Session } from '@supabase/supabase-js';
 
 import { enableSession, supabase } from '@/lib/supabase';
+import { dataCacheKey, loadWithCache, readCachedData } from '@/lib/dataCache';
 import { AppUser, Couple, DateEvent, DateEventInput, DateCategoryOption } from '@/types/domain';
 import { localizeAuthError } from '@/utils/authErrors';
 
 const emailRedirectTo = 'https://duet.by/email-confirmed';
 
-type RemoteWorkspace = {
+export type RemoteWorkspace = {
   user: AppUser;
   couple: Couple | null;
   events: DateEvent[];
@@ -24,6 +25,7 @@ type CoupleRow = {
 type EventRow = {
   id: string;
   title: string;
+  description?: string | null;
   event_date: string;
   recurrence: DateEvent['recurrence'];
   category: DateEvent['category'];
@@ -41,6 +43,7 @@ function mapEvent(row: EventRow): DateEvent {
   return {
     id: row.id,
     title: row.title,
+    description: row.description ?? '',
     eventDate: row.event_date,
     recurrence: row.recurrence,
     category: row.category,
@@ -93,7 +96,7 @@ export async function deleteAccountRemote(): Promise<void> {
   }
 }
 
-export async function loadRemoteWorkspace(session: Session): Promise<RemoteWorkspace> {
+async function fetchRemoteWorkspace(session: Session): Promise<RemoteWorkspace> {
   const client = getClient();
   const { error: workspaceError } = await client.rpc('ensure_personal_workspace');
   if (workspaceError) throw new Error('Не удалось открыть пространство. Проверьте подключение и применение миграции личного режима.');
@@ -144,7 +147,10 @@ export async function loadRemoteWorkspace(session: Session): Promise<RemoteWorks
         .maybeSingle(),
       client
         .from('date_events')
-        .select('id, title, event_date, recurrence, icon, category')
+        // Selecting the row keeps workspace loading compatible while the
+        // description migration is rolling out. mapEvent supplies an empty
+        // description for databases that do not expose the new column yet.
+        .select('*')
         .eq('couple_id', coupleRow.id)
         .order('id'),
       client.from('date_categories').select('value, label, custom_slot')
@@ -174,6 +180,18 @@ export async function loadRemoteWorkspace(session: Session): Promise<RemoteWorks
     events: ((eventRows ?? []) as EventRow[]).map(mapEvent),
     categories: (categoryRows ?? []).map((row) => ({ value: row.value, label: row.label, customSlot: row.custom_slot })),
   };
+}
+
+export function workspaceCacheKey(userId: string): string {
+  return dataCacheKey('workspace', userId);
+}
+
+export function loadCachedRemoteWorkspace(userId: string): Promise<RemoteWorkspace | undefined> {
+  return readCachedData<RemoteWorkspace>(workspaceCacheKey(userId));
+}
+
+export function loadRemoteWorkspace(session: Session): Promise<RemoteWorkspace> {
+  return loadWithCache(workspaceCacheKey(session.user.id), () => fetchRemoteWorkspace(session));
 }
 
 export async function createCoupleRemote(): Promise<void> {
@@ -241,12 +259,13 @@ export async function addEventRemote(coupleId: string, input: DateEventInput): P
     .insert({
       couple_id: coupleId,
       title: input.title,
+      description: input.description,
       event_date: input.eventDate,
       recurrence: input.recurrence,
       category: input.category,
       icon: input.icon,
     })
-    .select('id, title, event_date, recurrence, icon, category')
+    .select('id, title, description, event_date, recurrence, icon, category')
     .single();
   if (error) {
     throw error;
@@ -259,13 +278,14 @@ export async function updateEventRemote(id: string, input: DateEventInput): Prom
     .from('date_events')
     .update({
       title: input.title,
+      description: input.description,
       event_date: input.eventDate,
       recurrence: input.recurrence,
       category: input.category,
       icon: input.icon,
     })
     .eq('id', id)
-    .select('id, title, event_date, recurrence, icon, category')
+    .select('id, title, description, event_date, recurrence, icon, category')
     .single();
   if (error) {
     throw error;

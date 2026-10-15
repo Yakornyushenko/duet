@@ -4,6 +4,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { AppScreen } from '@/components/AppScreen';
+import { BackButton } from '@/components/BackButton';
 import { NotesIcon } from '@/components/NotesIcon';
 import { NotePinIcon } from '@/components/NotePinIcon';
 import { isChecklistComplete } from '@/utils/notes';
@@ -15,6 +16,7 @@ import { useDialog } from '@/context/DialogContext';
 import { supabase } from '@/lib/supabase';
 import { emptyNotesTrash, listNotes, Note } from '@/services/notes';
 import { colors, radii, spacing, typography } from '@/theme/tokens';
+import { entityIcons } from '@/utils/entityIcons';
 
 export default function NotesScreen() {
   const { user, couple } = useApp();
@@ -70,15 +72,14 @@ export default function NotesScreen() {
   const create = (kind: Note['kind']) => {
     if (!couple || creating) return;
       setEditor({ id: '', couple_id: couple.id, kind, title: '', body: '', items: [],
-        pinned: false, deleted_at: null, version: 0, updated_at: '', updated_by: user?.id ?? null });
+        icon: kind === 'checklist' ? 'checklist' : 'note', pinned: false, deleted_at: null,
+        version: 0, updated_at: '', updated_by: user?.id ?? null });
   };
 
   return (
     <AppScreen scroll={false}>
       <View style={styles.header}>
-        <Pressable accessibilityRole="button" accessibilityLabel="Назад" onPress={() => router.back()} style={styles.icon}>
-          <AppIcon name="chevron-back" size={24} color={colors.primary} />
-        </Pressable>
+        <BackButton onPress={() => router.back()} />
         <Text style={styles.title}>Заметки</Text>
         <Pressable accessibilityRole="button" accessibilityLabel={trash ? 'Все заметки' : 'Корзина'} onPress={() => setTrash(!trash)} style={styles.icon}>
           {trash ? <NotesIcon /> : <AppIcon name="trash-outline" size={23} color={colors.primary} />}
@@ -102,7 +103,8 @@ export default function NotesScreen() {
         renderItem={({ item }) => (
           <Pressable accessibilityRole="button" onPress={() => setEditor(item)} style={({ pressed }) => [styles.card, pressed && styles.pressed]}>
             <View style={styles.cardHeader}>
-              <AppIcon name={item.kind === 'checklist' ? (isChecklistComplete(item) ? 'checkbox-outline' : 'square-outline') : 'document-text-outline'} size={21} color={colors.primary} />
+              <AppIcon name={entityIcons[item.icon] ?? (item.kind === 'checklist' ? 'checkbox-outline' : 'document-text-outline')} size={21} color={colors.primary} />
+              {item.kind === 'checklist' && isChecklistComplete(item) ? <AppIcon name="checkmark-circle" size={16} color={colors.primary} /> : null}
               <Text style={styles.cardTitle} numberOfLines={2}>{item.title.trim() || 'Без названия'}</Text>
               {item.pinned && <NotePinIcon pinned size={22} />}
             </View>

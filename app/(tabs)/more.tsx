@@ -1,10 +1,9 @@
 import { AppIcon } from '@/components/AppIcon';
-import { Href, router } from 'expo-router';
+import { router } from 'expo-router';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { AppScreen } from '@/components/AppScreen';
 import { NotesIcon } from '@/components/NotesIcon';
-import { appName } from '@/config/app';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { colors, radii, spacing, typography } from '@/theme/tokens';
 
@@ -99,21 +98,6 @@ export default function MoreScreen() {
         <View style={styles.copy}>
           <Text style={styles.label}>Профиль</Text>
           <Text style={styles.description}>Наша пара и настройки</Text>
-        </View>
-        <AppIcon name="chevron-forward" size={20} color={colors.muted} />
-      </Pressable>
-      <Pressable
-        accessibilityRole="link"
-        accessibilityLabel="Открыть политику конфиденциальности"
-        onPress={() => router.push('/privacy' as Href)}
-        style={({ pressed }) => [styles.card, isDesktop && styles.desktopCard, pressed && styles.pressed]}
-      >
-        <View style={styles.icon}>
-          <AppIcon name="shield-checkmark-outline" size={24} color={colors.primary} />
-        </View>
-        <View style={styles.copy}>
-          <Text style={styles.label}>Конфиденциальность</Text>
-          <Text style={styles.description}>Как {appName} использует и защищает данные</Text>
         </View>
         <AppIcon name="chevron-forward" size={20} color={colors.muted} />
       </Pressable>

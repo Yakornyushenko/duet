@@ -2,7 +2,7 @@ import { AppIcon } from '@/components/AppIcon';
 import { Tabs, type BottomTabBarButtonProps } from 'expo-router/js-tabs';
 import { PlatformPressable } from 'expo-router/react-navigation';
 import { useEffect, useRef, useState } from 'react';
-import { Platform, Pressable, StyleSheet, View } from 'react-native';
+import { Animated, Platform, Pressable, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
@@ -12,7 +12,18 @@ function MoreTabButton(props: BottomTabBarButtonProps) {
   const [hovered, setHovered] = useState(false);
   const [returning, setReturning] = useState(false);
   const returnTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const scale = useRef(new Animated.Value(1)).current;
   const selected = props['aria-selected'];
+
+  const animateTo = (value: number) => {
+    scale.stopAnimation();
+    Animated.spring(scale, {
+      toValue: value,
+      speed: 28,
+      bounciness: 5,
+      useNativeDriver: true,
+    }).start();
+  };
 
   useEffect(() => {
     setReturning(false);
@@ -43,17 +54,16 @@ function MoreTabButton(props: BottomTabBarButtonProps) {
         }, 200);
       }}
       onLongPress={props.onLongPress}
-      onHoverIn={() => setHovered(true)}
-      onHoverOut={() => setHovered(false)}
+      onPressIn={() => animateTo(0.9)}
+      onPressOut={() => animateTo(1)}
+      onHoverIn={() => { setHovered(true); animateTo(1.05); }}
+      onHoverOut={() => { setHovered(false); animateTo(1); }}
       style={[props.style, styles.backButton]}
     >
       {({ pressed }) => (
-        <View style={[
-          styles.backIcon,
-          pressed && styles.pressed,
-        ]}>
+        <Animated.View style={[styles.backIcon, { transform: [{ scale }] }]}>
           <AppIcon name="arrow-back" color={pressed || hovered || returning ? colors.primary : colors.muted} size={26} />
-        </View>
+        </Animated.View>
       )}
     </Pressable>
   );
@@ -129,6 +139,5 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: colors.border,
     alignItems: 'center', justifyContent: 'center',
   },
-  pressed: { transform: [{ scale: 0.94 }] },
   hiddenTabBar: { display: 'none' },
 });

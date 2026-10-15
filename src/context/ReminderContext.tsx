@@ -138,7 +138,7 @@ export function ReminderProvider({ children }: PropsWithChildren) {
         router.push(`/wish?id=${target.id}` as Href);
         return;
       }
-      router.push({ pathname: '/date-form', params: { id: target.id } });
+      router.push({ pathname: '/date', params: { id: target.id } });
     };
 
     let active = true;

@@ -6,6 +6,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { AppButton } from '@/components/AppButton';
 import { AppScreen } from '@/components/AppScreen';
+import { BackButton } from '@/components/BackButton';
 import { appName, quotedAppName } from '@/config/app';
 import { useDialog } from '@/context/DialogContext';
 import { useReminders } from '@/context/ReminderContext';
@@ -16,7 +17,7 @@ import {
 } from '@/services/reminders';
 import { colors, radii, spacing, typography } from '@/theme/tokens';
 import { formatEventDate } from '@/utils/dates';
-import { eventIcons } from '@/utils/eventIcons';
+import { entityIcons } from '@/utils/entityIcons';
 
 function EventReminderCard({ group }: { group: PlannedEventReminders }) {
   return (
@@ -27,7 +28,7 @@ function EventReminderCard({ group }: { group: PlannedEventReminders }) {
       style={({ pressed }) => [styles.reminderCard, pressed && styles.pressed]}
     >
       <View style={styles.eventIcon}>
-        <AppIcon name={eventIcons[group.event.icon]} size={21} color={colors.primary} />
+        <AppIcon name={entityIcons[group.event.icon]} size={21} color={colors.primary} />
       </View>
       <View style={styles.reminderCopy}>
         <Text style={styles.reminderTitle} numberOfLines={2}>{group.event.title}</Text>
@@ -40,12 +41,10 @@ function EventReminderCard({ group }: { group: PlannedEventReminders }) {
 }
 
 export default function RemindersScreen() {
-  const [backPressed, setBackPressed] = useState(false);
   const [returning, setReturning] = useState(false);
   const focused = useIsFocused();
 
   useEffect(() => {
-    setBackPressed(false);
     setReturning(false);
   }, [focused]);
 
@@ -87,16 +86,7 @@ export default function RemindersScreen() {
   return (
     <AppScreen>
       <View style={styles.header}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Назад"
-          onPressIn={() => setBackPressed(true)}
-          onPressOut={() => setBackPressed(false)}
-          onPress={() => setReturning(true)}
-          style={styles.iconButton}
-        >
-          <AppIcon name="chevron-back" size={24} color={backPressed || returning ? colors.primary : colors.muted} />
-        </Pressable>
+        <BackButton disabled={returning} onPress={() => setReturning(true)} />
         <Text style={styles.headerTitle}>Напоминания</Text>
         <View style={styles.headerSpacer} />
       </View>
@@ -165,14 +155,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: spacing.xxxl,
-  },
-  iconButton: {
-    width: 44,
-    height: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: radii.round,
-    backgroundColor: colors.surface,
   },
   headerTitle: {
     ...typography.cardTitle,

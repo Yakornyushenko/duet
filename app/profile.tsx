@@ -7,6 +7,7 @@ import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 import { AppButton } from '@/components/AppButton';
 import { AppInput } from '@/components/AppInput';
 import { AppScreen } from '@/components/AppScreen';
+import { BackButton } from '@/components/BackButton';
 import { quotedAppName } from '@/config/app';
 import { InvitePartnerCallout } from '@/components/InvitePartnerCallout';
 import { PairAvatars } from '@/components/PairAvatars';
@@ -87,14 +88,8 @@ export default function ProfileScreen() {
   return (
     <AppScreen>
       <View style={styles.header}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Назад в Ещё"
-          onPress={() => router.canGoBack() ? router.back() : router.replace('/more')}
-          style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}
-        >
-          <AppIcon name="chevron-back" size={24} color={colors.primary} />
-        </Pressable>
+        <BackButton accessibilityLabel="Назад в Ещё"
+          onPress={() => router.canGoBack() ? router.back() : router.replace('/more')} />
         <Text style={styles.title}>Профиль</Text>
       </View>
 
@@ -200,6 +195,22 @@ export default function ProfileScreen() {
             </View>
             <AppIcon name="chevron-forward" size={20} color={colors.muted} />
           </Pressable>
+          <View style={styles.separator} />
+          <Pressable
+            accessibilityRole="link"
+            accessibilityLabel="Открыть политику конфиденциальности"
+            onPress={() => router.push('/privacy' as Href)}
+            style={({ pressed }) => [styles.detailRow, pressed && styles.pressed]}
+          >
+            <View style={styles.detailIcon}>
+              <AppIcon name="shield-checkmark-outline" size={20} color={colors.primary} />
+            </View>
+            <View style={styles.detailCopy}>
+              <Text style={styles.detailValue}>Конфиденциальность</Text>
+              <Text style={styles.detailLabel}>Обработка и защита ваших данных</Text>
+            </View>
+            <AppIcon name="chevron-forward" size={20} color={colors.muted} />
+          </Pressable>
         </View>
       </View>
 
@@ -288,11 +299,6 @@ const styles = StyleSheet.create({
   title: {
     ...typography.title,
     color: colors.text,
-  },
-  backButton: {
-    width: 44, height: 44,
-    alignItems: 'center', justifyContent: 'center',
-    borderRadius: radii.md, backgroundColor: colors.softRose,
   },
   coupleCard: {
     alignItems: 'center',

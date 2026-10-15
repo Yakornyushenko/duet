@@ -2,14 +2,15 @@ import { useEffect, useState } from 'react';
 import { AppIcon } from '@/components/AppIcon';
 import * as Haptics from 'expo-haptics';
 import { router, useLocalSearchParams } from 'expo-router';
-import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
+import { StyleSheet, Switch, Text, View } from 'react-native';
 
+import { AnimatedCollapsible } from '@/components/AnimatedCollapsible';
+import { BackButton } from '@/components/BackButton';
 import { DateCategoryPicker } from '@/components/DateCategoryPicker';
-import { DateCompletionEditor } from '@/components/DateCompletionEditor';
 import { AppButton } from '@/components/AppButton';
 import { AppDatePicker } from '@/components/AppDatePicker';
 import { AppTimePicker } from '@/components/AppTimePicker';
-import { EventIconPicker } from '@/components/EventIconPicker';
+import { EntityIconPicker } from '@/components/EntityIconPicker';
 import { AppInput } from '@/components/AppInput';
 import { AppScreen } from '@/components/AppScreen';
 import { SegmentedControl } from '@/components/SegmentedControl';
@@ -18,7 +19,7 @@ import { useApp } from '@/context/AppContext';
 import { useDialog } from '@/context/DialogContext';
 import { useReminders } from '@/context/ReminderContext';
 import { colors, radii, spacing, typography } from '@/theme/tokens';
-import { DateCategory, DateEventIcon, DateRecurrence } from '@/types/domain';
+import { DateCategory, EntityIcon, DateRecurrence } from '@/types/domain';
 import { formatRelationshipDate, getNextOccurrence, toDateOnly } from '@/utils/dates';
 
 export default function DateFormScreen() {
@@ -36,9 +37,10 @@ export default function DateFormScreen() {
   } = useReminders();
   const existingEvent = events.find((event) => event.id === eventId);
   const [title, setTitle] = useState(existingEvent?.title ?? '');
+  const [description, setDescription] = useState(existingEvent?.description ?? '');
   const [eventDate, setEventDate] = useState(existingEvent?.eventDate ?? toDateOnly(new Date()));
   const [recurrence, setRecurrence] = useState<DateRecurrence>(existingEvent?.recurrence ?? 'yearly');
-  const [icon, setIcon] = useState<DateEventIcon>(existingEvent?.icon ?? 'heart');
+  const [icon, setIcon] = useState<EntityIcon>(existingEvent?.icon ?? 'heart');
   const [category, setCategory] = useState<DateCategory>(
     existingEvent?.category ?? categories.find((option) => option.value === params.category)?.value ?? categories[0]?.value ?? '',
   );
@@ -52,7 +54,7 @@ export default function DateFormScreen() {
   const [notifications, setNotifications] = useState<{ date: string; time: string; text?: string }[]>([]);
   const [editingReminder, setEditingReminder] = useState<number | null>(null);
   const [reminderDatePicker, setReminderDatePicker] = useState(false);
-  const deadline = toDateOnly(getNextOccurrence({ id: eventId ?? '', title, eventDate, recurrence, icon, category }));
+  const deadline = toDateOnly(getNextOccurrence({ id: eventId ?? '', title, description, eventDate, recurrence, icon, category }));
 
   useEffect(() => {
     if (remindersInitializing) {
@@ -134,7 +136,7 @@ export default function DateFormScreen() {
         showDialog({ title: 'Выберите категорию', message: 'Добавьте категорию через меню «…» на главном экране раздела «Даты», затем выберите её для даты.' });
         return;
       }
-      const input = { title: title.trim(), eventDate, recurrence, icon, category };
+      const input = { title: title.trim(), description: description.trim(), eventDate, recurrence, icon, category };
       const savedEvent = existingEvent
         ? await updateEvent(existingEvent.id, input)
         : await addEvent(input);
@@ -173,7 +175,7 @@ export default function DateFormScreen() {
             try {
               await deleteEvent(existingEvent.id);
               await removeEventSettings(existingEvent.id);
-              router.back();
+              router.dismissTo('/(tabs)/dates');
             } catch (error) {
               showDialog({
                 title: 'Не получилось удалить',
@@ -191,10 +193,8 @@ export default function DateFormScreen() {
   return (
     <AppScreen>
       <View style={styles.header}>
-        <Pressable accessibilityRole="button" accessibilityLabel="Назад" onPress={() => router.back()} style={styles.iconButton}>
-          <AppIcon name="chevron-back" size={24} color={colors.text} />
-        </Pressable>
-        <Text style={styles.headerTitle}>{existingEvent ? 'Редактировать дату' : 'Новая дата'}</Text>
+        <BackButton onPress={() => router.back()} />
+        <Text style={styles.headerTitle}>{existingEvent ? 'Редактирование даты' : 'Новая дата'}</Text>
         <View style={styles.headerSpacer} />
       </View>
 
@@ -206,6 +206,17 @@ export default function DateFormScreen() {
           onChangeText={setTitle}
           autoCapitalize="sentences"
           maxLength={80}
+        />
+
+        <AppInput
+          label="Описание"
+          placeholder="Добавьте детали, планы или важное напоминание"
+          value={description}
+          onChangeText={setDescription}
+          autoCapitalize="sentences"
+          multiline
+          maxLength={2000}
+          style={styles.description}
         />
 
         <View style={styles.field}>
@@ -241,9 +252,7 @@ export default function DateFormScreen() {
           <DateCategoryPicker value={category} onChange={setCategory} />
         </View>
 
-        <EventIconPicker value={icon} onChange={(value) => { setIcon(value); void Haptics.selectionAsync(); }} />
-
-        {existingEvent && <DateCompletionEditor event={existingEvent} />}
+        <EntityIconPicker kind="date" value={icon} onChange={(value) => { setIcon(value); void Haptics.selectionAsync(); }} />
 
         <View style={styles.field}>
           <Text style={styles.label}>Напоминания</Text>
@@ -266,8 +275,7 @@ export default function DateFormScreen() {
               />
             </View>
 
-            {reminderEnabled ? (
-              <View style={styles.reminderOptions}>
+            <AnimatedCollapsible expanded={reminderEnabled} style={styles.reminderOptions}>
                 <Text style={styles.reminderOptionsLabel}>Когда напомнить</Text>
                 {notifications.map((item, index) => (
                   <View key={index} style={styles.field}>
@@ -307,7 +315,10 @@ export default function DateFormScreen() {
                   title="День уведомления"
                   maximumDate={deadline}
                   value={notifications[editingReminder ?? -1]?.date ?? deadline}
-                  onSelect={(date) => updateReminder({ date })}
+                  onSelect={(date) => {
+                    updateReminder({ date });
+                    setShowTimePicker(true);
+                  }}
                   onClose={() => setReminderDatePicker(false)}
                 />
                 <AppTimePicker
@@ -316,8 +327,7 @@ export default function DateFormScreen() {
                   onSelect={(time) => updateReminder({ time })}
                   onClose={() => setShowTimePicker(false)}
                 />
-              </View>
-            ) : null}
+            </AnimatedCollapsible>
           </View>
         </View>
 
@@ -351,14 +361,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: spacing.xxxl,
   },
-  iconButton: {
-    width: 44,
-    height: 44,
-    borderRadius: radii.round,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.surface,
-  },
   headerTitle: {
     ...typography.cardTitle,
     color: colors.text,
@@ -375,6 +377,12 @@ const styles = StyleSheet.create({
   label: {
     ...typography.label,
     color: colors.text,
+  },
+  description: {
+    minHeight: 108,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.md,
+    textAlignVertical: 'top',
   },
   iconGrid: {
     flexDirection: 'row',

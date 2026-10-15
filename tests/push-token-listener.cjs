@@ -39,6 +39,7 @@ async function main() {
       if (name === 'expo-notifications') return notifications;
       if (name === 'expo-constants') return { default: { easConfig: { projectId: 'test' } } };
       if (name === 'react-native') return { Platform: { OS: 'android' } };
+      if (name === '@/lib/network') return { withTimeout: (operation) => operation };
       throw new Error('Unexpected import: ' + name);
     },
   });

@@ -15,7 +15,7 @@ import { useReminders } from '@/context/ReminderContext';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { getPlannedReminderLabel } from '@/services/reminders';
 import { colors, radii, shadow, spacing, typography } from '@/theme/tokens';
-import { formatRelationshipDate, getDaysTogether, getUpcomingEvents } from '@/utils/dates';
+import { formatRelationshipDate, getRelationshipDuration, getUpcomingEvents } from '@/utils/dates';
 
 export default function HomeScreen() {
   const { user, couple, events } = useApp();
@@ -60,6 +60,9 @@ export default function HomeScreen() {
   if (!user || !couple) {
     return null;
   }
+  const relationshipDuration = couple.relationshipStartedAt
+    ? getRelationshipDuration(couple.relationshipStartedAt)
+    : null;
 
   return (
     <AppScreen wide>
@@ -98,7 +101,7 @@ export default function HomeScreen() {
       <View style={styles.primaryColumn}>
       <View style={styles.hero}>
         <View style={[styles.daySummary, isDesktop && styles.desktopDaySummary]}>
-        {couple.relationshipStartedAt ? <>
+        {couple.relationshipStartedAt && relationshipDuration ? <>
         <Text style={styles.eyebrow}>Мы вместе уже</Text>
         <Pressable
           accessibilityRole="button"
@@ -106,8 +109,13 @@ export default function HomeScreen() {
           onPress={() => setRelationshipDateEditorVisible(true)}
           style={({ pressed }) => pressed && styles.pressed}
         >
-          <Text style={styles.dayCount}>{getDaysTogether(couple.relationshipStartedAt)}</Text>
-          <Text style={styles.dayLabel}>дней</Text>
+          <Text style={styles.dayCount} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.72}>
+            {relationshipDuration.valueLabel}
+          </Text>
+          <Text style={[styles.dayLabel, relationshipDuration.detailLabel && styles.dayLabelCompact]}>
+            {relationshipDuration.unitLabel}
+          </Text>
+          {relationshipDuration.detailLabel ? <Text style={styles.durationDetail}>{relationshipDuration.detailLabel}</Text> : null}
         </Pressable>
         <Text style={styles.heroDate}>С {formatRelationshipDate(couple.relationshipStartedAt)}</Text>
         </> : <AppButton label="Добавить дату начала отношений" variant="ghost" onPress={() => setRelationshipDateEditorVisible(true)} />}
@@ -135,7 +143,7 @@ export default function HomeScreen() {
         <DateCard
           event={nextEvent}
           highlighted
-          onPress={() => router.push({ pathname: '/date-form', params: { id: nextEvent.id } })}
+          onPress={() => router.push({ pathname: '/date', params: { id: nextEvent.id } })}
         />
       ) : (
         <View style={styles.emptyCard}>
@@ -164,7 +172,7 @@ export default function HomeScreen() {
                 key={event.id}
                 event={event}
                 reminderLabel={getPlannedReminderLabel(plannedReminders, event.id)}
-                onPress={() => router.push({ pathname: '/date-form', params: { id: event.id } })}
+                onPress={() => router.push({ pathname: '/date', params: { id: event.id } })}
               />
             ))}
           </View>
@@ -256,6 +264,14 @@ const styles = StyleSheet.create({
   dayLabel: {
     ...typography.sectionTitle,
     color: colors.text,
+    marginBottom: spacing.sm,
+  },
+  dayLabelCompact: {
+    marginBottom: 0,
+  },
+  durationDetail: {
+    ...typography.label,
+    color: colors.secondary,
     marginBottom: spacing.sm,
   },
   heroDate: {

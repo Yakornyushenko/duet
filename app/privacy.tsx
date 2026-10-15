@@ -1,6 +1,7 @@
 import { Href, Stack, router } from 'expo-router';
 import { Image, Linking, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { BackButton } from '@/components/BackButton';
 import { AppScreen } from '@/components/AppScreen';
 import { appName, quotedAppName } from '@/config/app';
 import { supportEmail } from '@/config/support';
@@ -124,14 +125,7 @@ export default function PrivacyScreen() {
       <Stack.Screen options={{ title: `Политика конфиденциальности ${quotedAppName}` }} />
 
       {Platform.OS !== 'web' ? (
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Назад"
-          onPress={() => router.canGoBack() ? router.back() : router.replace('/auth')}
-          style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}
-        >
-          <Text style={styles.backButtonText}>← Назад</Text>
-        </Pressable>
+        <BackButton onPress={() => router.canGoBack() ? router.back() : router.replace('/auth')} />
       ) : null}
 
       <View style={styles.header}>
@@ -210,16 +204,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingTop: spacing.sm,
     paddingBottom: spacing.md,
-  },
-  backButton: {
-    alignSelf: 'flex-start',
-    minHeight: 44,
-    justifyContent: 'center',
-    paddingHorizontal: spacing.sm,
-  },
-  backButtonText: {
-    ...typography.label,
-    color: colors.primary,
   },
   logo: {
     width: 148,
