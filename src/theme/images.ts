@@ -16,6 +16,11 @@ const themeImages = {
     invitePartner: require('../../assets/invite-partner-emerald.png'),
     wishesEnvelope: require('../../assets/wishes-envelope-soft-emerald.png'),
   },
+  honey: {
+    birds: require('../../assets/duet-birds-honey.png'),
+    invitePartner: require('../../assets/invite-partner-honey.png'),
+    wishesEnvelope: require('../../assets/wishes-envelope-soft-honey.png'),
+  },
 } satisfies Record<ThemeName, Record<ThemeImageName, ImageSourcePropType>>;
 
 export function useThemeImage(name: ThemeImageName): ImageSourcePropType {

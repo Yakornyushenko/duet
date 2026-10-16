@@ -6,6 +6,7 @@ import type { ThemeName } from '@/theme/tokens';
 const iconNames: Record<ThemeName, string | null> = {
   rose: null,
   emerald: 'emerald',
+  honey: 'honey',
 };
 
 export async function applyThemeAppIcon(theme: ThemeName, changeOnBackground = false): Promise<void> {

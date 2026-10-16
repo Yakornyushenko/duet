@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { reloadAppAsync } from 'expo';
 import { createContext, PropsWithChildren, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { View } from 'react-native';
 
@@ -33,7 +34,7 @@ export function ThemeProvider({ children }: PropsWithChildren) {
     void AsyncStorage.getItem(THEME_STORAGE_KEY)
       .then((storedTheme) => {
         if (cancelled) return;
-        const nextTheme: ThemeName = storedTheme === 'emerald' ? 'emerald' : 'rose';
+        const nextTheme: ThemeName = storedTheme === 'emerald' || storedTheme === 'honey' ? storedTheme : 'rose';
         themeRef.current = nextTheme;
         setActiveTheme(nextTheme);
         setThemeState(nextTheme);
@@ -59,8 +60,9 @@ export function ThemeProvider({ children }: PropsWithChildren) {
       themeRef.current = nextTheme;
       setActiveTheme(nextTheme);
       setThemeState(nextTheme);
+      await applyThemeAppIcon(nextTheme, true);
       await new Promise((resolve) => setTimeout(resolve, 1000));
-      await applyThemeAppIcon(nextTheme);
+      await reloadAppAsync('Тема приложения изменена');
     } catch {
       throw new Error('Не удалось сохранить тему. Попробуйте ещё раз.');
     } finally {

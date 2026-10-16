@@ -60,6 +60,15 @@
                 "foregroundImage": "./assets/duet-icon-foreground-emerald.png",
                 "backgroundColor": "#F6FBF8"
               }
+            },
+            "honey": {
+              "ios": {
+                "light": "./assets/duet-app-icon-honey.png"
+              },
+              "android": {
+                "foregroundImage": "./assets/duet-icon-foreground-honey.png",
+                "backgroundColor": "#FFF8E6"
+              }
             }
           }
         }

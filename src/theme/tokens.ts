@@ -1,6 +1,6 @@
 import { ImageStyle, Platform, StyleSheet, TextStyle, ViewStyle } from 'react-native';
 
-export type ThemeName = 'rose' | 'emerald';
+export type ThemeName = 'rose' | 'emerald' | 'honey';
 
 export type AppColors = {
   background: string;
@@ -61,6 +61,25 @@ export const themePalettes: Record<ThemeName, AppColors> = {
     white: '#FFFFFF',
     overlay: 'rgba(22, 34, 30, 0.42)',
   },
+  honey: {
+    background: '#FFF8E6',
+    surface: '#FFFCF4',
+    primary: '#D79A24',
+    primaryPressed: '#B97812',
+    secondary: '#8C6A2F',
+    secondaryPressed: '#E7C36E',
+    soft: '#F2D58A',
+    softAccent: '#FFF0C4',
+    text: '#2B2419',
+    muted: '#74664F',
+    border: '#EADCB7',
+    success: '#7A7542',
+    danger: '#B94355',
+    dangerSoft: '#FBE9EC',
+    dangerPressed: '#F4D2D8',
+    white: '#FFFFFF',
+    overlay: 'rgba(43, 36, 25, 0.42)',
+  },
 };
 
 let activeTheme: ThemeName = 'rose';
@@ -85,13 +104,16 @@ for (const palette of Object.values(themePalettes)) {
 
 const roseWebShadow = '0 8px 24px rgba(110, 64, 90, 0.08)';
 const emeraldWebShadow = '0 8px 24px rgba(54, 95, 84, 0.10)';
+const honeyWebShadow = '0 8px 24px rgba(140, 106, 47, 0.12)';
 
 function resolveThemeValues(value: unknown, theme: ThemeName): unknown {
   if (typeof value === 'string') {
     const colorToken = colorTokenByValue.get(value.toLowerCase());
     if (colorToken) return themePalettes[theme][colorToken];
-    if (value === roseWebShadow || value === emeraldWebShadow) {
-      return theme === 'emerald' ? emeraldWebShadow : roseWebShadow;
+    if (value === roseWebShadow || value === emeraldWebShadow || value === honeyWebShadow) {
+      if (theme === 'emerald') return emeraldWebShadow;
+      if (theme === 'honey') return honeyWebShadow;
+      return roseWebShadow;
     }
     return value;
   }

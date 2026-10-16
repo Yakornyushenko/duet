@@ -1,4 +1,5 @@
 import { AppIcon } from '@/components/AppIcon';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
 import { Href, router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
@@ -29,7 +30,14 @@ type ThemeOptionButtonProps = {
   onPress: () => void;
 };
 
+const themeLabels: Record<ThemeName, string> = {
+  rose: 'Розовая',
+  emerald: 'Изумрудная',
+  honey: 'Медовая',
+};
+
 let profileScrollOffsetToRestore: number | null = null;
+const PROFILE_THEME_SCROLL_STORAGE_KEY = 'duet:profile-theme-scroll-offset';
 
 function ThemeOptionButton({ label, palette, selected, disabled, onPress }: ThemeOptionButtonProps) {
   return (
@@ -68,11 +76,35 @@ export default function ProfileScreen() {
   const [accountDeleting, setAccountDeleting] = useState(false);
   const [relationshipDateEditorVisible, setRelationshipDateEditorVisible] = useState(false);
   const profileScrollOffset = useRef(0);
-  const [initialScrollOffset] = useState(() => {
+  const [initialScrollOffset, setInitialScrollOffset] = useState<number>();
+  const [scrollOffsetReady, setScrollOffsetReady] = useState(false);
+
+  useEffect(() => {
     const offset = profileScrollOffsetToRestore;
     profileScrollOffsetToRestore = null;
-    return offset ?? undefined;
-  });
+
+    if (offset !== null) {
+      setInitialScrollOffset(offset);
+      setScrollOffsetReady(true);
+      return;
+    }
+
+    let cancelled = false;
+    void AsyncStorage.getItem(PROFILE_THEME_SCROLL_STORAGE_KEY)
+      .then((storedOffset) => {
+        if (cancelled) return;
+        const parsedOffset = storedOffset === null ? undefined : Number(storedOffset);
+        setInitialScrollOffset(Number.isFinite(parsedOffset) ? parsedOffset : undefined);
+        void AsyncStorage.removeItem(PROFILE_THEME_SCROLL_STORAGE_KEY);
+      })
+      .finally(() => {
+        if (!cancelled) setScrollOffsetReady(true);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     setDisplayName(user?.displayName ?? '');
@@ -131,10 +163,12 @@ export default function ProfileScreen() {
     try {
       setThemeSaving(true);
       profileScrollOffsetToRestore = profileScrollOffset.current;
+      await AsyncStorage.setItem(PROFILE_THEME_SCROLL_STORAGE_KEY, String(profileScrollOffset.current));
       await setTheme(nextTheme);
       setThemePickerVisible(false);
     } catch (error) {
       profileScrollOffsetToRestore = null;
+      void AsyncStorage.removeItem(PROFILE_THEME_SCROLL_STORAGE_KEY);
       showDialog({
         title: 'Не получилось изменить тему',
         message: error instanceof Error ? error.message : 'Попробуйте ещё раз.',
@@ -145,7 +179,7 @@ export default function ProfileScreen() {
     }
   };
 
-  if (!user || !couple) {
+  if (!user || !couple || !scrollOffsetReady) {
     return null;
   }
 
@@ -239,7 +273,7 @@ export default function ProfileScreen() {
             </View>
             <View style={styles.detailCopy}>
               <Text style={styles.detailValue}>Тема приложения</Text>
-              <Text style={styles.detailLabel}>{theme === 'rose' ? 'Розовая' : 'Изумрудная'}</Text>
+              <Text style={styles.detailLabel}>{themeLabels[theme]}</Text>
             </View>
             <AppIcon name="chevron-forward" size={20} color={colors.muted} />
           </Pressable>
@@ -268,6 +302,12 @@ export default function ProfileScreen() {
               <Text style={styles.themeModalTitle}>Тема приложения</Text>
               <Text style={styles.themeModalSubtitle}>Выберите настроение интерфейса</Text>
             </View>
+            <View style={styles.themeRestartNote}>
+              <AppIcon name="refresh-outline" size={20} color={colors.secondary} />
+              <Text style={styles.themeRestartNoteText}>
+                После смены темы приложение перезапустится
+              </Text>
+            </View>
             <View style={styles.themeOptions}>
               <ThemeOptionButton
                 label="Розовая"
@@ -282,6 +322,13 @@ export default function ProfileScreen() {
                 selected={theme === 'emerald'}
                 disabled={themeSaving}
                 onPress={() => void changeTheme('emerald')}
+              />
+              <ThemeOptionButton
+                label="Медовая"
+                palette={themePalettes.honey}
+                selected={theme === 'honey'}
+                disabled={themeSaving}
+                onPress={() => void changeTheme('honey')}
               />
             </View>
             <AppButton
@@ -547,6 +594,19 @@ const styles = createThemedStyles({
   themeModalSubtitle: {
     ...typography.body,
     color: colors.muted,
+  },
+  themeRestartNote: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    padding: spacing.md,
+    borderRadius: radii.sm,
+    backgroundColor: colors.softAccent,
+  },
+  themeRestartNoteText: {
+    ...typography.label,
+    flex: 1,
+    color: colors.secondary,
   },
   themeOptions: {
     gap: spacing.md,
