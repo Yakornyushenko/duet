@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppButton } from '@/components/AppButton';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
-import { colors, radii, spacing, typography } from '@/theme/tokens';
+import { colors, createThemedStyles, radii, spacing, typography } from '@/theme/tokens';
 
 type AppTimePickerProps = {
   visible: boolean;
@@ -69,7 +69,7 @@ export function AppTimePicker({ visible, value, onSelect, onClose }: AppTimePick
   );
 }
 
-const styles = StyleSheet.create({
+const styles = createThemedStyles({
   backdrop: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: spacing.xxl, backgroundColor: colors.overlay },
   card: { width: '100%', maxHeight: '100%', padding: spacing.xl, borderRadius: radii.xl, backgroundColor: colors.background, gap: spacing.md },
   title: { ...typography.sectionTitle, color: colors.text, textAlign: 'center' },

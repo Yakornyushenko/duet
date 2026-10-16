@@ -12,7 +12,7 @@ import { IntimateQuestionSettings } from '@/components/IntimateQuestionSettings'
 import { useApp } from '@/context/AppContext';
 import { useDialog } from '@/context/DialogContext';
 import { DailyQuestion, DailyQuestionState, loadDailyQuestions, loadQuestionHistory, questionRequest } from '@/services/dailyQuestions';
-import { colors, radii, spacing, typography } from '@/theme/tokens';
+import { colors, createThemedStyles, radii, spacing, typography } from '@/theme/tokens';
 
 export default function DailyQuestionScreen() {
   const { user, couple } = useApp();
@@ -184,12 +184,12 @@ function QuestionHistory({ questions, onSelect, hasMore, loading, onMore }: {
   </View>;
 }
 
-const styles = StyleSheet.create({
+const styles = createThemedStyles({
   historyToggle: { flexDirection: 'row', alignItems: 'center', minHeight: 52, paddingHorizontal: spacing.lg, borderRadius: radii.md, backgroundColor: colors.surface },
   historyContent: { position: 'absolute', top: 0, left: 0, right: 0, paddingTop: spacing.md, gap: spacing.lg },
   screen: { gap: spacing.lg }, row: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   heading: { ...typography.sectionTitle, color: colors.text }, title: { ...typography.cardTitle, color: colors.text },
   flexTitle: { ...typography.cardTitle, color: colors.text, flex: 1 }, copy: { ...typography.body, color: colors.muted },
   card: { backgroundColor: colors.surface, borderRadius: radii.lg, padding: spacing.xl, gap: spacing.md },
-  answer: { backgroundColor: colors.softRose, borderRadius: radii.md, padding: spacing.lg, gap: spacing.sm },
+  answer: { backgroundColor: colors.softAccent, borderRadius: radii.md, padding: spacing.lg, gap: spacing.sm },
 });

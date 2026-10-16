@@ -16,19 +16,28 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
-import { colors, spacing } from '@/theme/tokens';
+import { colors, createThemedStyles, spacing } from '@/theme/tokens';
 
 type AppScreenProps = PropsWithChildren<{
   scroll?: boolean;
   wide?: boolean;
   contentContainerStyle?: StyleProp<ViewStyle>;
+  initialScrollOffset?: number;
+  onScrollOffsetChange?: (offset: number) => void;
 }>;
 
-export function AppScreen({ children, scroll = true, wide = false, contentContainerStyle }: AppScreenProps) {
+export function AppScreen({
+  children,
+  scroll = true,
+  wide = false,
+  contentContainerStyle,
+  initialScrollOffset,
+  onScrollOffsetChange,
+}: AppScreenProps) {
   const isFocused = useIsFocused();
   const scrollView = useRef<ScrollView>(null);
   const keyboardSpacerHeight = useRef(new Animated.Value(0)).current;
-  const scrollOffsetY = useRef(0);
+  const scrollOffsetY = useRef(initialScrollOffset ?? 0);
   const { contentMaxWidth, horizontalPadding, wideContentMaxWidth } = useResponsiveLayout();
   const responsiveContentStyle = {
     maxWidth: wide ? wideContentMaxWidth : contentMaxWidth,
@@ -38,23 +47,15 @@ export function AppScreen({ children, scroll = true, wide = false, contentContai
   const scrollFocusedInputIntoView = useCallback((keyboardTop: number) => {
     const input = TextInput.State.currentlyFocusedInput();
     const currentScrollView = scrollView.current;
-    const nativeScrollView = currentScrollView?.getNativeScrollRef();
-    if (input === null || currentScrollView === null || nativeScrollView == null) return;
+    if (input === null || currentScrollView === null) return;
 
     requestAnimationFrame(() => {
-      input.measureLayout(
-        currentScrollView.getInnerViewNode(),
-        (_left, top, _width, height) => {
-          nativeScrollView.measureInWindow((_x, scrollTop) => {
-            const visibleHeight = Math.max(0, keyboardTop - scrollTop);
-            const nextOffset = top + height + spacing.huge - visibleHeight;
-            if (nextOffset > scrollOffsetY.current) {
-              currentScrollView.scrollTo({ y: nextOffset, animated: true });
-            }
-          });
-        },
-        () => undefined,
-      );
+      input.measureInWindow((_x, inputTop, _width, height) => {
+        const coveredHeight = inputTop + height + spacing.huge - keyboardTop;
+        if (coveredHeight > 0) {
+          currentScrollView.scrollTo({ y: scrollOffsetY.current + coveredHeight, animated: true });
+        }
+      });
     });
   }, []);
 
@@ -85,10 +86,15 @@ export function AppScreen({ children, scroll = true, wide = false, contentContai
     <ScrollView
       ref={scrollView}
       automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
+      contentOffset={initialScrollOffset === undefined ? undefined : { x: 0, y: initialScrollOffset }}
       contentContainerStyle={[styles.content, responsiveContentStyle, contentContainerStyle]}
       keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
       keyboardShouldPersistTaps="handled"
-      onScroll={(event) => { scrollOffsetY.current = event.nativeEvent.contentOffset.y; }}
+      onScroll={(event) => {
+        const offset = event.nativeEvent.contentOffset.y;
+        scrollOffsetY.current = offset;
+        onScrollOffsetChange?.(offset);
+      }}
       scrollEventThrottle={16}
       showsVerticalScrollIndicator={false}
     >
@@ -114,7 +120,7 @@ export function AppScreen({ children, scroll = true, wide = false, contentContai
   );
 }
 
-const styles = StyleSheet.create({
+const styles = createThemedStyles({
   safeArea: {
     flex: 1,
     backgroundColor: colors.background,

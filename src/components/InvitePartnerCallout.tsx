@@ -1,7 +1,8 @@
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { AppIcon } from '@/components/AppIcon';
-import { colors, radii, shadow, spacing, typography } from '@/theme/tokens';
+import { useThemeImage } from '@/theme/images';
+import { colors, createThemedStyles, radii, shadow, spacing, typography } from '@/theme/tokens';
 
 type InvitePartnerCalloutProps = {
   onPress: () => void;
@@ -12,6 +13,8 @@ export function InvitePartnerCallout({
   onPress,
   description = 'Создайте общее пространство для ваших дат, желаний и заметок.',
 }: InvitePartnerCalloutProps) {
+  const illustration = useThemeImage('invitePartner');
+
   return (
     <Pressable
       accessibilityRole="button"
@@ -21,7 +24,7 @@ export function InvitePartnerCallout({
       style={({ pressed }) => [styles.callout, pressed && styles.pressed]}
     >
       <Image
-        source={require('../../assets/invite-partner.png')}
+        source={illustration}
         style={styles.illustration}
         resizeMode="contain"
         accessible={false}
@@ -35,7 +38,7 @@ export function InvitePartnerCallout({
   );
 }
 
-const styles = StyleSheet.create({
+const styles = createThemedStyles({
   callout: {
     ...shadow,
     minHeight: 88,

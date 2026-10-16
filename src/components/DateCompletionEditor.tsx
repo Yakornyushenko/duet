@@ -8,7 +8,7 @@ import { useDialog } from '@/context/DialogContext';
 import { DateCompletion, listDateCompletions, setDateCompletion } from '@/services/dateCompletions';
 import { DateEvent } from '@/types/domain';
 import { formatRelationshipDate, toDateOnly } from '@/utils/dates';
-import { colors, radii, spacing, typography } from '@/theme/tokens';
+import { colors, createThemedStyles, radii, spacing, typography } from '@/theme/tokens';
 
 export function DateCompletionEditor({ event }: { event: DateEvent }) {
   const { showDialog } = useDialog();
@@ -58,7 +58,7 @@ export function DateCompletionEditor({ event }: { event: DateEvent }) {
   </View>;
 }
 
-const styles = StyleSheet.create({
+const styles = createThemedStyles({
   card: { backgroundColor: colors.surface, borderRadius: radii.lg, padding: spacing.lg, gap: spacing.md },
   title: { ...typography.cardTitle, color: colors.text }, hint: { ...typography.caption, color: colors.muted },
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm }, date: { ...typography.body, color: colors.text, flex: 1 },

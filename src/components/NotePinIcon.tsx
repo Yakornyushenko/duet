@@ -1,7 +1,7 @@
 import { AppIcon } from '@/components/AppIcon';
 import { StyleSheet, View } from 'react-native';
 
-import { colors } from '@/theme/tokens';
+import { colors, createThemedStyles } from '@/theme/tokens';
 
 export function NotePinIcon({ pinned, size = 28 }: { pinned: boolean; size?: number }) {
   return (
@@ -18,7 +18,7 @@ export function NotePinIcon({ pinned, size = 28 }: { pinned: boolean; size?: num
   );
 }
 
-const styles = StyleSheet.create({
+const styles = createThemedStyles({
   frame: { position: 'absolute', width: 28, height: 28, alignItems: 'center', justifyContent: 'center' },
   paper: { position: 'absolute', left: 9, top: 8, width: 17, height: 19,
     borderWidth: 1.5, borderColor: colors.primary, borderRadius: 2, paddingHorizontal: 3, paddingTop: 5, gap: 3 },

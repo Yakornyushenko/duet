@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, ViewStyle } from 'react-native';
 
-import { colors, radii, spacing, typography } from '@/theme/tokens';
+import { colors, createThemedStyles, radii, spacing, typography } from '@/theme/tokens';
 
-export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
+export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'dangerOutline';
 
 type AppButtonProps = {
   label: string;
@@ -13,20 +13,6 @@ type AppButtonProps = {
   loading?: boolean;
   fullWidth?: boolean;
   accessibilityHint?: string;
-};
-
-const backgrounds: Record<ButtonVariant, string> = {
-  primary: colors.primary,
-  secondary: colors.soft,
-  ghost: 'transparent',
-  danger: colors.softRose,
-};
-
-const textColors: Record<ButtonVariant, string> = {
-  primary: colors.white,
-  secondary: colors.secondary,
-  ghost: colors.primary,
-  danger: colors.danger,
 };
 
 export function AppButton({
@@ -39,13 +25,40 @@ export function AppButton({
   accessibilityHint,
 }: AppButtonProps) {
   const [pressed, setPressed] = useState(false);
+  const backgrounds: Record<ButtonVariant, string> = {
+    primary: colors.primary,
+    secondary: colors.soft,
+    ghost: 'transparent',
+    danger: colors.dangerSoft,
+    dangerOutline: 'transparent',
+  };
+  const pressedBackgrounds: Record<ButtonVariant, string> = {
+    primary: colors.primaryPressed,
+    secondary: colors.secondaryPressed,
+    ghost: colors.softAccent,
+    danger: colors.dangerPressed,
+    dangerOutline: colors.dangerSoft,
+  };
+  const textColors: Record<ButtonVariant, string> = {
+    primary: colors.white,
+    secondary: colors.secondary,
+    ghost: colors.primary,
+    danger: colors.danger,
+    dangerOutline: colors.danger,
+  };
+  const inactive = disabled || loading;
+  const foregroundColor = inactive ? colors.muted : textColors[variant];
+  const backgroundColor = inactive
+    ? variant === 'ghost' || variant === 'dangerOutline' ? 'transparent' : colors.border
+    : pressed ? pressedBackgrounds[variant] : backgrounds[variant];
+  const outlined = variant === 'dangerOutline';
 
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityHint={accessibilityHint}
-      accessibilityState={{ disabled: disabled || loading, busy: loading }}
-      disabled={disabled || loading}
+      accessibilityState={{ disabled: inactive, busy: loading }}
+      disabled={inactive}
       onPressIn={() => setPressed(true)}
       onPressOut={() => setPressed(false)}
       onPress={() => {
@@ -55,27 +68,29 @@ export function AppButton({
       style={[
         styles.base,
         {
-          backgroundColor: pressed && variant === 'primary' ? colors.primaryPressed : backgrounds[variant],
-          opacity: disabled ? 0.45 : pressed ? 0.82 : 1,
+          backgroundColor,
+          borderColor: outlined ? inactive ? colors.border : colors.danger : 'transparent',
+          transform: [{ scale: pressed ? 0.985 : 1 }],
         },
         fullWidth && styles.fullWidth,
       ]}
     >
       {loading ? (
-        <ActivityIndicator color={textColors[variant]} />
+        <ActivityIndicator color={foregroundColor} />
       ) : (
-        <Text style={[styles.label, { color: textColors[variant] }]}>{label}</Text>
+        <Text style={[styles.label, { color: foregroundColor }]}>{label}</Text>
       )}
     </Pressable>
   );
 }
 
-const styles = StyleSheet.create({
+const styles = createThemedStyles({
   base: {
     minHeight: 52,
     paddingHorizontal: spacing.xl,
     paddingVertical: spacing.md,
     borderRadius: radii.md,
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   } satisfies ViewStyle,

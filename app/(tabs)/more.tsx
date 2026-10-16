@@ -5,9 +5,11 @@ import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { AppScreen } from '@/components/AppScreen';
 import { NotesIcon } from '@/components/NotesIcon';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
-import { colors, radii, spacing, typography } from '@/theme/tokens';
+import { useThemeImage } from '@/theme/images';
+import { colors, createThemedStyles, radii, spacing, typography } from '@/theme/tokens';
 
 export default function MoreScreen() {
+  const wishesEnvelope = useThemeImage('wishesEnvelope');
   const { isDesktop } = useResponsiveLayout();
 
   return (
@@ -42,7 +44,7 @@ export default function MoreScreen() {
       >
         <View style={[styles.envelopeFrame, isDesktop && styles.desktopEnvelopeFrame]}>
           <Image
-            source={require('../../assets/wishes-envelope-soft.png')}
+            source={wishesEnvelope}
             style={[styles.envelope, isDesktop && styles.desktopEnvelope]}
             resizeMode="contain"
             accessible={false}
@@ -106,7 +108,7 @@ export default function MoreScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = createThemedStyles({
   grid: { gap: spacing.md },
   desktopGrid: { flexDirection: 'row', flexWrap: 'wrap' },
   card: {
@@ -116,7 +118,7 @@ const styles = StyleSheet.create({
   desktopCard: { flexBasis: '48%', flexGrow: 1, maxWidth: '49%' },
   icon: {
     width: 48, height: 48, borderRadius: radii.md,
-    alignItems: 'center', justifyContent: 'center', backgroundColor: colors.softRose,
+    alignItems: 'center', justifyContent: 'center', backgroundColor: colors.softAccent,
   },
   copy: { flex: 1, gap: spacing.xs },
   envelopeFrame: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center' },

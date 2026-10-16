@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle, Path } from 'react-native-svg';
 
-import { colors, radii, spacing, typography } from '@/theme/tokens';
+import { colors, createThemedStyles, radii, spacing, typography } from '@/theme/tokens';
 import { getRingSegment } from '@/utils/statisticsRing';
 
 type Segment = { label: string; count: number; color: string };
@@ -73,7 +73,7 @@ export function StatisticsRing({ segments }: { segments: Segment[] }) {
       }}>
       <View pointerEvents="none" style={StyleSheet.absoluteFill}>
       {total === 0 && <Svg width="100%" height="100%" viewBox="0 0 300 300" accessible={false}>
-        <Circle cx={150} cy={150} r={110} fill="none" stroke={colors.softRose} strokeWidth={32} />
+        <Circle cx={150} cy={150} r={110} fill="none" stroke={colors.softAccent} strokeWidth={32} />
       </Svg>}
         {segments.map((segment, index) => {
           if (!segment.count || !total) return null;
@@ -109,7 +109,7 @@ export function StatisticsRing({ segments }: { segments: Segment[] }) {
   </View>;
 }
 
-const styles = StyleSheet.create({
+const styles = createThemedStyles({
   card: { backgroundColor: colors.surface, borderRadius: radii.xl, padding: spacing.lg, gap: spacing.md },
   title: { ...typography.sectionTitle, color: colors.text },
   ring: { width: '100%', maxWidth: 300, aspectRatio: 1, alignSelf: 'center', alignItems: 'center', justifyContent: 'center' },
@@ -120,7 +120,7 @@ const styles = StyleSheet.create({
   empty: { ...typography.caption, color: colors.muted, textAlign: 'center' },
   legend: { gap: spacing.xs },
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, minHeight: 44, padding: spacing.sm, borderRadius: radii.md },
-  selectedRow: { backgroundColor: colors.softRose },
+  selectedRow: { backgroundColor: colors.softAccent },
   dot: { width: 10, height: 10, borderRadius: 5 },
   label: { ...typography.body, color: colors.text, flex: 1 },
   count: { ...typography.cardTitle, color: colors.secondary },

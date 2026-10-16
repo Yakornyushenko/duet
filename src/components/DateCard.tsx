@@ -2,7 +2,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { AppIcon } from '@/components/AppIcon';
 import { LinearGradient } from 'expo-linear-gradient';
 
-import { colors, radii, spacing, typography } from '@/theme/tokens';
+import { colors, createThemedStyles, radii, spacing, typography } from '@/theme/tokens';
 import { DateEvent } from '@/types/domain';
 import { useApp } from '@/context/AppContext';
 import { formatEventDate, getDaysUntil, pluralizeDays } from '@/utils/dates';
@@ -99,14 +99,14 @@ export function DateCard({ event, highlighted = false, reminderLabel, onPress }:
   );
 }
 
-const styles = StyleSheet.create({
+const styles = createThemedStyles({
   card: {
     backgroundColor: colors.surface,
     borderRadius: radii.lg,
     padding: spacing.lg,
   },
   cardWithReminder: {
-    backgroundColor: colors.softRose,
+    backgroundColor: colors.softAccent,
   },
   highlightedCard: {
     borderRadius: radii.lg,
@@ -125,7 +125,7 @@ const styles = StyleSheet.create({
     borderRadius: radii.sm,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.softRose,
+    backgroundColor: colors.softAccent,
   },
   reminderEventIcon: {
     backgroundColor: colors.surface,

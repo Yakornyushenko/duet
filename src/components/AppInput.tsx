@@ -1,7 +1,7 @@
 import { forwardRef, type ReactNode } from 'react';
 import { StyleSheet, Text, TextInput, TextInputProps, View } from 'react-native';
 
-import { colors, radii, spacing, typography } from '@/theme/tokens';
+import { colors, createThemedStyles, radii, spacing, typography } from '@/theme/tokens';
 
 type AppInputProps = TextInputProps & {
   label: string;
@@ -36,7 +36,7 @@ export const AppInput = forwardRef<TextInput, AppInputProps>(function AppInput(
   );
 });
 
-const styles = StyleSheet.create({
+const styles = createThemedStyles({
   field: {
     gap: spacing.sm,
   },

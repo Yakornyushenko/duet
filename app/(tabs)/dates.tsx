@@ -11,7 +11,7 @@ import { useApp } from '@/context/AppContext';
 import { useReminders } from '@/context/ReminderContext';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { getPlannedReminderLabel } from '@/services/reminders';
-import { colors, radii, spacing, typography } from '@/theme/tokens';
+import { colors, createThemedStyles, radii, spacing, typography } from '@/theme/tokens';
 import { DateCategory } from '@/types/domain';
 import { getUpcomingEvents, sortByNextOccurrence } from '@/utils/dates';
 
@@ -96,7 +96,7 @@ export default function DatesScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = createThemedStyles({
   filters: {
     gap: spacing.sm,
     marginBottom: spacing.xxl,
@@ -107,7 +107,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: radii.md,
-    backgroundColor: colors.softRose,
+    backgroundColor: colors.softAccent,
   },
   filterSelected: { backgroundColor: colors.primary },
   filterText: { ...typography.label, color: colors.primary },
@@ -170,7 +170,7 @@ const styles = StyleSheet.create({
     borderRadius: 26,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.softRose,
+    backgroundColor: colors.softAccent,
   },
   emptyTitle: {
     ...typography.sectionTitle,

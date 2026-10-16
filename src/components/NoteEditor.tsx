@@ -12,7 +12,7 @@ import { NotePinIcon } from '@/components/NotePinIcon';
 import { useApp } from '@/context/AppContext';
 import { useDialog } from '@/context/DialogContext';
 import { Note, noteContent, saveLatestNote, saveNote } from '@/services/notes';
-import { colors, radii, spacing, typography } from '@/theme/tokens';
+import { colors, createThemedStyles, radii, spacing, typography } from '@/theme/tokens';
 
 type Props = { initial: Note; remote?: Note; onSaved: (note: Note) => void; onClose: () => void };
 
@@ -281,11 +281,11 @@ export function NoteEditor({ initial, remote, onSaved, onClose }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = createThemedStyles({
   trashHint: { ...typography.body, color: colors.muted, marginBottom: spacing.xl },
   footer: { marginTop: 'auto', paddingTop: spacing.xl, gap: spacing.md },
   header: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, marginBottom: spacing.xl },
-  icon: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: radii.md, backgroundColor: colors.softRose },
+  icon: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: radii.md, backgroundColor: colors.softAccent },
   status: { ...typography.caption, flex: 1, color: colors.muted },
   content: { gap: spacing.sm, marginVertical: spacing.xl },
   body: { minHeight: 260, paddingTop: spacing.lg },
@@ -294,6 +294,6 @@ const styles = StyleSheet.create({
   itemInput: { flex: 1 }, done: { textDecorationLine: 'line-through', color: colors.muted },
   disabled: { opacity: 0.45 },
   pressed: { opacity: 0.82 },
-  notice: { padding: spacing.md, borderRadius: radii.md, backgroundColor: colors.softRose, gap: spacing.sm, marginBottom: spacing.lg },
+  notice: { padding: spacing.md, borderRadius: radii.md, backgroundColor: colors.softAccent, gap: spacing.sm, marginBottom: spacing.lg },
   error: { ...typography.caption, color: colors.danger },
 });

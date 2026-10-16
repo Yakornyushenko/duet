@@ -34,7 +34,7 @@ import {
   updateWish,
   Wish,
 } from '@/services/wishes';
-import { colors, radii, spacing, typography } from '@/theme/tokens';
+import { colors, createThemedStyles, radii, spacing, typography } from '@/theme/tokens';
 import { canManageWishlist, getWishlists } from '@/utils/wishlists';
 
 const maxPhotos = 1;
@@ -498,7 +498,7 @@ export function WishEditorScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = createThemedStyles({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -532,7 +532,7 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     marginBottom: spacing.md,
     borderRadius: radii.lg,
-    backgroundColor: colors.softRose,
+    backgroundColor: colors.softAccent,
   },
   statusCardFulfilled: { backgroundColor: colors.soft },
   statusCardPressed: { opacity: 0.78 },
@@ -549,7 +549,7 @@ const styles = StyleSheet.create({
   photoFrame: {
     borderRadius: radii.md,
     overflow: 'hidden',
-    backgroundColor: colors.softRose,
+    backgroundColor: colors.softAccent,
   },
   photo: {
     width: '100%',
@@ -578,7 +578,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.xs,
-    backgroundColor: colors.softRose,
+    backgroundColor: colors.softAccent,
   },
   addPhotoLabel: { ...typography.caption, color: colors.primary, fontWeight: '500' },
   previewBackdrop: {

@@ -7,7 +7,7 @@ import { AppScreen } from '@/components/AppScreen';
 import { quotedAppName } from '@/config/app';
 import { useApp } from '@/context/AppContext';
 import { useDialog } from '@/context/DialogContext';
-import { colors, radii, spacing, typography } from '@/theme/tokens';
+import { colors, createThemedStyles, radii, spacing, typography } from '@/theme/tokens';
 import { JoinPreview, prepareJoinRemote } from '@/services/backend';
 
 export default function PairScreen() {
@@ -79,7 +79,7 @@ export default function PairScreen() {
   </AppScreen>;
 }
 
-const styles = StyleSheet.create({
+const styles = createThemedStyles({
   content: {
     justifyContent: 'center',
     gap: spacing.xxl,
@@ -99,7 +99,7 @@ const styles = StyleSheet.create({
     borderRadius: 26,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.softRose,
+    backgroundColor: colors.softAccent,
   },
   centeredCopy: {
     alignItems: 'center',

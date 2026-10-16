@@ -2,7 +2,7 @@ import { useCallback, useRef } from 'react';
 import { Animated, Pressable, StyleSheet } from 'react-native';
 
 import { AppIcon } from '@/components/AppIcon';
-import { colors, radii } from '@/theme/tokens';
+import { colors, createThemedStyles, radii } from '@/theme/tokens';
 
 export function BackButton({ onPress, disabled = false, accessibilityLabel = 'Назад' }: {
   onPress: () => void;
@@ -41,10 +41,10 @@ export function BackButton({ onPress, disabled = false, accessibilityLabel = 'Н
   );
 }
 
-const styles = StyleSheet.create({
+const styles = createThemedStyles({
   frame: { width: 44, height: 44 },
   button: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center',
-    borderRadius: radii.md, backgroundColor: colors.softRose },
+    borderRadius: radii.md, backgroundColor: colors.softAccent },
   pressed: { backgroundColor: colors.soft },
   disabled: { opacity: 0.45 },
 });

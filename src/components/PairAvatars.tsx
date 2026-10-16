@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
 
-import { colors, typography } from '@/theme/tokens';
+import { colors, createThemedStyles, typography } from '@/theme/tokens';
 
 type PairAvatarsProps = {
   firstName: string;
@@ -29,7 +29,7 @@ export function PairAvatars({ firstName, secondName, size = 38 }: PairAvatarsPro
   );
 }
 
-const styles = StyleSheet.create({
+const styles = createThemedStyles({
   row: {
     flexDirection: 'row',
     alignItems: 'center',

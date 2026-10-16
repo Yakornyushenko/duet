@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { appName } from '@/config/app';
-import { colors, radii, spacing, typography } from '@/theme/tokens';
+import { colors, createThemedStyles, radii, spacing, typography } from '@/theme/tokens';
 
 type DesktopSection = 'home' | 'dates' | 'more';
 
@@ -58,7 +58,7 @@ export function DesktopHeader() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = createThemedStyles({
   header: {
     minHeight: 72,
     justifyContent: 'center',
@@ -103,7 +103,7 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
     padding: spacing.xs,
     borderRadius: radii.round,
-    backgroundColor: colors.softRose,
+    backgroundColor: colors.softAccent,
   },
   item: {
     minHeight: 42,

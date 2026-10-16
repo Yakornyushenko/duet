@@ -15,7 +15,7 @@ import {
   requestNotificationPermission,
 } from '@/services/notificationApi';
 import { listWishes, Wish } from '@/services/wishes';
-import { colors, radii, spacing, typography } from '@/theme/tokens';
+import { colors, createThemedStyles, radii, spacing, typography } from '@/theme/tokens';
 import { canManageWishlist, Wishlist, getWishlists } from '@/utils/wishlists';
 
 export default function WishlistsScreen() {
@@ -209,7 +209,7 @@ export default function WishlistsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = createThemedStyles({
   screen: { paddingHorizontal: 0, paddingTop: 0, paddingBottom: 0 },
   listContent: { paddingTop: spacing.lg, paddingBottom: spacing.huge },
   desktopColumns: { gap: spacing.md },
@@ -220,7 +220,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: radii.md,
-    backgroundColor: colors.softRose,
+    backgroundColor: colors.softAccent,
   },
   heading: { ...typography.sectionTitle, color: colors.text, flex: 1 },
   subtitle: { ...typography.body, color: colors.muted, marginVertical: spacing.lg },
@@ -231,7 +231,7 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.softRose,
+    backgroundColor: colors.softAccent,
     borderRadius: radii.md,
     paddingHorizontal: spacing.xs,
   },

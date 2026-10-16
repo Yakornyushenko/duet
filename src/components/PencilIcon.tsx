@@ -1,6 +1,6 @@
 import { StyleSheet, View } from 'react-native';
 
-import { colors, radii } from '@/theme/tokens';
+import { colors, createThemedStyles, radii } from '@/theme/tokens';
 
 export function PencilIcon() {
   return <View style={styles.frame} pointerEvents="none" accessible={false}>
@@ -13,11 +13,11 @@ export function PencilIcon() {
   </View>;
 }
 
-const styles = StyleSheet.create({
+const styles = createThemedStyles({
   frame: {
     width: 40, height: 40, flexShrink: 0,
     alignItems: 'center', justifyContent: 'center',
-    borderRadius: radii.md, backgroundColor: colors.softRose,
+    borderRadius: radii.md, backgroundColor: colors.softAccent,
   },
   pencil: {
     width: 10, height: 28,

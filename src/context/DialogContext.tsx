@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppButton, ButtonVariant } from '@/components/AppButton';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
-import { colors, radii, shadow, spacing, typography } from '@/theme/tokens';
+import { colors, createThemedStyles, radii, shadow, spacing, typography } from '@/theme/tokens';
 
 type DialogTone = 'info' | 'warning' | 'danger' | 'success';
 type DialogAction = {
@@ -34,13 +34,6 @@ const toneIcons: Record<DialogTone, AppIconName> = {
   success: 'checkmark-circle-outline',
 };
 
-const toneColors: Record<DialogTone, string> = {
-  info: colors.primary,
-  warning: colors.secondary,
-  danger: colors.danger,
-  success: colors.success,
-};
-
 const DialogContext = createContext<DialogContextValue | null>(null);
 
 export function DialogProvider({ children }: PropsWithChildren) {
@@ -50,6 +43,12 @@ export function DialogProvider({ children }: PropsWithChildren) {
   const showDialog = useCallback((options: DialogOptions) => setDialog(options), []);
   const value = useMemo(() => ({ showDialog, hideDialog }), [hideDialog, showDialog]);
   const tone = dialog?.tone ?? 'info';
+  const toneColors: Record<DialogTone, string> = {
+    info: colors.primary,
+    warning: colors.secondary,
+    danger: colors.danger,
+    success: colors.success,
+  };
   const actions = dialog?.actions?.length ? dialog.actions : [{ label: 'Хорошо' }];
 
   return (
@@ -76,7 +75,7 @@ export function DialogProvider({ children }: PropsWithChildren) {
             />
           ) : null}
           <View style={[styles.card, { maxWidth: modalMaxWidth }]}>
-            <View style={[styles.icon, { backgroundColor: tone === 'warning' ? colors.soft : colors.softRose }]}>
+            <View style={[styles.icon, { backgroundColor: tone === 'warning' ? colors.soft : colors.softAccent }]}>
               <AppIcon name={toneIcons[tone]} size={32} color={toneColors[tone]} />
             </View>
             <View style={styles.copy}>
@@ -111,7 +110,7 @@ export function useDialog() {
   return context;
 }
 
-const styles = StyleSheet.create({
+const styles = createThemedStyles({
   backdrop: {
     flex: 1,
     alignItems: 'center',

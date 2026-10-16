@@ -6,7 +6,7 @@ import { Animated, Platform, Pressable, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
-import { colors } from '@/theme/tokens';
+import { colors, createThemedStyles } from '@/theme/tokens';
 
 function MoreTabButton(props: BottomTabBarButtonProps) {
   const [hovered, setHovered] = useState(false);
@@ -131,7 +131,7 @@ export default function TabsLayout() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = createThemedStyles({
   backButton: { alignItems: 'center', justifyContent: 'center' },
   backIcon: {
     width: 44, height: 44, borderRadius: 22,

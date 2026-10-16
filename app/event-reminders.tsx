@@ -8,7 +8,7 @@ import { BackButton } from '@/components/BackButton';
 import { useApp } from '@/context/AppContext';
 import { useReminders } from '@/context/ReminderContext';
 import { formatReminderCount } from '@/services/reminders';
-import { colors, radii, spacing, typography } from '@/theme/tokens';
+import { colors, createThemedStyles, radii, spacing, typography } from '@/theme/tokens';
 import { formatEventDate } from '@/utils/dates';
 import { entityIcons } from '@/utils/entityIcons';
 
@@ -102,7 +102,7 @@ export default function EventRemindersScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = createThemedStyles({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -130,7 +130,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: radii.md,
-    backgroundColor: colors.softRose,
+    backgroundColor: colors.softAccent,
   },
   eventCopy: {
     flex: 1,
@@ -180,7 +180,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: radii.sm,
-    backgroundColor: colors.softRose,
+    backgroundColor: colors.softAccent,
   },
   reminderCopy: {
     flex: 1,

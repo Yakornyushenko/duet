@@ -12,14 +12,14 @@ import { AppScreen } from '@/components/AppScreen';
 import { SegmentedControl } from '@/components/SegmentedControl';
 import { useApp } from '@/context/AppContext';
 import { useDialog } from '@/context/DialogContext';
-import { colors, radii, shadow, spacing, typography } from '@/theme/tokens';
+import { useThemeImage } from '@/theme/images';
+import { colors, createThemedStyles, radii, shadow, spacing, typography } from '@/theme/tokens';
 import { isEmailNotConfirmedError } from '@/utils/authErrors';
 
 type AuthMode = 'signin' | 'signup';
 
-const duetLogo = require('../assets/duet-birds.png') as ReturnType<typeof Image.resolveAssetSource>;
-
 export default function AuthScreen() {
+  const duetLogo = useThemeImage('birds');
   const { modalMaxWidth } = useResponsiveLayout();
   const { user, signIn, signUp, resendSignUpConfirmation } = useApp();
   const { showDialog } = useDialog();
@@ -225,7 +225,7 @@ export default function AuthScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = createThemedStyles({
   content: {
     justifyContent: 'center',
     gap: spacing.xxl,
@@ -301,7 +301,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: radii.lg,
-    backgroundColor: colors.softRose,
+    backgroundColor: colors.softAccent,
     transform: [{ rotate: '-5deg' }],
   },
   modalCopy: {

@@ -8,7 +8,7 @@ import { QuestionCard } from '@/components/QuestionCard';
 import { useApp } from '@/context/AppContext';
 import { useDialog } from '@/context/DialogContext';
 import { DailyQuestion, loadDailyQuestionDetail } from '@/services/dailyQuestions';
-import { colors, spacing, typography } from '@/theme/tokens';
+import { colors, createThemedStyles, spacing, typography } from '@/theme/tokens';
 
 export default function QuestionDetailScreen() {
   const params = useLocalSearchParams<{ id?: string | string[] }>();
@@ -55,7 +55,7 @@ export default function QuestionDetailScreen() {
     {question && <QuestionCard key={`${user?.id}:${question.id}`} question={question} userId={user?.id ?? ''} busy={busy} perform={perform} />}
   </AppScreen>;
 }
-const styles = StyleSheet.create({
+const styles = createThemedStyles({
   screen: { gap: spacing.lg }, header: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   title: { ...typography.sectionTitle, color: colors.text }, copy: { ...typography.body, color: colors.muted },
 });

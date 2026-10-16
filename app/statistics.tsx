@@ -16,7 +16,7 @@ import { loadStatistics, StatisticsData } from '@/services/statistics';
 import { HistoryPeriod, summarizeStatistics } from '@/utils/statistics';
 import { formatRelationshipDate, getRelationshipDuration } from '@/utils/dates';
 import { getWishlists } from '@/utils/wishlists';
-import { colors, radii, spacing, typography } from '@/theme/tokens';
+import { colors, createThemedStyles, radii, spacing, typography } from '@/theme/tokens';
 
 export default function StatisticsScreen() {
   const { user, couple, categories } = useApp();
@@ -111,7 +111,7 @@ export default function StatisticsScreen() {
   </AppScreen>;
 }
 
-const styles = StyleSheet.create({
+const styles = createThemedStyles({
   screen: { gap: spacing.xl }, header: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   title: { ...typography.sectionTitle, color: colors.text, flex: 1 },
   hero: { borderRadius: radii.xl, padding: spacing.xxl, gap: spacing.sm },

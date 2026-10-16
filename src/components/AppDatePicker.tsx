@@ -6,7 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppButton } from '@/components/AppButton';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
-import { colors, radii, shadow, spacing, typography } from '@/theme/tokens';
+import { colors, createThemedStyles, radii, shadow, spacing, typography } from '@/theme/tokens';
 import { formatRelationshipDate, parseDateOnly, toDateOnly } from '@/utils/dates';
 
 const monthNames = [
@@ -286,7 +286,7 @@ export function AppDatePicker({
   );
 }
 
-const styles = StyleSheet.create({
+const styles = createThemedStyles({
   backdrop: {
     flex: 1,
     alignItems: 'center',
@@ -313,7 +313,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: radii.md,
-    backgroundColor: colors.softRose,
+    backgroundColor: colors.softAccent,
     transform: [{ rotate: '-5deg' }],
   },
   headingCopy: {
@@ -339,7 +339,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: radii.round,
-    backgroundColor: colors.softRose,
+    backgroundColor: colors.softAccent,
   },
   monthTitle: {
     ...typography.cardTitle,

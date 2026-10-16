@@ -5,9 +5,8 @@ import { BackButton } from '@/components/BackButton';
 import { AppScreen } from '@/components/AppScreen';
 import { appName, quotedAppName } from '@/config/app';
 import { supportEmail } from '@/config/support';
-import { colors, radii, shadow, spacing, typography } from '@/theme/tokens';
-
-const duetLogo = require('../assets/duet-birds.png') as ReturnType<typeof Image.resolveAssetSource>;
+import { useThemeImage } from '@/theme/images';
+import { colors, createThemedStyles, radii, shadow, spacing, typography } from '@/theme/tokens';
 
 const privacySections = [
   {
@@ -120,6 +119,7 @@ const privacySections = [
 ] as const;
 
 export default function PrivacyScreen() {
+  const duetLogo = useThemeImage('birds');
   return (
     <AppScreen contentContainerStyle={styles.content}>
       <Stack.Screen options={{ title: `Политика конфиденциальности ${quotedAppName}` }} />
@@ -195,7 +195,7 @@ export default function PrivacyScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = createThemedStyles({
   content: {
     maxWidth: 720,
     gap: spacing.xl,
@@ -231,7 +231,7 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     padding: spacing.xl,
     borderRadius: radii.lg,
-    backgroundColor: colors.softRose,
+    backgroundColor: colors.softAccent,
     overflow: 'hidden',
   },
   introAccent: {

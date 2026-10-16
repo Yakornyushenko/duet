@@ -1,8 +1,9 @@
 import { AppIcon } from '@/components/AppIcon';
 import * as Haptics from 'expo-haptics';
 import { Href, router } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Modal, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppButton } from '@/components/AppButton';
 import { AppInput } from '@/components/AppInput';
@@ -16,12 +17,44 @@ import { RelationshipDateEditor } from '@/components/RelationshipDateEditor';
 import { useApp } from '@/context/AppContext';
 import { useDialog } from '@/context/DialogContext';
 import { useReminders } from '@/context/ReminderContext';
-import { colors, radii, spacing, typography } from '@/theme/tokens';
+import { useTheme } from '@/context/ThemeContext';
+import { colors, createThemedStyles, radii, spacing, type AppColors, type ThemeName, themePalettes, typography } from '@/theme/tokens';
 import { formatRelationshipDate } from '@/utils/dates';
+
+type ThemeOptionButtonProps = {
+  label: string;
+  palette: AppColors;
+  selected: boolean;
+  disabled: boolean;
+  onPress: () => void;
+};
+
+let profileScrollOffsetToRestore: number | null = null;
+
+function ThemeOptionButton({ label, palette, selected, disabled, onPress }: ThemeOptionButtonProps) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`Выбрать тему «${label}»`}
+      accessibilityState={{ selected, disabled }}
+      disabled={disabled}
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.themeOptionButton,
+        { backgroundColor: pressed ? palette.primaryPressed : palette.primary },
+        disabled && styles.themeOptionButtonDisabled,
+      ]}
+    >
+      <Text style={styles.themeOptionLabel}>{label}</Text>
+      {selected ? <AppIcon name="checkmark-circle" size={22} color={palette.white} /> : null}
+    </Pressable>
+  );
+}
 
 export default function ProfileScreen() {
   const { user, couple, signOut, deleteAccount, updateDisplayName } = useApp();
   const { showDialog } = useDialog();
+  const { theme, setTheme } = useTheme();
   const {
     enabled: remindersEnabled,
     initializing: remindersInitializing,
@@ -30,8 +63,16 @@ export default function ProfileScreen() {
   } = useReminders();
   const [displayName, setDisplayName] = useState(user?.displayName ?? '');
   const [nameSaving, setNameSaving] = useState(false);
+  const [themeSaving, setThemeSaving] = useState(false);
+  const [themePickerVisible, setThemePickerVisible] = useState(false);
   const [accountDeleting, setAccountDeleting] = useState(false);
   const [relationshipDateEditorVisible, setRelationshipDateEditorVisible] = useState(false);
+  const profileScrollOffset = useRef(0);
+  const [initialScrollOffset] = useState(() => {
+    const offset = profileScrollOffsetToRestore;
+    profileScrollOffsetToRestore = null;
+    return offset ?? undefined;
+  });
 
   useEffect(() => {
     setDisplayName(user?.displayName ?? '');
@@ -81,12 +122,38 @@ export default function ProfileScreen() {
     }
   };
 
+  const changeTheme = async (nextTheme: ThemeName) => {
+    if (nextTheme === theme) {
+      setThemePickerVisible(false);
+      return;
+    }
+
+    try {
+      setThemeSaving(true);
+      profileScrollOffsetToRestore = profileScrollOffset.current;
+      await setTheme(nextTheme);
+      setThemePickerVisible(false);
+    } catch (error) {
+      profileScrollOffsetToRestore = null;
+      showDialog({
+        title: 'Не получилось изменить тему',
+        message: error instanceof Error ? error.message : 'Попробуйте ещё раз.',
+        tone: 'danger',
+      });
+    } finally {
+      setThemeSaving(false);
+    }
+  };
+
   if (!user || !couple) {
     return null;
   }
 
   return (
-    <AppScreen>
+    <AppScreen
+      initialScrollOffset={initialScrollOffset}
+      onScrollOffsetChange={(offset) => { profileScrollOffset.current = offset; }}
+    >
       <View style={styles.header}>
         <BackButton accessibilityLabel="Назад в Ещё"
           onPress={() => router.canGoBack() ? router.back() : router.replace('/more')} />
@@ -157,6 +224,77 @@ export default function ProfileScreen() {
       </View>
 
       <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Оформление</Text>
+        <View style={styles.detailsCard}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Тема приложения"
+            accessibilityHint="Открыть выбор темы"
+            accessibilityState={{ expanded: themePickerVisible }}
+            onPress={() => setThemePickerVisible(true)}
+            style={({ pressed }) => [styles.detailRow, pressed && styles.pressed]}
+          >
+            <View style={styles.detailIcon}>
+              <AppIcon name="sparkles-outline" size={20} color={colors.primary} />
+            </View>
+            <View style={styles.detailCopy}>
+              <Text style={styles.detailValue}>Тема приложения</Text>
+              <Text style={styles.detailLabel}>{theme === 'rose' ? 'Розовая' : 'Изумрудная'}</Text>
+            </View>
+            <AppIcon name="chevron-forward" size={20} color={colors.muted} />
+          </Pressable>
+        </View>
+      </View>
+
+      <Modal
+        transparent
+        animationType="fade"
+        visible={themePickerVisible}
+        statusBarTranslucent
+        onRequestClose={() => {
+          if (!themeSaving) setThemePickerVisible(false);
+        }}
+      >
+        <SafeAreaView style={styles.themeModalBackdrop}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Закрыть выбор темы"
+            style={StyleSheet.absoluteFill}
+            disabled={themeSaving}
+            onPress={() => setThemePickerVisible(false)}
+          />
+          <View style={styles.themeModalCard}>
+            <View style={styles.themeModalHeader}>
+              <Text style={styles.themeModalTitle}>Тема приложения</Text>
+              <Text style={styles.themeModalSubtitle}>Выберите настроение интерфейса</Text>
+            </View>
+            <View style={styles.themeOptions}>
+              <ThemeOptionButton
+                label="Розовая"
+                palette={themePalettes.rose}
+                selected={theme === 'rose'}
+                disabled={themeSaving}
+                onPress={() => void changeTheme('rose')}
+              />
+              <ThemeOptionButton
+                label="Изумрудная"
+                palette={themePalettes.emerald}
+                selected={theme === 'emerald'}
+                disabled={themeSaving}
+                onPress={() => void changeTheme('emerald')}
+              />
+            </View>
+            <AppButton
+              label="Отмена"
+              variant="ghost"
+              disabled={themeSaving}
+              onPress={() => setThemePickerVisible(false)}
+            />
+          </View>
+        </SafeAreaView>
+      </Modal>
+
+      <View style={styles.section}>
         <Text style={styles.sectionTitle}>Настройки аккаунта</Text>
         <IntimateQuestionSettings />
         <View style={styles.detailsCard}>
@@ -217,7 +355,7 @@ export default function ProfileScreen() {
       <View style={styles.logoutButton}>
         <AppButton
           label="Удалить аккаунт и данные"
-          variant="danger"
+          variant="dangerOutline"
           loading={accountDeleting}
           onPress={() =>
             showDialog({
@@ -256,7 +394,7 @@ export default function ProfileScreen() {
         />
         <AppButton
           label="Выйти из аккаунта"
-          variant="danger"
+          variant="secondary"
           onPress={() =>
             showDialog({
               title: 'Выйти из аккаунта?',
@@ -289,7 +427,7 @@ export default function ProfileScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = createThemedStyles({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -356,7 +494,7 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: radii.sm,
-    backgroundColor: colors.softRose,
+    backgroundColor: colors.softAccent,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -383,5 +521,50 @@ const styles = StyleSheet.create({
   },
   pressed: {
     opacity: 0.68,
+  },
+  themeModalBackdrop: {
+    flex: 1,
+    justifyContent: 'center',
+    padding: spacing.xl,
+    backgroundColor: colors.overlay,
+  },
+  themeModalCard: {
+    width: '100%',
+    maxWidth: 420,
+    alignSelf: 'center',
+    gap: spacing.lg,
+    padding: spacing.xl,
+    borderRadius: radii.xl,
+    backgroundColor: colors.surface,
+  },
+  themeModalHeader: {
+    gap: spacing.xs,
+  },
+  themeModalTitle: {
+    ...typography.sectionTitle,
+    color: colors.text,
+  },
+  themeModalSubtitle: {
+    ...typography.body,
+    color: colors.muted,
+  },
+  themeOptions: {
+    gap: spacing.md,
+  },
+  themeOptionButton: {
+    minHeight: 54,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.lg,
+    borderRadius: radii.md,
+  },
+  themeOptionButtonDisabled: {
+    opacity: 0.55,
+  },
+  themeOptionLabel: {
+    ...typography.body,
+    color: colors.white,
+    fontWeight: '700',
   },
 });

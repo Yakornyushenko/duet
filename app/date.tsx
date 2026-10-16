@@ -6,7 +6,7 @@ import { DateCompletionEditor } from '@/components/DateCompletionEditor';
 import { useApp } from '@/context/AppContext';
 import { useReminders } from '@/context/ReminderContext';
 import { getPlannedReminderLabel } from '@/services/reminders';
-import { colors, radii, spacing, typography } from '@/theme/tokens';
+import { colors, createThemedStyles, radii, spacing, typography } from '@/theme/tokens';
 import { entityIcons } from '@/utils/entityIcons';
 import { formatEventDate, formatRelationshipDate } from '@/utils/dates';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -96,13 +96,13 @@ export default function DateScreen() {
   </AppScreen>;
 }
 
-const styles = StyleSheet.create({
+const styles = createThemedStyles({
   header: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, marginBottom: spacing.xl },
   headerTitle: { ...typography.sectionTitle, color: colors.text, flex: 1, textAlign: 'center' },
   headerSpacer: { width: 44 },
-  iconButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: radii.md, backgroundColor: colors.softRose },
+  iconButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: radii.md, backgroundColor: colors.softAccent },
   heroCard: { alignItems: 'center', gap: spacing.md, padding: spacing.xxl, marginBottom: spacing.md, borderRadius: radii.xl, backgroundColor: colors.surface },
-  eventIcon: { width: 64, height: 64, alignItems: 'center', justifyContent: 'center', borderRadius: radii.lg, backgroundColor: colors.softRose },
+  eventIcon: { width: 64, height: 64, alignItems: 'center', justifyContent: 'center', borderRadius: radii.lg, backgroundColor: colors.softAccent },
   title: { ...typography.sectionTitle, color: colors.text, textAlign: 'center' },
   description: { ...typography.body, color: colors.text, textAlign: 'center' },
   muted: { ...typography.body, color: colors.muted },
@@ -111,7 +111,7 @@ const styles = StyleSheet.create({
   detailLabel: { ...typography.body, color: colors.muted },
   detailValue: { ...typography.body, color: colors.text, flex: 1, textAlign: 'right', fontWeight: '500' },
   reminderCard: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.lg, marginBottom: spacing.md, borderRadius: radii.lg, backgroundColor: colors.surface },
-  reminderIcon: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: radii.md, backgroundColor: colors.softRose },
+  reminderIcon: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: radii.md, backgroundColor: colors.softAccent },
   reminderCopy: { flex: 1, gap: 2 },
   reminderTitle: { ...typography.cardTitle, color: colors.text },
   reminderAction: { minHeight: 44, justifyContent: 'center', paddingHorizontal: spacing.sm },

@@ -15,7 +15,7 @@ import { useApp } from '@/context/AppContext';
 import { useDialog } from '@/context/DialogContext';
 import { supabase } from '@/lib/supabase';
 import { emptyNotesTrash, listNotes, Note } from '@/services/notes';
-import { colors, radii, spacing, typography } from '@/theme/tokens';
+import { colors, createThemedStyles, radii, spacing, typography } from '@/theme/tokens';
 import { entityIcons } from '@/utils/entityIcons';
 
 export default function NotesScreen() {
@@ -140,10 +140,10 @@ export default function NotesScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = createThemedStyles({
   header: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, marginBottom: spacing.xl },
   title: { ...typography.title, color: colors.text, flex: 1 },
-  icon: { width: 44, height: 44, borderRadius: radii.md, backgroundColor: colors.softRose, alignItems: 'center', justifyContent: 'center' },
+  icon: { width: 44, height: 44, borderRadius: radii.md, backgroundColor: colors.softAccent, alignItems: 'center', justifyContent: 'center' },
   actions: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginVertical: spacing.lg },
   section: { ...typography.label, color: colors.muted, marginVertical: spacing.lg },
   error: { ...typography.caption, color: colors.danger },

@@ -49,11 +49,27 @@
       ],
       "./plugins/with-r8-production",
       [
+        "expo-awesome-app-icon",
+        {
+          "icons": {
+            "emerald": {
+              "ios": {
+                "light": "./assets/duet-app-icon-emerald.png"
+              },
+              "android": {
+                "foregroundImage": "./assets/duet-icon-foreground-emerald.png",
+                "backgroundColor": "#F6FBF8"
+              }
+            }
+          }
+        }
+      ],
+      [
         "expo-splash-screen",
         {
-          "backgroundColor": "#FFF8F3",
-          "image": "./assets/duet-icon-foreground.png",
-          "imageWidth": 220,
+          "backgroundColor": "#F7F8F6",
+          "image": "./assets/splash-transparent.png",
+          "imageWidth": 1,
           "resizeMode": "contain"
         }
       ],

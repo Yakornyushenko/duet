@@ -5,9 +5,8 @@ import { BackButton } from '@/components/BackButton';
 import { AppScreen } from '@/components/AppScreen';
 import { appName, quotedAppName } from '@/config/app';
 import { supportEmail } from '@/config/support';
-import { colors, radii, shadow, spacing, typography } from '@/theme/tokens';
-
-const duetLogo = require('../assets/duet-birds.png') as ReturnType<typeof Image.resolveAssetSource>;
+import { useThemeImage } from '@/theme/images';
+import { colors, createThemedStyles, radii, shadow, spacing, typography } from '@/theme/tokens';
 
 const deletionSteps = [
   'Откройте раздел «Ещё».',
@@ -39,6 +38,7 @@ const deletionEmailBody = [
 ].join('\n');
 
 export default function DeleteAccountScreen() {
+  const duetLogo = useThemeImage('birds');
   return (
     <AppScreen contentContainerStyle={styles.content}>
       <Stack.Screen options={{ title: `Удаление аккаунта ${quotedAppName}` }} />
@@ -143,7 +143,7 @@ export default function DeleteAccountScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = createThemedStyles({
   content: { maxWidth: 720, gap: spacing.xl },
   header: { alignItems: 'center', paddingTop: spacing.sm, paddingBottom: spacing.md },
   logo: { width: 148, height: 96, marginBottom: -spacing.md },
@@ -152,7 +152,7 @@ const styles = StyleSheet.create({
   subtitle: { ...typography.caption, color: colors.muted, marginTop: spacing.sm, textAlign: 'center' },
   noticeCard: {
     position: 'relative', gap: spacing.sm, padding: spacing.xl, borderRadius: radii.lg,
-    backgroundColor: colors.softRose, overflow: 'hidden',
+    backgroundColor: colors.softAccent, overflow: 'hidden',
   },
   noticeAccent: {
     position: 'absolute', top: 0, bottom: 0, left: 0, width: 5, backgroundColor: colors.danger,
@@ -171,7 +171,7 @@ const styles = StyleSheet.create({
   stepRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   stepNumber: {
     width: 32, height: 32, alignItems: 'center', justifyContent: 'center',
-    borderRadius: radii.round, backgroundColor: colors.softRose,
+    borderRadius: radii.round, backgroundColor: colors.softAccent,
   },
   stepNumberText: { ...typography.label, color: colors.primary, fontWeight: '700' },
   step: { ...typography.body, flex: 1, color: colors.text },
@@ -180,7 +180,7 @@ const styles = StyleSheet.create({
   bulletText: { ...typography.body, flex: 1, color: colors.muted },
   securityNote: {
     ...typography.label, color: colors.danger, padding: spacing.md,
-    borderRadius: radii.md, backgroundColor: colors.softRose,
+    borderRadius: radii.md, backgroundColor: colors.softAccent,
   },
   emailButton: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.md, minHeight: 64,

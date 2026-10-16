@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { colors, radii, spacing, typography } from '@/theme/tokens';
+import { colors, createThemedStyles, radii, spacing, typography } from '@/theme/tokens';
 
 type Option<T extends string> = {
   label: string;
@@ -11,9 +11,10 @@ type SegmentedControlProps<T extends string> = {
   options: Option<T>[];
   value: T;
   onChange: (value: T) => void;
+  disabled?: boolean;
 };
 
-export function SegmentedControl<T extends string>({ options, value, onChange }: SegmentedControlProps<T>) {
+export function SegmentedControl<T extends string>({ options, value, onChange, disabled = false }: SegmentedControlProps<T>) {
   return (
     <View style={styles.container} accessibilityRole="tablist">
       {options.map((option) => {
@@ -22,9 +23,16 @@ export function SegmentedControl<T extends string>({ options, value, onChange }:
           <Pressable
             key={option.value}
             accessibilityRole="tab"
-            accessibilityState={{ selected: isSelected }}
+            accessibilityState={{ selected: isSelected, disabled }}
+            disabled={disabled}
             onPress={() => onChange(option.value)}
-            style={({ pressed }) => [styles.option, isSelected && styles.selected, pressed && styles.pressed]}
+            style={({ pressed }) => [
+              styles.option,
+              isSelected && styles.selected,
+              pressed && styles.pressed,
+              pressed && isSelected && styles.selectedPressed,
+              disabled && styles.disabled,
+            ]}
           >
             <Text style={[styles.label, isSelected && styles.selectedLabel]}>{option.label}</Text>
           </Pressable>
@@ -34,12 +42,13 @@ export function SegmentedControl<T extends string>({ options, value, onChange }:
   );
 }
 
-const styles = StyleSheet.create({
+const styles = createThemedStyles({
   container: {
     flexDirection: 'row',
+    gap: spacing.xs,
     padding: spacing.xs,
     borderRadius: radii.md,
-    backgroundColor: colors.softRose,
+    backgroundColor: colors.softAccent,
   },
   option: {
     flex: 1,
@@ -50,17 +59,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
   },
   selected: {
-    backgroundColor: colors.surface,
+    backgroundColor: colors.primary,
   },
   pressed: {
-    opacity: 0.72,
+    backgroundColor: colors.soft,
+  },
+  selectedPressed: {
+    backgroundColor: colors.primaryPressed,
+  },
+  disabled: {
+    opacity: 0.55,
   },
   label: {
     ...typography.label,
     color: colors.muted,
   },
   selectedLabel: {
-    color: colors.secondary,
+    color: colors.white,
     fontWeight: '600',
   },
 });

@@ -2,11 +2,11 @@ import { useEffect, useRef } from 'react';
 import { ActivityIndicator, Animated, Easing, Image, StyleSheet, Text, View } from 'react-native';
 
 import { appName } from '@/config/app';
-import { colors, spacing, typography } from '@/theme/tokens';
-
-const birds = require('../../assets/duet-birds.png') as ReturnType<typeof Image.resolveAssetSource>;
+import { useThemeImage } from '@/theme/images';
+import { colors, createThemedStyles, spacing, typography } from '@/theme/tokens';
 
 export function LoadingSplash() {
+  const birds = useThemeImage('birds');
   const illustrationOpacity = useRef(new Animated.Value(0)).current;
   const illustrationScale = useRef(new Animated.Value(0.82)).current;
   const copyOpacity = useRef(new Animated.Value(0)).current;
@@ -68,7 +68,7 @@ export function LoadingSplash() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = createThemedStyles({
   screen: {
     flex: 1,
     alignItems: 'center',

@@ -9,7 +9,7 @@ import { useDialog } from '@/context/DialogContext';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { supabase } from '@/lib/supabase';
 import { DateCategoryOption } from '@/types/domain';
-import { colors, radii, spacing, typography } from '@/theme/tokens';
+import { colors, createThemedStyles, radii, spacing, typography } from '@/theme/tokens';
 
 export function DateCategoryPicker({ value, onChange, includeAll = false, editable = false }: {
   value: string; onChange: (value: string) => void; includeAll?: boolean; editable?: boolean;
@@ -118,9 +118,9 @@ export function DateCategoryPicker({ value, onChange, includeAll = false, editab
   </>;
 }
 
-const styles = StyleSheet.create({
+const styles = createThemedStyles({
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
-  group: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.softRose, borderRadius: radii.md, maxWidth: '100%', overflow: 'hidden' },
+  group: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.softAccent, borderRadius: radii.md, maxWidth: '100%', overflow: 'hidden' },
   chip: { minHeight: 44, paddingHorizontal: spacing.md, justifyContent: 'center', borderRadius: radii.md, flexShrink: 1 },
   selected: { backgroundColor: colors.primary },
   label: { ...typography.label, color: colors.primary },

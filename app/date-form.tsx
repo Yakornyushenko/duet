@@ -18,7 +18,7 @@ import { quotedAppName } from '@/config/app';
 import { useApp } from '@/context/AppContext';
 import { useDialog } from '@/context/DialogContext';
 import { useReminders } from '@/context/ReminderContext';
-import { colors, radii, spacing, typography } from '@/theme/tokens';
+import { colors, createThemedStyles, radii, spacing, typography } from '@/theme/tokens';
 import { DateCategory, EntityIcon, DateRecurrence } from '@/types/domain';
 import { formatRelationshipDate, getNextOccurrence, toDateOnly } from '@/utils/dates';
 
@@ -343,7 +343,7 @@ export default function DateFormScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = createThemedStyles({
   timeField: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -395,7 +395,7 @@ const styles = StyleSheet.create({
     borderRadius: radii.md,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.softRose,
+    backgroundColor: colors.softAccent,
   },
   iconChoiceSelected: {
     backgroundColor: colors.primary,
@@ -417,7 +417,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: radii.sm,
-    backgroundColor: colors.softRose,
+    backgroundColor: colors.softAccent,
   },
   reminderCopy: {
     flex: 1,
@@ -456,7 +456,7 @@ const styles = StyleSheet.create({
   },
   offsetOptionSelected: {
     borderColor: colors.primary,
-    backgroundColor: colors.softRose,
+    backgroundColor: colors.softAccent,
   },
   offsetLabel: {
     ...typography.body,

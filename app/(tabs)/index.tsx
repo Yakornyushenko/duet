@@ -14,10 +14,12 @@ import { useApp } from '@/context/AppContext';
 import { useReminders } from '@/context/ReminderContext';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { getPlannedReminderLabel } from '@/services/reminders';
-import { colors, radii, shadow, spacing, typography } from '@/theme/tokens';
+import { useThemeImage } from '@/theme/images';
+import { colors, createThemedStyles, radii, shadow, spacing, typography } from '@/theme/tokens';
 import { formatRelationshipDate, getRelationshipDuration, getUpcomingEvents } from '@/utils/dates';
 
 export default function HomeScreen() {
+  const wishesEnvelope = useThemeImage('wishesEnvelope');
   const { user, couple, events } = useApp();
   const { plannedReminders } = useReminders();
   const [relationshipDateEditorVisible, setRelationshipDateEditorVisible] = useState(false);
@@ -129,7 +131,7 @@ export default function HomeScreen() {
         >
           <Text style={styles.wishesTitle}>{wishesTitle}</Text>
           <View style={styles.envelopeFrame}>
-            <Image source={require('../../assets/wishes-envelope-soft.png')} style={styles.envelope} resizeMode="contain" accessible={false} />
+            <Image source={wishesEnvelope} style={styles.envelope} resizeMode="contain" accessible={false} />
           </View>
         </Pressable>
       </View>
@@ -188,7 +190,7 @@ export default function HomeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = createThemedStyles({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -223,7 +225,7 @@ const styles = StyleSheet.create({
     borderRadius: radii.round,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.softRose,
+    backgroundColor: colors.softAccent,
   },
   partnerInvite: {
     marginBottom: spacing.xxl,

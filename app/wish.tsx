@@ -17,7 +17,7 @@ import {
   Wish,
   WishComment,
 } from '@/services/wishes';
-import { colors, radii, shadow, spacing, typography } from '@/theme/tokens';
+import { colors, createThemedStyles, radii, shadow, spacing, typography } from '@/theme/tokens';
 import { entityIcons } from '@/utils/entityIcons';
 import { canManageWishlist, getWishlists } from '@/utils/wishlists';
 import { Href, router, useFocusEffect, useIsFocused, useLocalSearchParams } from 'expo-router';
@@ -450,26 +450,26 @@ function CommentIconButton({ label, icon, tone = 'neutral', loading = false, dis
   </Pressable>;
 }
 
-const styles = StyleSheet.create({
+const styles = createThemedStyles({
   header: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, marginBottom: spacing.xl },
   headerCopy: { flex: 1, minWidth: 0 },
   iconButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center',
-    borderRadius: radii.md, backgroundColor: colors.softRose },
+    borderRadius: radii.md, backgroundColor: colors.softAccent },
   heading: { ...typography.sectionTitle, color: colors.text },
   listLabel: { ...typography.caption, color: colors.muted, marginTop: 2 },
   card: { backgroundColor: colors.surface, borderRadius: radii.lg, padding: spacing.lg,
     gap: spacing.md, marginBottom: spacing.md },
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   wishIcon: { width: 48, height: 48, borderRadius: radii.md, alignItems: 'center',
-    justifyContent: 'center', backgroundColor: colors.softRose },
+    justifyContent: 'center', backgroundColor: colors.softAccent },
   title: { ...typography.sectionTitle, color: colors.text, flex: 1 },
   sectionTitle: { ...typography.cardTitle, color: colors.text },
   body: { ...typography.body, color: colors.text },
   muted: { ...typography.body, color: colors.muted },
-  photo: { width: '100%', aspectRatio: 4 / 3, borderRadius: radii.md, backgroundColor: colors.softRose },
+  photo: { width: '100%', aspectRatio: 4 / 3, borderRadius: radii.md, backgroundColor: colors.softAccent },
   photoPlaceholder: { alignItems: 'center', justifyContent: 'center' },
   statusCard: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.lg,
-    marginBottom: spacing.md, borderRadius: radii.lg, backgroundColor: colors.softRose },
+    marginBottom: spacing.md, borderRadius: radii.lg, backgroundColor: colors.softAccent },
   statusCardFulfilled: { backgroundColor: colors.soft },
   statusCardReadOnly: { backgroundColor: colors.border },
   statusCardPressed: { opacity: 0.78 },
@@ -497,18 +497,18 @@ const styles = StyleSheet.create({
   commentTime: { ...typography.caption, color: colors.muted },
   commentFooterSpacer: { flex: 1 },
   commentFooterButton: { width: 36, height: 36, borderRadius: radii.round, alignItems: 'center', justifyContent: 'center' },
-  commentFooterButtonPressed: { backgroundColor: colors.softRose, opacity: 0.72 },
+  commentFooterButtonPressed: { backgroundColor: colors.softAccent, opacity: 0.72 },
   commentMenuAnchor: { position: 'relative' },
   commentMenu: { position: 'absolute', top: 38, right: 0, width: 178, padding: spacing.xs,
     borderRadius: radii.md, backgroundColor: colors.surface, zIndex: 20, ...shadow },
   commentMenuAction: { minHeight: 42, flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
     paddingHorizontal: spacing.md, borderRadius: radii.sm },
-  commentMenuActionPressed: { backgroundColor: colors.softRose },
+  commentMenuActionPressed: { backgroundColor: colors.softAccent },
   commentMenuText: { ...typography.label, color: colors.text },
   commentMenuDanger: { ...typography.label, color: colors.danger },
   commentActions: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   replyComposerContext: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
-    padding: spacing.md, borderRadius: radii.md, backgroundColor: colors.softRose },
+    padding: spacing.md, borderRadius: radii.md, backgroundColor: colors.softAccent },
   replyComposerCopy: { flex: 1, minWidth: 0, gap: 2 },
   replyComposerAuthor: { ...typography.caption, color: colors.secondary, fontWeight: '600' },
   replyComposerText: { ...typography.caption, color: colors.muted },
@@ -519,7 +519,7 @@ const styles = StyleSheet.create({
   commentIconButton: { width: 34, height: 34, borderRadius: radii.round, alignItems: 'center',
     justifyContent: 'center', backgroundColor: colors.background },
   commentIconButtonPrimary: { width: 44, height: 44, backgroundColor: colors.primary },
-  commentIconButtonDanger: { backgroundColor: colors.softRose },
+  commentIconButtonDanger: { backgroundColor: colors.softAccent },
   commentIconButtonConfirm: { backgroundColor: colors.soft },
   commentIconButtonPressed: { opacity: 0.68, transform: [{ scale: 0.94 }] },
   commentIconButtonDisabled: { opacity: 0.42 },

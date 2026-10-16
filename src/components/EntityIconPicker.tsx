@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
-import { colors, radii, spacing, typography } from '@/theme/tokens';
+import { colors, createThemedStyles, radii, spacing, typography } from '@/theme/tokens';
 import { EntityIcon } from '@/types/domain';
 import { entityIconGroups, entityIconLabels, entityIcons, EntityIconKind } from '@/utils/entityIcons';
 
@@ -94,14 +94,14 @@ export function EntityIconPicker({ kind, value, onChange, disabled = false }: {
   </View>;
 }
 
-const styles = StyleSheet.create({
+const styles = createThemedStyles({
   field: { gap: spacing.sm },
   label: { ...typography.label, color: colors.text },
   grid: { flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -3 },
   wideGrid: { width: '100%', maxWidth: 420, alignSelf: 'center' },
   extraContent: { position: 'absolute', top: 0, left: 0, right: 0 },
   cell: { width: '20%', padding: 3 },
-  choice: { minHeight: 44, aspectRatio: 1, borderRadius: radii.md, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.softRose },
+  choice: { minHeight: 44, aspectRatio: 1, borderRadius: radii.md, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.softAccent },
   selected: { backgroundColor: colors.primary },
   pressed: { opacity: 0.75 },
   toggle: { minHeight: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm },

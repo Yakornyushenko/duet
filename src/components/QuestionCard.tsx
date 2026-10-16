@@ -3,7 +3,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { AppInput } from '@/components/AppInput';
 import { AppButton } from '@/components/AppButton';
 import { DailyQuestion, questionRequest } from '@/services/dailyQuestions';
-import { colors, radii, spacing, typography } from '@/theme/tokens';
+import { colors, createThemedStyles, radii, spacing, typography } from '@/theme/tokens';
 
 export function QuestionCard({ question, userId, busy, perform }: {
   question: DailyQuestion; userId: string; busy: boolean; perform: (action: () => Promise<unknown>) => Promise<void>;
@@ -32,9 +32,9 @@ export function QuestionCard({ question, userId, busy, perform }: {
         </>}
   </View>;
 }
-const styles = StyleSheet.create({
+const styles = createThemedStyles({
   heading: { ...typography.sectionTitle, color: colors.text }, title: { ...typography.cardTitle, color: colors.text },
   copy: { ...typography.body, color: colors.muted },
   card: { backgroundColor: colors.surface, borderRadius: radii.lg, padding: spacing.xl, gap: spacing.md },
-  answer: { backgroundColor: colors.softRose, borderRadius: radii.md, padding: spacing.lg, gap: spacing.sm },
+  answer: { backgroundColor: colors.softAccent, borderRadius: radii.md, padding: spacing.lg, gap: spacing.sm },
 });

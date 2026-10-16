@@ -4,12 +4,12 @@ import { Image, Linking, StyleSheet, Text, View } from 'react-native';
 
 import { AppScreen } from '@/components/AppScreen';
 import { appName, quotedAppName } from '@/config/app';
-import { colors, radii, shadow, spacing, typography } from '@/theme/tokens';
+import { useThemeImage } from '@/theme/images';
+import { colors, createThemedStyles, radii, shadow, spacing, typography } from '@/theme/tokens';
 import { getEmailConfirmationError } from '@/utils/authLink';
 
-const duetLogo = require('../assets/duet-birds.png') as ReturnType<typeof Image.resolveAssetSource>;
-
 export default function EmailConfirmedScreen() {
+  const duetLogo = useThemeImage('birds');
   const [confirmationError, setConfirmationError] = useState<string | null>();
 
   useEffect(() => {
@@ -47,7 +47,7 @@ export default function EmailConfirmedScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = createThemedStyles({
   content: {
     justifyContent: 'center',
     gap: spacing.xxl,

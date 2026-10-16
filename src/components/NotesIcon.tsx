@@ -1,6 +1,6 @@
 import { StyleSheet, View } from 'react-native';
 
-import { colors } from '@/theme/tokens';
+import { colors, createThemedStyles } from '@/theme/tokens';
 
 export function NotesIcon() {
   return (
@@ -23,7 +23,7 @@ export function NotesIcon() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = createThemedStyles({
   frame: { width: 28, height: 32 },
   board: {
     position: 'absolute', left: 2, right: 2, top: 5, bottom: 0,
@@ -50,12 +50,12 @@ const styles = StyleSheet.create({
   loop: {
     position: 'absolute', top: 0, left: 10, width: 8, height: 8,
     borderWidth: 1.5, borderColor: colors.primary, borderRadius: 4,
-    backgroundColor: colors.softRose,
+    backgroundColor: colors.softAccent,
   },
   clip: {
     position: 'absolute', top: 3.5, left: 7, width: 14, height: 6,
     borderWidth: 1.5, borderColor: colors.primary, borderRadius: 1,
-    backgroundColor: colors.softRose, alignItems: 'center', justifyContent: 'center',
+    backgroundColor: colors.softAccent, alignItems: 'center', justifyContent: 'center',
   },
   clipLine: { width: 6, height: 1, backgroundColor: colors.primary },
 });

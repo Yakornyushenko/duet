@@ -4,7 +4,7 @@ import { StyleSheet, Switch, Text, View } from 'react-native';
 import { useApp } from '@/context/AppContext';
 import { useDialog } from '@/context/DialogContext';
 import { DailyQuestionState, loadDailyQuestions, questionRequest } from '@/services/dailyQuestions';
-import { colors, radii, spacing, typography } from '@/theme/tokens';
+import { colors, createThemedStyles, radii, spacing, typography } from '@/theme/tokens';
 
 export function IntimateQuestionSettings({ state: externalState, onRefresh }: {
   state?: DailyQuestionState;
@@ -55,7 +55,7 @@ export function IntimateQuestionSettings({ state: externalState, onRefresh }: {
     <Text style={styles.copy}>Личные вопросы доступны при согласии обоих.</Text>
   </View>;
 }
-const styles = StyleSheet.create({
+const styles = createThemedStyles({
   card: { padding: spacing.xl, borderRadius: radii.lg, backgroundColor: colors.surface, gap: spacing.sm },
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   title: { ...typography.cardTitle, color: colors.text, flex: 1 },
