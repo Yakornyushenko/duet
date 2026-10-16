@@ -124,7 +124,7 @@ const styles = createThemedStyles({
   chip: { minHeight: 44, paddingHorizontal: spacing.md, justifyContent: 'center', borderRadius: radii.md, flexShrink: 1 },
   selected: { backgroundColor: colors.primary },
   label: { ...typography.label, color: colors.primary },
-  selectedLabel: { color: colors.white },
+  selectedLabel: { color: colors.onPrimary },
   edit: { width: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   fieldLabel: { ...typography.label, color: colors.text },

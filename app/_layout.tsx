@@ -28,7 +28,7 @@ function RootNavigator() {
 
   return (
     <>
-      <StatusBar style="dark" />
+      <StatusBar style={theme === 'graphite' ? 'light' : 'dark'} />
       <Stack
         key={theme}
         screenOptions={{

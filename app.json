@@ -69,6 +69,33 @@
                 "foregroundImage": "./assets/duet-icon-foreground-honey.png",
                 "backgroundColor": "#FFF8E6"
               }
+            },
+            "sapphire": {
+              "ios": {
+                "light": "./assets/duet-app-icon-sapphire.png"
+              },
+              "android": {
+                "foregroundImage": "./assets/duet-icon-foreground-sapphire.png",
+                "backgroundColor": "#F5F8FF"
+              }
+            },
+            "terracotta": {
+              "ios": {
+                "light": "./assets/duet-app-icon-terracotta.png"
+              },
+              "android": {
+                "foregroundImage": "./assets/duet-icon-foreground-terracotta.png",
+                "backgroundColor": "#FFF5EE"
+              }
+            },
+            "graphite": {
+              "ios": {
+                "light": "./assets/duet-app-icon-graphite.png"
+              },
+              "android": {
+                "foregroundImage": "./assets/duet-icon-foreground-graphite.png",
+                "backgroundColor": "#0D0D0F"
+              }
             }
           }
         }

@@ -188,9 +188,9 @@ const styles = createThemedStyles({
     borderRadius: radii.md, backgroundColor: colors.primary,
   },
   emailButtonCopy: { flex: 1, gap: spacing.xs },
-  emailButtonText: { ...typography.label, color: colors.white, fontWeight: '700' },
-  emailButtonAddress: { ...typography.caption, color: colors.white, opacity: 0.88 },
-  emailButtonArrow: { fontSize: 24, lineHeight: 28, color: colors.white },
+  emailButtonText: { ...typography.label, color: colors.onPrimary, fontWeight: '700' },
+  emailButtonAddress: { ...typography.caption, color: colors.onPrimary, opacity: 0.88 },
+  emailButtonArrow: { fontSize: 24, lineHeight: 28, color: colors.onPrimary },
   missingContact: { ...typography.caption, color: colors.danger },
   privacyLink: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.md, minHeight: 76,

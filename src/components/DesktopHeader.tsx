@@ -87,7 +87,7 @@ const styles = createThemedStyles({
     borderRadius: 18,
     overflow: 'hidden',
     backgroundColor: colors.primary,
-    color: colors.white,
+    color: colors.onPrimary,
     fontSize: 18,
     lineHeight: 36,
     fontWeight: '700',

@@ -34,7 +34,14 @@ export function ThemeProvider({ children }: PropsWithChildren) {
     void AsyncStorage.getItem(THEME_STORAGE_KEY)
       .then((storedTheme) => {
         if (cancelled) return;
-        const nextTheme: ThemeName = storedTheme === 'emerald' || storedTheme === 'honey' ? storedTheme : 'rose';
+        const nextTheme: ThemeName =
+          storedTheme === 'emerald' ||
+          storedTheme === 'honey' ||
+          storedTheme === 'sapphire' ||
+          storedTheme === 'terracotta' ||
+          storedTheme === 'graphite'
+            ? storedTheme
+            : 'rose';
         themeRef.current = nextTheme;
         setActiveTheme(nextTheme);
         setThemeState(nextTheme);

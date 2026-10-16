@@ -10,6 +10,7 @@ import { BackButton } from '@/components/BackButton';
 import { SegmentedControl } from '@/components/SegmentedControl';
 import { StatisticsRing } from '@/components/StatisticsRing';
 import { useApp } from '@/context/AppContext';
+import { useTheme } from '@/context/ThemeContext';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { supabase } from '@/lib/supabase';
 import { loadStatistics, StatisticsData } from '@/services/statistics';
@@ -20,6 +21,7 @@ import { colors, createThemedStyles, radii, spacing, typography } from '@/theme/
 
 export default function StatisticsScreen() {
   const { user, couple, categories } = useApp();
+  const { theme } = useTheme();
   const { isDesktop } = useResponsiveLayout();
   const [data, setData] = useState<StatisticsData | null>(null);
   const [error, setError] = useState(false);
@@ -68,19 +70,21 @@ export default function StatisticsScreen() {
     ? getRelationshipDuration(couple.relationshipStartedAt)
     : null;
   const wishlists = getWishlists(user, couple);
+  const heroTextColor = theme === 'graphite' ? colors.text : colors.onPrimary;
+  const heroSecondaryColor = theme === 'graphite' ? colors.secondary : colors.onPrimary;
 
   return <AppScreen wide contentContainerStyle={styles.screen}>
     <View style={styles.header}>
       <BackButton onPress={() => router.canGoBack() ? router.back() : router.replace('/more')} />
       <Text style={styles.title}>Наша история</Text>
     </View>
-    {couple?.relationshipStartedAt && relationshipDuration && <LinearGradient colors={[colors.primary, colors.secondary]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.hero}>
-      <Text style={styles.heroCaption}>Вместе</Text>
-      <Text style={styles.heroNumber} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
+    {couple?.relationshipStartedAt && relationshipDuration && <LinearGradient colors={theme === 'graphite' ? [colors.soft, colors.surface] : [colors.primary, colors.secondary]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.hero}>
+      <Text style={[styles.heroCaption, { color: heroSecondaryColor }]}>Вместе</Text>
+      <Text style={[styles.heroNumber, { color: heroTextColor }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
         {relationshipDuration.valueLabel} <Text style={styles.heroUnit}>{relationshipDuration.unitLabel}</Text>
       </Text>
-      {relationshipDuration.detailLabel ? <Text style={styles.heroDetail}>{relationshipDuration.detailLabel}</Text> : null}
-      {couple && <Text style={styles.heroCaption}>С {formatRelationshipDate(couple.relationshipStartedAt)}</Text>}
+      {relationshipDuration.detailLabel ? <Text style={[styles.heroDetail, { color: heroSecondaryColor }]}>{relationshipDuration.detailLabel}</Text> : null}
+      {couple && <Text style={[styles.heroCaption, { color: heroSecondaryColor }]}>С {formatRelationshipDate(couple.relationshipStartedAt)}</Text>}
     </LinearGradient>}
     <SegmentedControl value={period} onChange={setPeriod} options={[
       { value: 'month', label: 'Месяц' }, { value: 'year', label: 'Год' }, { value: 'all', label: 'Всё время' },
@@ -115,7 +119,7 @@ const styles = createThemedStyles({
   screen: { gap: spacing.xl }, header: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   title: { ...typography.sectionTitle, color: colors.text, flex: 1 },
   hero: { borderRadius: radii.xl, padding: spacing.xxl, gap: spacing.sm },
-  heroCaption: { ...typography.label, color: colors.white }, heroNumber: { fontSize: 42, fontWeight: '700', color: colors.white },
+  heroCaption: { ...typography.label, color: colors.onPrimary }, heroNumber: { fontSize: 42, fontWeight: '700', color: colors.onPrimary },
   heroDetail: { ...typography.label, color: 'rgba(255, 255, 255, 0.82)' },
   heroUnit: { fontSize: 18, fontWeight: '500' }, grid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md },
   metric: { flexGrow: 1, flexBasis: '45%', backgroundColor: colors.surface, borderRadius: radii.lg, padding: spacing.lg, gap: spacing.sm },

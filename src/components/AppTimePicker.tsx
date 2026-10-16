@@ -82,5 +82,5 @@ const styles = createThemedStyles({
   option: { height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: radii.sm },
   selected: { backgroundColor: colors.primary },
   number: { ...typography.sectionTitle, color: colors.text, fontVariant: ['tabular-nums'] },
-  selectedText: { color: colors.white },
+  selectedText: { color: colors.onPrimary },
 });

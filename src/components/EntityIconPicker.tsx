@@ -55,7 +55,7 @@ export function EntityIconPicker({ kind, value, onChange, disabled = false }: {
         onPress={() => onChange(icon)}
         style={({ pressed }) => [styles.choice, value === icon && styles.selected, pressed && styles.pressed]}
       >
-        <AppIcon name={entityIcons[icon]} size={24} color={value === icon ? colors.white : colors.primary} />
+        <AppIcon name={entityIcons[icon]} size={24} color={value === icon ? colors.onPrimary : colors.primary} />
       </Pressable>
     </View>
   );

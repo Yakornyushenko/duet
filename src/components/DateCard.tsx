@@ -5,6 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { colors, createThemedStyles, radii, spacing, typography } from '@/theme/tokens';
 import { DateEvent } from '@/types/domain';
 import { useApp } from '@/context/AppContext';
+import { useTheme } from '@/context/ThemeContext';
 import { formatEventDate, getDaysUntil, pluralizeDays } from '@/utils/dates';
 import { entityIcons } from '@/utils/entityIcons';
 
@@ -17,24 +18,29 @@ type DateCardProps = {
 
 export function DateCard({ event, highlighted = false, reminderLabel, onPress }: DateCardProps) {
   const { categories } = useApp();
+  const { theme } = useTheme();
   const days = getDaysUntil(event);
   const absoluteDays = Math.abs(days);
+  const graphiteHighlighted = highlighted && theme === 'graphite';
+  const highlightedTextColor = graphiteHighlighted ? colors.text : colors.onPrimary;
+  const highlightedSecondaryColor = graphiteHighlighted ? colors.secondary : colors.onPrimary;
   const content = (
     <View style={styles.row}>
       <View style={[
         styles.icon,
         reminderLabel && !highlighted && styles.reminderEventIcon,
         highlighted && styles.highlightedIcon,
+        graphiteHighlighted && styles.graphiteHighlightedIcon,
       ]}>
-        <AppIcon name={entityIcons[event.icon]} size={21} color={highlighted ? colors.white : colors.primary} />
+        <AppIcon name={entityIcons[event.icon]} size={21} color={highlighted ? highlightedTextColor : colors.primary} />
       </View>
       <View style={styles.main}>
-        {highlighted ? <Text style={styles.eyebrow}>Следующая дата</Text> : null}
-        <Text style={[styles.title, highlighted && styles.highlightedText]} numberOfLines={2}>
+        {highlighted ? <Text style={[styles.eyebrow, { color: highlightedSecondaryColor }]}>Следующая дата</Text> : null}
+        <Text style={[styles.title, highlighted && { color: highlightedTextColor }]} numberOfLines={2}>
           {event.title}
         </Text>
-        <Text style={[styles.date, highlighted && styles.highlightedSecondary]}>{formatEventDate(event)}</Text>
-        <Text style={[styles.date, highlighted && styles.highlightedSecondary]}>
+        <Text style={[styles.date, highlighted && { color: highlightedSecondaryColor }]}>{formatEventDate(event)}</Text>
+        <Text style={[styles.date, highlighted && { color: highlightedSecondaryColor }]}>
           {categories.find((category) => category.value === event.category)?.label}
         </Text>
         {reminderLabel ? (
@@ -42,22 +48,22 @@ export function DateCard({ event, highlighted = false, reminderLabel, onPress }:
             <AppIcon
               name="notifications-outline"
               size={15}
-              color={highlighted ? colors.white : colors.primary}
+              color={highlighted ? highlightedTextColor : colors.primary}
             />
-            <Text style={[styles.reminderLabel, highlighted && styles.highlightedSecondary]}>
+            <Text style={[styles.reminderLabel, highlighted && { color: highlightedSecondaryColor }]}>
               {reminderLabel}
             </Text>
           </View>
         ) : null}
       </View>
       <View style={styles.counter}>
-        <Text style={[styles.days, highlighted && styles.highlightedText]}>
+        <Text style={[styles.days, highlighted && { color: highlightedTextColor }]}>
           {days === 0 ? 'Сегодня' : absoluteDays}
         </Text>
         {days > 0 ? (
-          <Text style={[styles.dayLabel, highlighted && styles.highlightedSecondary]}>{pluralizeDays(days)}</Text>
+          <Text style={[styles.dayLabel, highlighted && { color: highlightedSecondaryColor }]}>{pluralizeDays(days)}</Text>
         ) : days < 0 ? (
-          <Text style={[styles.dayLabel, highlighted && styles.highlightedSecondary]}>
+          <Text style={[styles.dayLabel, highlighted && { color: highlightedSecondaryColor }]}>
             {pluralizeDays(absoluteDays)} назад
           </Text>
         ) : null}
@@ -70,7 +76,7 @@ export function DateCard({ event, highlighted = false, reminderLabel, onPress }:
       <Pressable accessibilityRole={onPress ? 'button' : undefined} onPress={onPress} disabled={!onPress}>
         {({ pressed }) => (
           <LinearGradient
-            colors={[colors.primary, colors.secondary]}
+            colors={theme === 'graphite' ? [colors.soft, colors.surface] : [colors.primary, colors.secondary]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={[styles.highlightedCard, pressed && styles.pressed]}
@@ -133,6 +139,9 @@ const styles = createThemedStyles({
   highlightedIcon: {
     backgroundColor: 'rgba(255, 255, 255, 0.18)',
   },
+  graphiteHighlightedIcon: {
+    backgroundColor: colors.softAccent,
+  },
   main: {
     flex: 1,
     gap: 2,
@@ -172,12 +181,6 @@ const styles = createThemedStyles({
   dayLabel: {
     ...typography.caption,
     color: colors.muted,
-  },
-  highlightedText: {
-    color: colors.white,
-  },
-  highlightedSecondary: {
-    color: 'rgba(255, 255, 255, 0.82)',
   },
   glow: {
     position: 'absolute',

@@ -419,7 +419,7 @@ const styles = createThemedStyles({
     opacity: 0.45,
   },
   selectedDayText: {
-    color: colors.white,
+    color: colors.onPrimary,
     fontWeight: '700',
     opacity: 1,
   },

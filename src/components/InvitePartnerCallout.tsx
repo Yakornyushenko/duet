@@ -33,7 +33,7 @@ export function InvitePartnerCallout({
         <Text style={styles.title}>Пригласить партнёра</Text>
         <Text style={styles.description}>{description}</Text>
       </View>
-      <AppIcon name="chevron-forward" size={22} color={colors.white} />
+      <AppIcon name="chevron-forward" size={22} color={colors.onPrimary} />
     </Pressable>
   );
 }
@@ -60,11 +60,11 @@ const styles = createThemedStyles({
   },
   title: {
     ...typography.cardTitle,
-    color: colors.white,
+    color: colors.onPrimary,
   },
   description: {
     ...typography.caption,
-    color: colors.white,
+    color: colors.onPrimary,
     opacity: 0.88,
   },
   pressed: {

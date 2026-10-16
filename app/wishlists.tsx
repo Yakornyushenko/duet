@@ -165,7 +165,7 @@ export default function WishlistsScreen() {
         {wishlists.map((item) => {
           const selected = list === item.value;
           const readOnly = !canManageWishlist(user, couple, item.value);
-          const foreground = selected ? colors.white : readOnly ? colors.secondary : colors.primary;
+          const foreground = selected ? colors.onPrimary : readOnly ? colors.secondary : colors.primary;
           return (
             <Pressable
               key={item.value}
@@ -177,7 +177,7 @@ export default function WishlistsScreen() {
                 selected && readOnly && styles.selectedReadOnlyTab]}
             >
               <AppIcon name={item.icon} size={21} color={foreground} />
-              <Text style={{ color: selected ? colors.white : colors.secondary }} numberOfLines={1}>
+              <Text style={{ color: selected ? colors.onPrimary : colors.secondary }} numberOfLines={1}>
                 {item.label}
               </Text>
             </Pressable>

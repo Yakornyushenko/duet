@@ -46,7 +46,7 @@ const styles = createThemedStyles({
   },
   initial: {
     ...typography.label,
-    color: colors.white,
+    color: colors.onPrimary,
     fontWeight: '600',
   },
 });

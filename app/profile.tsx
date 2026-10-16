@@ -34,6 +34,9 @@ const themeLabels: Record<ThemeName, string> = {
   rose: 'Розовая',
   emerald: 'Изумрудная',
   honey: 'Медовая',
+  sapphire: 'Сапфировая',
+  terracotta: 'Терракотовая',
+  graphite: 'Графитовая',
 };
 
 let profileScrollOffsetToRestore: number | null = null;
@@ -53,8 +56,8 @@ function ThemeOptionButton({ label, palette, selected, disabled, onPress }: Them
         disabled && styles.themeOptionButtonDisabled,
       ]}
     >
-      <Text style={styles.themeOptionLabel}>{label}</Text>
-      {selected ? <AppIcon name="checkmark-circle" size={22} color={palette.white} /> : null}
+      <Text style={[styles.themeOptionLabel, { color: palette.onPrimary }]}>{label}</Text>
+      {selected ? <AppIcon name="checkmark-circle" size={22} color={palette.onPrimary} /> : null}
     </Pressable>
   );
 }
@@ -329,6 +332,27 @@ export default function ProfileScreen() {
                 selected={theme === 'honey'}
                 disabled={themeSaving}
                 onPress={() => void changeTheme('honey')}
+              />
+              <ThemeOptionButton
+                label="Сапфировая"
+                palette={themePalettes.sapphire}
+                selected={theme === 'sapphire'}
+                disabled={themeSaving}
+                onPress={() => void changeTheme('sapphire')}
+              />
+              <ThemeOptionButton
+                label="Терракотовая"
+                palette={themePalettes.terracotta}
+                selected={theme === 'terracotta'}
+                disabled={themeSaving}
+                onPress={() => void changeTheme('terracotta')}
+              />
+              <ThemeOptionButton
+                label="Графитовая"
+                palette={themePalettes.graphite}
+                selected={theme === 'graphite'}
+                disabled={themeSaving}
+                onPress={() => void changeTheme('graphite')}
               />
             </View>
             <AppButton
@@ -624,7 +648,6 @@ const styles = createThemedStyles({
   },
   themeOptionLabel: {
     ...typography.body,
-    color: colors.white,
     fontWeight: '700',
   },
 });

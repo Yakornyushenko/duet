@@ -437,7 +437,7 @@ function CommentIconButton({ label, icon, tone = 'neutral', loading = false, dis
   disabled?: boolean;
   onPress: () => void;
 }) {
-  const color = tone === 'primary' ? colors.white
+  const color = tone === 'primary' ? colors.onPrimary
     : tone === 'danger' ? colors.danger
       : tone === 'confirm' ? colors.success : colors.secondary;
   return <Pressable accessibilityRole="button" accessibilityLabel={label}

@@ -40,7 +40,7 @@ export function AppButton({
     dangerOutline: colors.dangerSoft,
   };
   const textColors: Record<ButtonVariant, string> = {
-    primary: colors.white,
+    primary: colors.onPrimary,
     secondary: colors.secondary,
     ghost: colors.primary,
     danger: colors.danger,

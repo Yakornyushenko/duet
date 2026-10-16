@@ -41,7 +41,7 @@ export default function DatesScreen() {
           onPress={() => router.push({ pathname: '/date-form', params: { category } })}
           style={styles.addButton}
         >
-          <AppIcon name="add" size={26} color={colors.white} />
+          <AppIcon name="add" size={26} color={colors.onPrimary} />
         </Pressable>
       </View>
 
@@ -111,7 +111,7 @@ const styles = createThemedStyles({
   },
   filterSelected: { backgroundColor: colors.primary },
   filterText: { ...typography.label, color: colors.primary },
-  filterTextSelected: { color: colors.white },
+  filterTextSelected: { color: colors.onPrimary },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',

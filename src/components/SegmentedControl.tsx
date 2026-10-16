@@ -75,7 +75,7 @@ const styles = createThemedStyles({
     color: colors.muted,
   },
   selectedLabel: {
-    color: colors.white,
+    color: colors.onPrimary,
     fontWeight: '600',
   },
 });
