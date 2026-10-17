@@ -7,15 +7,18 @@ import { Modal, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppButton } from '@/components/AppButton';
+import { AppBackground } from '@/components/AppBackground';
 import { AppInput } from '@/components/AppInput';
 import { AppScreen } from '@/components/AppScreen';
 import { BackButton } from '@/components/BackButton';
 import { quotedAppName } from '@/config/app';
 import { InvitePartnerCallout } from '@/components/InvitePartnerCallout';
 import { PairAvatars } from '@/components/PairAvatars';
+import { ProfilePhotoModal } from '@/components/ProfilePhotoModal';
 import { IntimateQuestionSettings } from '@/components/IntimateQuestionSettings';
 import { RelationshipDateEditor } from '@/components/RelationshipDateEditor';
 import { useApp } from '@/context/AppContext';
+import { type BackgroundPattern, useBackground } from '@/context/BackgroundContext';
 import { useDialog } from '@/context/DialogContext';
 import { useReminders } from '@/context/ReminderContext';
 import { useTheme } from '@/context/ThemeContext';
@@ -30,6 +33,14 @@ type ThemeOptionButtonProps = {
   onPress: () => void;
 };
 
+type BackgroundOptionButtonProps = {
+  label: string;
+  pattern: BackgroundPattern;
+  selected: boolean;
+  disabled: boolean;
+  onPress: () => void;
+};
+
 const themeLabels: Record<ThemeName, string> = {
   rose: 'Розовая',
   emerald: 'Изумрудная',
@@ -37,6 +48,14 @@ const themeLabels: Record<ThemeName, string> = {
   sapphire: 'Сапфировая',
   terracotta: 'Терракотовая',
   graphite: 'Графитовая',
+};
+
+const backgroundLabels: Record<BackgroundPattern, string> = {
+  solid: 'Без узора',
+  hearts: 'Сердечки',
+  stars: 'Звёзды',
+  constellation: 'Созвездие',
+  heartsSparkles: 'Сердца и искры',
 };
 
 let profileScrollOffsetToRestore: number | null = null;
@@ -62,10 +81,35 @@ function ThemeOptionButton({ label, palette, selected, disabled, onPress }: Them
   );
 }
 
+function BackgroundOptionButton({ label, pattern, selected, disabled, onPress }: BackgroundOptionButtonProps) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`Выбрать фон «${label}»`}
+      accessibilityState={{ selected, disabled }}
+      disabled={disabled}
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.backgroundOptionButton,
+        selected && styles.backgroundOptionButtonSelected,
+        pressed && styles.backgroundOptionButtonPressed,
+        disabled && styles.themeOptionButtonDisabled,
+      ]}
+    >
+      <View style={styles.backgroundOptionPreview}>
+        <AppBackground pattern={pattern} />
+      </View>
+      <Text style={styles.backgroundOptionLabel}>{label}</Text>
+      {selected ? <AppIcon name="checkmark-circle" size={22} color={colors.primary} /> : null}
+    </Pressable>
+  );
+}
+
 export default function ProfileScreen() {
   const { user, couple, signOut, deleteAccount, updateDisplayName } = useApp();
   const { showDialog } = useDialog();
   const { theme, setTheme } = useTheme();
+  const { backgroundPattern, setBackgroundPattern } = useBackground();
   const {
     enabled: remindersEnabled,
     initializing: remindersInitializing,
@@ -74,8 +118,11 @@ export default function ProfileScreen() {
   } = useReminders();
   const [displayName, setDisplayName] = useState(user?.displayName ?? '');
   const [nameSaving, setNameSaving] = useState(false);
+  const [photoPickerVisible, setPhotoPickerVisible] = useState(false);
   const [themeSaving, setThemeSaving] = useState(false);
   const [themePickerVisible, setThemePickerVisible] = useState(false);
+  const [backgroundSaving, setBackgroundSaving] = useState(false);
+  const [backgroundPickerVisible, setBackgroundPickerVisible] = useState(false);
   const [accountDeleting, setAccountDeleting] = useState(false);
   const [relationshipDateEditorVisible, setRelationshipDateEditorVisible] = useState(false);
   const profileScrollOffset = useRef(0);
@@ -182,6 +229,28 @@ export default function ProfileScreen() {
     }
   };
 
+  const changeBackground = async (nextPattern: BackgroundPattern) => {
+    if (nextPattern === backgroundPattern) {
+      setBackgroundPickerVisible(false);
+      return;
+    }
+
+    try {
+      setBackgroundSaving(true);
+      await setBackgroundPattern(nextPattern);
+      await Haptics.selectionAsync();
+      setBackgroundPickerVisible(false);
+    } catch (error) {
+      showDialog({
+        title: 'Не получилось изменить фон',
+        message: error instanceof Error ? error.message : 'Попробуйте ещё раз.',
+        tone: 'danger',
+      });
+    } finally {
+      setBackgroundSaving(false);
+    }
+  };
+
   if (!user || !couple || !scrollOffsetReady) {
     return null;
   }
@@ -198,7 +267,13 @@ export default function ProfileScreen() {
       </View>
 
       <View style={styles.coupleCard}>
-        <PairAvatars firstName={user.displayName} secondName={couple.partnerName} size={64} />
+        <PairAvatars
+          firstName={user.displayName}
+          secondName={couple.partnerName}
+          firstPhotoUrl={user.avatarUrl}
+          secondPhotoUrl={couple.partnerAvatarUrl}
+          size={64}
+        />
         <View style={styles.centeredCopy}>
           <Text style={styles.coupleName}>{user.displayName}{couple.partnerName ? ` + ${couple.partnerName}` : ''}</Text>
           <View style={styles.connectedRow}>
@@ -265,6 +340,24 @@ export default function ProfileScreen() {
         <View style={styles.detailsCard}>
           <Pressable
             accessibilityRole="button"
+            accessibilityLabel="Фото профиля"
+            accessibilityHint="Открыть настройку фото профиля"
+            accessibilityState={{ expanded: photoPickerVisible }}
+            onPress={() => setPhotoPickerVisible(true)}
+            style={({ pressed }) => [styles.detailRow, pressed && styles.pressed]}
+          >
+            <View style={styles.detailIcon}>
+              <AppIcon name="camera-outline" size={20} color={colors.primary} />
+            </View>
+            <View style={styles.detailCopy}>
+              <Text style={styles.detailValue}>Фото профиля</Text>
+              <Text style={styles.detailLabel}>{user.avatarPath ? 'Фото добавлено' : 'Добавить фото'}</Text>
+            </View>
+            <AppIcon name="chevron-forward" size={20} color={colors.muted} />
+          </Pressable>
+          <View style={styles.separator} />
+          <Pressable
+            accessibilityRole="button"
             accessibilityLabel="Тема приложения"
             accessibilityHint="Открыть выбор темы"
             accessibilityState={{ expanded: themePickerVisible }}
@@ -280,8 +373,28 @@ export default function ProfileScreen() {
             </View>
             <AppIcon name="chevron-forward" size={20} color={colors.muted} />
           </Pressable>
+          <View style={styles.separator} />
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Фон приложения"
+            accessibilityHint="Открыть выбор фонового узора"
+            accessibilityState={{ expanded: backgroundPickerVisible }}
+            onPress={() => setBackgroundPickerVisible(true)}
+            style={({ pressed }) => [styles.detailRow, pressed && styles.pressed]}
+          >
+            <View style={styles.detailIcon}>
+              <AppIcon name="image-outline" size={20} color={colors.primary} />
+            </View>
+            <View style={styles.detailCopy}>
+              <Text style={styles.detailValue}>Фон приложения</Text>
+              <Text style={styles.detailLabel}>{backgroundLabels[backgroundPattern]}</Text>
+            </View>
+            <AppIcon name="chevron-forward" size={20} color={colors.muted} />
+          </Pressable>
         </View>
       </View>
+
+      <ProfilePhotoModal visible={photoPickerVisible} onClose={() => setPhotoPickerVisible(false)} />
 
       <Modal
         transparent
@@ -360,6 +473,50 @@ export default function ProfileScreen() {
               variant="ghost"
               disabled={themeSaving}
               onPress={() => setThemePickerVisible(false)}
+            />
+          </View>
+        </SafeAreaView>
+      </Modal>
+
+      <Modal
+        transparent
+        animationType="fade"
+        visible={backgroundPickerVisible}
+        statusBarTranslucent
+        onRequestClose={() => {
+          if (!backgroundSaving) setBackgroundPickerVisible(false);
+        }}
+      >
+        <SafeAreaView style={styles.themeModalBackdrop}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Закрыть выбор фона"
+            style={StyleSheet.absoluteFill}
+            disabled={backgroundSaving}
+            onPress={() => setBackgroundPickerVisible(false)}
+          />
+          <View style={styles.themeModalCard}>
+            <View style={styles.themeModalHeader}>
+              <Text style={styles.themeModalTitle}>Фон приложения</Text>
+              <Text style={styles.themeModalSubtitle}>Выберите декоративный узор</Text>
+            </View>
+            <View style={styles.themeOptions}>
+              {(Object.entries(backgroundLabels) as [BackgroundPattern, string][]).map(([pattern, label]) => (
+                <BackgroundOptionButton
+                  key={pattern}
+                  label={label}
+                  pattern={pattern}
+                  selected={backgroundPattern === pattern}
+                  disabled={backgroundSaving}
+                  onPress={() => void changeBackground(pattern)}
+                />
+              ))}
+            </View>
+            <AppButton
+              label="Отмена"
+              variant="ghost"
+              disabled={backgroundSaving}
+              onPress={() => setBackgroundPickerVisible(false)}
             />
           </View>
         </SafeAreaView>
@@ -649,5 +806,36 @@ const styles = createThemedStyles({
   themeOptionLabel: {
     ...typography.body,
     fontWeight: '700',
+  },
+  backgroundOptionButton: {
+    minHeight: 62,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    padding: spacing.sm,
+    paddingRight: spacing.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radii.md,
+    backgroundColor: colors.surface,
+  },
+  backgroundOptionButtonSelected: {
+    borderColor: colors.primary,
+  },
+  backgroundOptionButtonPressed: {
+    backgroundColor: colors.softAccent,
+  },
+  backgroundOptionPreview: {
+    width: 82,
+    height: 46,
+    overflow: 'hidden',
+    borderRadius: radii.sm,
+    backgroundColor: colors.background,
+  },
+  backgroundOptionLabel: {
+    ...typography.body,
+    flex: 1,
+    color: colors.text,
+    fontWeight: '600',
   },
 });

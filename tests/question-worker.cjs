@@ -11,6 +11,7 @@ const ts = require('typescript');
     { id: 'q', couple_id: 'pair', recipient_id: 'user', daily_question_id: 'intimate', message: 'DO NOT SEND RAW TEXT' },
     { id: 'cancelled', couple_id: 'pair', recipient_id: 'user', daily_question_id: 'cancelled', message: 'DO NOT SEND' },
     { id: 'wish', couple_id: 'pair', recipient_id: 'user', wish_id: 'wish-id', message: 'Желание обновлено' },
+    { id: 'date', couple_id: 'pair', recipient_id: 'user', date_event_id: 'event-id', message: 'Партнёр · Добавлена дата: Концерт' },
   ];
   const client = {
     async rpc(name, args) {
@@ -45,12 +46,15 @@ const ts = require('typescript');
   assert.equal(sent.length,0);
   const response = await handler(new Request('https://test.invalid',{method:'POST',headers:{'x-wish-worker-secret':'secret'}}));
   assert.equal(response.status,200);
-  assert.equal(sent.length,2);
+  assert.equal(sent.length,3);
   assert.equal(sent[0].body,'Для вас новый личный вопрос');
   assert.equal(sent[0].data.questionId,'intimate');
   assert.equal(sent[0].channelId,'daily-questions');
   assert.equal(sent[1].data.wishId,'wish-id');
   assert.equal(sent[1].channelId,'wish-updates');
-  assert.equal(completed.length,3);
-  console.log('PASS: worker authorization, daily scheduling, consent recheck, private push body, question deep link, existing wish delivery');
+  assert.equal(sent[2].data.eventId,'event-id');
+  assert.equal(sent[2].channelId,'date-updates');
+  assert.equal(sent[2].title,'Duet · Новая дата');
+  assert.equal(completed.length,4);
+  console.log('PASS: worker authorization, daily scheduling, consent recheck, question, wish and date delivery');
 })().catch(error => { console.error(error); process.exitCode=1; });

@@ -5,17 +5,17 @@ import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { appName } from '@/config/app';
 import { colors, createThemedStyles, radii, spacing, typography } from '@/theme/tokens';
 
-type DesktopSection = 'home' | 'dates' | 'more';
+type DesktopSection = 'home' | 'calendar' | 'more';
 
-const navigation: { label: string; section: DesktopSection; href: '/(tabs)' | '/(tabs)/dates' | '/(tabs)/more' }[] = [
+const navigation: { label: string; section: DesktopSection; href: '/(tabs)' | '/(tabs)/calendar' | '/(tabs)/more' }[] = [
   { label: 'Главная', section: 'home', href: '/(tabs)' },
-  { label: 'Даты', section: 'dates', href: '/(tabs)/dates' },
+  { label: 'Календарь', section: 'calendar', href: '/(tabs)/calendar' },
   { label: 'Ещё', section: 'more', href: '/(tabs)/more' },
 ];
 
 function getActiveSection(pathname: string): DesktopSection {
   if (pathname === '/') return 'home';
-  if (pathname === '/dates' || pathname === '/date' || pathname === '/date-form' || pathname === '/event-reminders') return 'dates';
+  if (pathname === '/calendar' || pathname === '/date' || pathname === '/date-form' || pathname === '/event-reminders') return 'calendar';
   return 'more';
 }
 

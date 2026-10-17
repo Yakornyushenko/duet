@@ -23,6 +23,21 @@ export default function MoreScreen() {
       </Pressable>
       <Pressable
         accessibilityRole="button"
+        accessibilityLabel="Открыть даты"
+        onPress={() => router.push('/(tabs)/dates')}
+        style={({ pressed }) => [styles.card, isDesktop && styles.desktopCard, pressed && styles.pressed]}
+      >
+        <View style={styles.icon}>
+          <AppIcon name="calendar-outline" size={24} color={colors.primary} />
+        </View>
+        <View style={styles.copy}>
+          <Text style={styles.label}>Даты</Text>
+          <Text style={styles.description}>Важные события и годовщины</Text>
+        </View>
+        <AppIcon name="chevron-forward" size={20} color={colors.muted} />
+      </Pressable>
+      <Pressable
+        accessibilityRole="button"
         accessibilityLabel="Открыть напоминания"
         onPress={() => router.push('/reminders')}
         style={({ pressed }) => [styles.card, isDesktop && styles.desktopCard, pressed && styles.pressed]}

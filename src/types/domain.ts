@@ -2,6 +2,8 @@ export type AppUser = {
   id: string;
   email: string;
   displayName: string;
+  avatarPath: string | null;
+  avatarUrl: string | null;
 };
 
 export type Couple = {
@@ -11,6 +13,8 @@ export type Couple = {
   inviteCode: string | null;
   inviteExpiresAt: string | null;
   partnerName: string | null;
+  partnerAvatarPath: string | null;
+  partnerAvatarUrl: string | null;
 };
 
 export type DateRecurrence = 'none' | 'yearly';

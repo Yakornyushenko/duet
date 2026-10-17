@@ -9,6 +9,7 @@ import { AppScreen } from '@/components/AppScreen';
 import { DateCard } from '@/components/DateCard';
 import { InvitePartnerCallout } from '@/components/InvitePartnerCallout';
 import { PairAvatars } from '@/components/PairAvatars';
+import { ProfilePhotoModal } from '@/components/ProfilePhotoModal';
 import { RelationshipDateEditor } from '@/components/RelationshipDateEditor';
 import { useApp } from '@/context/AppContext';
 import { useReminders } from '@/context/ReminderContext';
@@ -23,6 +24,7 @@ export default function HomeScreen() {
   const { user, couple, events } = useApp();
   const { plannedReminders } = useReminders();
   const [relationshipDateEditorVisible, setRelationshipDateEditorVisible] = useState(false);
+  const [photoPickerVisible, setPhotoPickerVisible] = useState(false);
   const [openingReminders, setOpeningReminders] = useState(false);
   const [bellPressed, setBellPressed] = useState(false);
   const reminderTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -69,13 +71,24 @@ export default function HomeScreen() {
   return (
     <AppScreen wide>
       <View style={styles.header}>
-        <View style={styles.coupleIdentity}>
-          <PairAvatars firstName={user.displayName} secondName={couple.partnerName} />
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Настроить фото профиля"
+          accessibilityHint="Открыть выбор фото профиля"
+          onPress={() => setPhotoPickerVisible(true)}
+          style={({ pressed }) => [styles.coupleIdentity, pressed && styles.identityPressed]}
+        >
+          <PairAvatars
+            firstName={user.displayName}
+            secondName={couple.partnerName}
+            firstPhotoUrl={user.avatarUrl}
+            secondPhotoUrl={couple.partnerAvatarUrl}
+          />
           <View style={styles.identityCopy}>
             <Text style={styles.eyebrow}>{couple.partnerName ? 'Наше пространство' : 'Моё пространство'}</Text>
             <Text style={styles.coupleName} numberOfLines={1} ellipsizeMode="tail">{user.displayName}{couple.partnerName ? ` + ${couple.partnerName}` : ''}</Text>
           </View>
-        </View>
+        </Pressable>
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Уведомления"
@@ -93,6 +106,8 @@ export default function HomeScreen() {
             />
         </Pressable>
       </View>
+
+      <ProfilePhotoModal visible={photoPickerVisible} onClose={() => setPhotoPickerVisible(false)} />
 
       {!couple.partnerName && (
         <View style={styles.partnerInvite}>
@@ -205,6 +220,9 @@ const styles = createThemedStyles({
     alignItems: 'center',
     gap: spacing.md,
     flexShrink: 1,
+  },
+  identityPressed: {
+    opacity: 0.68,
   },
   identityCopy: {
     flex: 1,

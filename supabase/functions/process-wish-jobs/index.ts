@@ -5,6 +5,7 @@ type WishJob = {
   couple_id: string;
   recipient_id: string | null;
   wish_id: string | null;
+  date_event_id: string | null;
   daily_question_id: string | null;
   message: string | null;
   remove_photos: string[] | null;
@@ -57,7 +58,7 @@ Deno.serve(async (request) => {
       }
 
       if (job.recipient_id && job.message) {
-        await sendWishPush(supabase, job);
+        await sendPush(supabase, job);
       }
 
       const { error: completeError } = await supabase
@@ -79,7 +80,7 @@ Deno.serve(async (request) => {
   return Response.json({ processed: claimed.length });
 });
 
-async function sendWishPush(
+async function sendPush(
   supabase: ReturnType<typeof createClient>,
   job: WishJob,
 ): Promise<void> {
@@ -114,12 +115,18 @@ async function sendWishPush(
 
   const messages = tokens.map((token: string) => ({
     to: token,
-    title: job.daily_question_id ? 'Duet · Вопрос дня' : 'Duet',
+    title: job.daily_question_id ? 'Duet · Вопрос дня' : job.date_event_id ? 'Duet · Новая дата' : 'Duet',
     body,
     sound: 'default',
     // Android needs a channel so the notification is grouped and vibrates.
-    channelId: job.daily_question_id ? 'daily-questions' : 'wish-updates',
-    data: job.daily_question_id ? { questionId: job.daily_question_id } : job.wish_id ? { wishId: job.wish_id } : {},
+    channelId: job.daily_question_id ? 'daily-questions' : job.date_event_id ? 'date-updates' : 'wish-updates',
+    data: job.daily_question_id
+      ? { questionId: job.daily_question_id }
+      : job.date_event_id
+        ? { eventId: job.date_event_id }
+        : job.wish_id
+          ? { wishId: job.wish_id }
+          : {},
   }));
 
   const pushResponse = await fetch('https://exp.host/--/api/v2/push/send', {

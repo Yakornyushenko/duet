@@ -46,8 +46,9 @@ async function main() {
   const received = [];
   await exports.configureReminderChannel();
   await exports.configureWishChannel();
+  await exports.configureDateUpdatesChannel();
   await exports.configureQuestionChannel();
-  assert.equal(channels.length, 3);
+  assert.equal(channels.length, 4);
   for (const channel of channels) {
     assert.equal(Object.hasOwn(channel.options, 'sound'), false, 'System channel sound must not be passed as a custom filename');
     assert.equal(channel.options.importance, 4);
