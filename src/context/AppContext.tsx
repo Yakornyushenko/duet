@@ -21,6 +21,7 @@ import {
   signInRemote,
   signUpRemote,
   updateDisplayNameRemote,
+  updateProfilePhotoRemote,
   updateEventRemote,
   updateRelationshipDateRemote,
   workspaceCacheKey,
@@ -46,6 +47,7 @@ type AppContextValue = AppState & {
   createCouple: () => Promise<void>;
   updateRelationshipDate: (relationshipStartedAt: string) => Promise<void>;
   updateDisplayName: (displayName: string) => Promise<void>;
+  updateProfilePhoto: (avatarPath: string | null) => Promise<void>;
   joinCouple: (token: string, categories: JoinCategory[]) => Promise<void>;
   joinEmptyCouple: (token: string) => Promise<void>;
   refreshWorkspace: () => Promise<void>;
@@ -353,6 +355,13 @@ export function AppProvider({ children }: PropsWithChildren) {
         }
         const updatedDisplayName = await updateDisplayNameRemote(user.id, displayName.trim());
         setUser((current) => current ? { ...current, displayName: updatedDisplayName } : current);
+      },
+      updateProfilePhoto: async (avatarPath) => {
+        if (!user) {
+          throw new Error('Сначала войдите в аккаунт');
+        }
+        const avatarUrl = await updateProfilePhotoRemote(user.id, avatarPath);
+        setUser((current) => current ? { ...current, avatarPath, avatarUrl } : current);
       },
       joinCouple: async (token, categories) => {
         await joinCoupleRemote(token, categories);

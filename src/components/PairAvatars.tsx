@@ -1,28 +1,58 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { Image, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useState } from 'react';
 
 import { colors, createThemedStyles, typography } from '@/theme/tokens';
 
 type PairAvatarsProps = {
   firstName: string;
   secondName?: string | null;
+  firstPhotoUrl?: string | null;
+  secondPhotoUrl?: string | null;
   size?: number;
 };
 
-export function PairAvatars({ firstName, secondName, size = 38 }: PairAvatarsProps) {
+function Avatar({ name, photoUrl, size, second = false }: {
+  name: string;
+  photoUrl?: string | null;
+  size: number;
+  second?: boolean;
+}) {
+  const [photoFailed, setPhotoFailed] = useState(false);
+  useEffect(() => setPhotoFailed(false), [photoUrl]);
+
+  return (
+    <View style={[
+      styles.avatar,
+      second && styles.secondAvatar,
+      { width: size, height: size, borderRadius: size / 2 },
+    ]}>
+      {photoUrl && !photoFailed ? (
+        <Image
+          source={{ uri: photoUrl }}
+          style={styles.photo}
+          accessibilityLabel={`Фото профиля ${name}`}
+          onError={() => setPhotoFailed(true)}
+        />
+      ) : (
+        <Text style={styles.initial}>{name.trim().charAt(0).toUpperCase()}</Text>
+      )}
+    </View>
+  );
+}
+
+export function PairAvatars({
+  firstName,
+  secondName,
+  firstPhotoUrl,
+  secondPhotoUrl,
+  size = 38,
+}: PairAvatarsProps) {
   return (
     <View style={styles.row} accessibilityLabel={secondName ? `${firstName} и ${secondName}` : firstName}>
-      <View style={[styles.avatar, { width: size, height: size, borderRadius: size / 2 }]}>
-        <Text style={styles.initial}>{firstName.trim().charAt(0).toUpperCase()}</Text>
-      </View>
+      <Avatar name={firstName} photoUrl={firstPhotoUrl} size={size} />
       {secondName ? (
-        <View
-          style={[
-            styles.avatar,
-            styles.secondAvatar,
-            { width: size, height: size, borderRadius: size / 2, marginLeft: -size / 3.8 },
-          ]}
-        >
-          <Text style={styles.initial}>{secondName.trim().charAt(0).toUpperCase()}</Text>
+        <View style={{ marginLeft: -size / 3.8 }}>
+          <Avatar name={secondName} photoUrl={secondPhotoUrl} size={size} second />
         </View>
       ) : null}
     </View>
@@ -40,6 +70,7 @@ const styles = createThemedStyles({
     backgroundColor: colors.primary,
     borderWidth: 2,
     borderColor: colors.background,
+    overflow: 'hidden',
   },
   secondAvatar: {
     backgroundColor: colors.secondary,
@@ -48,5 +79,9 @@ const styles = createThemedStyles({
     ...typography.label,
     color: colors.onPrimary,
     fontWeight: '600',
+  },
+  photo: {
+    width: '100%',
+    height: '100%',
   },
 });

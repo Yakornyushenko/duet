@@ -14,6 +14,23 @@ const ts = require('typescript');
     auth: { async getUser() { return { data: { user: { id: 'user-id' } }, error: null }; } },
   };
   const adminClient = {
+    from(table) {
+      assert.equal(table, 'profiles');
+      return {
+        select(columns) {
+          assert.equal(columns, 'avatar_path');
+          return {
+            eq(column, value) {
+              assert.equal(column, 'id');
+              assert.equal(value, 'user-id');
+              return { async maybeSingle() {
+                return { data: { avatar_path: 'user-id/avatar.jpg' }, error: null };
+              } };
+            },
+          };
+        },
+      };
+    },
     async rpc(name, args) {
       assert.equal(args.p_user_id, 'user-id');
       rpcCalls.push(name);
@@ -27,9 +44,8 @@ const ts = require('typescript');
     },
     storage: {
       from(bucket) {
-        assert.equal(bucket, 'wish-photos');
         return { async remove(paths) {
-          removed.push(...paths);
+          removed.push(...paths.map((path) => `${bucket}:${path}`));
           return storageFailure ? { error: { message: 'storage failed' } } : { error: null };
         } };
       },
@@ -69,7 +85,11 @@ const ts = require('typescript');
   });
   const success = await handler(validRequest());
   assert.equal(success.status, 200);
-  assert.deepEqual(removed, ['workspace/user-id/one.jpg', 'workspace/user-id/two.jpg']);
+  assert.deepEqual(removed, [
+    'wish-photos:workspace/user-id/one.jpg',
+    'wish-photos:workspace/user-id/two.jpg',
+    'profile-photos:user-id/avatar.jpg',
+  ]);
   assert.deepEqual(rpcCalls, ['begin_account_deletion', 'finalize_account_deletion']);
   assert.deepEqual(deletedUsers, ['user-id']);
 

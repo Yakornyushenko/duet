@@ -91,6 +91,17 @@ export async function configureWishChannel(): Promise<void> {
   });
 }
 
+export async function configureDateUpdatesChannel(): Promise<void> {
+  await Notifications.setNotificationChannelAsync('date-updates', {
+    name: 'Новые даты',
+    description: 'Уведомления о датах, добавленных партнёром',
+    importance: Notifications.AndroidImportance.HIGH,
+    enableVibrate: true,
+    vibrationPattern: [0, 250, 180, 250],
+    lightColor: '#E85D75',
+  });
+}
+
 export async function configureQuestionChannel(): Promise<void> {
   await Notifications.setNotificationChannelAsync('daily-questions', {
     name: 'Вопрос дня',

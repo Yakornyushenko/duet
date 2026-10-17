@@ -106,7 +106,13 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="dates"
         options={{
-          title: 'Даты',
+          href: null,
+        }}
+      />
+      <Tabs.Screen
+        name="calendar"
+        options={{
+          title: 'Календарь',
           tabBarIcon: ({ color, size }) => <AppIcon name="calendar-outline" color={color} size={size} />,
         }}
       />

@@ -4,6 +4,7 @@ import { enableSession, supabase } from '@/lib/supabase';
 import { dataCacheKey, loadWithCache, readCachedData } from '@/lib/dataCache';
 import { AppUser, Couple, DateEvent, DateEventInput, DateCategoryOption } from '@/types/domain';
 import { localizeAuthError } from '@/utils/authErrors';
+import { getProfilePhotoUrls } from '@/services/profilePhotos';
 
 const emailRedirectTo = 'https://duet.by/email-confirmed';
 
@@ -102,7 +103,7 @@ async function fetchRemoteWorkspace(session: Session): Promise<RemoteWorkspace> 
   if (workspaceError) throw new Error('Не удалось открыть пространство. Проверьте подключение и применение миграции личного режима.');
   const [{ data: profile, error: profileError }, { data: membership, error: membershipError }] = await Promise.all([client
     .from('profiles')
-    .select('display_name')
+    .select('display_name, avatar_path')
     .eq('id', session.user.id)
     .maybeSingle(),
     client.from('couple_members')
@@ -122,6 +123,8 @@ async function fetchRemoteWorkspace(session: Session): Promise<RemoteWorkspace> 
       (typeof session.user.user_metadata.display_name === 'string'
         ? session.user.user_metadata.display_name
         : session.user.email?.split('@')[0] ?? 'Вы'),
+    avatarPath: profile?.avatar_path ?? null,
+    avatarUrl: null,
   };
 
   if (membershipError) {
@@ -141,7 +144,7 @@ async function fetchRemoteWorkspace(session: Session): Promise<RemoteWorkspace> 
     await Promise.all([
       client
         .from('couple_members')
-        .select('profiles(display_name)')
+        .select('profiles(display_name, avatar_path)')
         .eq('couple_id', coupleRow.id)
         .neq('user_id', session.user.id)
         .maybeSingle(),
@@ -164,8 +167,15 @@ async function fetchRemoteWorkspace(session: Session): Promise<RemoteWorkspace> 
   }
   if (categoryError) throw categoryError;
 
-  const rawProfile = partnerMembership?.profiles as unknown as { display_name: string } | { display_name: string }[] | null;
+  const rawProfile = partnerMembership?.profiles as unknown as
+    { display_name: string; avatar_path: string | null } |
+    { display_name: string; avatar_path: string | null }[] | null;
   const partnerProfile = Array.isArray(rawProfile) ? rawProfile[0] : rawProfile;
+  const photoUrls = await getProfilePhotoUrls([
+    ...(user.avatarPath ? [user.avatarPath] : []),
+    ...(partnerProfile?.avatar_path ? [partnerProfile.avatar_path] : []),
+  ]);
+  user.avatarUrl = user.avatarPath ? photoUrls[user.avatarPath] ?? null : null;
 
   return {
     user,
@@ -176,6 +186,8 @@ async function fetchRemoteWorkspace(session: Session): Promise<RemoteWorkspace> 
       inviteCode: coupleRow.invite_code,
       inviteExpiresAt: coupleRow.invite_expires_at,
       partnerName: partnerProfile?.display_name ?? null,
+      partnerAvatarPath: partnerProfile?.avatar_path ?? null,
+      partnerAvatarUrl: partnerProfile?.avatar_path ? photoUrls[partnerProfile.avatar_path] ?? null : null,
     },
     events: ((eventRows ?? []) as EventRow[]).map(mapEvent),
     categories: (categoryRows ?? []).map((row) => ({ value: row.value, label: row.label, customSlot: row.custom_slot })),
@@ -221,6 +233,19 @@ export async function updateDisplayNameRemote(userId: string, displayName: strin
     throw error;
   }
   return data.display_name;
+}
+
+export async function updateProfilePhotoRemote(userId: string, avatarPath: string | null): Promise<string | null> {
+  const { data, error } = await getClient()
+    .from('profiles')
+    .update({ avatar_path: avatarPath })
+    .eq('id', userId)
+    .select('avatar_path')
+    .single();
+  if (error) throw error;
+  if (!data.avatar_path) return null;
+  const urls = await getProfilePhotoUrls([data.avatar_path]);
+  return urls[data.avatar_path] ?? null;
 }
 
 export type JoinCategory = { key: string; label: string; mine: boolean };

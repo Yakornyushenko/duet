@@ -17,6 +17,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { colors, createThemedStyles, spacing } from '@/theme/tokens';
+import { AppBackground } from '@/components/AppBackground';
 
 type AppScreenProps = PropsWithChildren<{
   scroll?: boolean;
@@ -109,6 +110,7 @@ export function AppScreen({
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
+      <AppBackground />
       <KeyboardAvoidingView
         style={styles.fill}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}

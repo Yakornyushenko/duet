@@ -7,6 +7,7 @@ import { useApp } from '@/context/AppContext';
 import {
   addNotificationResponseListener,
   addPushTokenListener,
+  configureDateUpdatesChannel,
   configureWishChannel,
   configureQuestionChannel,
   getExpoPushToken,
@@ -162,6 +163,7 @@ export function ReminderProvider({ children }: PropsWithChildren) {
     let active = true;
     const register = async () => {
       await configureWishChannel().catch(() => undefined);
+      await configureDateUpdatesChannel().catch(() => undefined);
       await configureQuestionChannel().catch(() => undefined);
       const permission = await getNotificationPermission();
       if (!active || !permission.granted) {

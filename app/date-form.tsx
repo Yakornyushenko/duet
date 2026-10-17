@@ -20,11 +20,15 @@ import { useDialog } from '@/context/DialogContext';
 import { useReminders } from '@/context/ReminderContext';
 import { colors, createThemedStyles, radii, spacing, typography } from '@/theme/tokens';
 import { DateCategory, EntityIcon, DateRecurrence } from '@/types/domain';
-import { formatRelationshipDate, getNextOccurrence, toDateOnly } from '@/utils/dates';
+import { formatRelationshipDate, getNextOccurrence, parseDateOnly, toDateOnly } from '@/utils/dates';
 
 export default function DateFormScreen() {
-  const params = useLocalSearchParams<{ id?: string | string[]; category?: string }>();
+  const params = useLocalSearchParams<{ id?: string | string[]; category?: string; date?: string | string[] }>();
   const eventId = Array.isArray(params.id) ? params.id[0] : params.id;
+  const requestedDate = Array.isArray(params.date) ? params.date[0] : params.date;
+  const initialDate = requestedDate && toDateOnly(parseDateOnly(requestedDate)) === requestedDate
+    ? requestedDate
+    : toDateOnly(new Date());
   const { events, categories, addEvent, updateEvent, deleteEvent } = useApp();
   const { showDialog } = useDialog();
   const {
@@ -38,8 +42,8 @@ export default function DateFormScreen() {
   const existingEvent = events.find((event) => event.id === eventId);
   const [title, setTitle] = useState(existingEvent?.title ?? '');
   const [description, setDescription] = useState(existingEvent?.description ?? '');
-  const [eventDate, setEventDate] = useState(existingEvent?.eventDate ?? toDateOnly(new Date()));
-  const [recurrence, setRecurrence] = useState<DateRecurrence>(existingEvent?.recurrence ?? 'yearly');
+  const [eventDate, setEventDate] = useState(existingEvent?.eventDate ?? initialDate);
+  const [recurrence, setRecurrence] = useState<DateRecurrence>(existingEvent?.recurrence ?? 'none');
   const [icon, setIcon] = useState<EntityIcon>(existingEvent?.icon ?? 'heart');
   const [category, setCategory] = useState<DateCategory>(
     existingEvent?.category ?? categories.find((option) => option.value === params.category)?.value ?? categories[0]?.value ?? '',
@@ -241,8 +245,8 @@ export default function DateFormScreen() {
             value={recurrence}
             onChange={setRecurrence}
             options={[
-              { label: 'Каждый год', value: 'yearly' },
               { label: 'Один раз', value: 'none' },
+              { label: 'Каждый год', value: 'yearly' },
             ]}
           />
         </View>

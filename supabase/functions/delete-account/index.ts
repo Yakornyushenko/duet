@@ -50,6 +50,16 @@ Deno.serve(async (request) => {
   const admin = createClient(supabaseUrl, serviceRoleKey, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
+  const { data: profile, error: profileError } = await admin
+    .from('profiles')
+    .select('avatar_path')
+    .eq('id', user.id)
+    .maybeSingle();
+  if (profileError) {
+    console.error('Profile photo lookup failed:', profileError.message);
+    return json({ error: 'Не удалось подготовить удаление фото профиля' }, 500);
+  }
+
   const { data, error: beginError } = await admin.rpc('begin_account_deletion', {
     p_user_id: user.id,
   });
@@ -66,6 +76,14 @@ Deno.serve(async (request) => {
     if (storageError) {
       console.error('Account photo cleanup failed:', storageError.message);
       return json({ error: 'Не удалось удалить фотографии аккаунта' }, 500);
+    }
+  }
+
+  if (profile?.avatar_path) {
+    const { error: avatarError } = await admin.storage.from('profile-photos').remove([profile.avatar_path]);
+    if (avatarError) {
+      console.error('Profile photo cleanup failed:', avatarError.message);
+      return json({ error: 'Не удалось удалить фото профиля' }, 500);
     }
   }
 

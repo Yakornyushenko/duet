@@ -123,6 +123,7 @@ assert.match(profileSource, /onScrollOffsetChange=\{\(offset\) => \{ profileScro
 const appScreenSource = fs.readFileSync('src/components/AppScreen.tsx', 'utf8');
 assert.match(appScreenSource, /contentOffset=\{initialScrollOffset === undefined \? undefined : \{ x: 0, y: initialScrollOffset \}\}/);
 assert.doesNotMatch(appScreenSource, /scrollTo\(\{ y: initialScrollOffset/);
+assert.match(appScreenSource, /<AppBackground \/>/);
 
 const themeContextSource = fs.readFileSync('src/context/ThemeContext.tsx', 'utf8');
 assert.match(themeContextSource, /themeTransitioning: boolean/);
@@ -133,6 +134,27 @@ assert.match(themeContextSource, /reloadAppAsync\('Тема приложения
 const rootLayoutSource = fs.readFileSync('app/_layout.tsx', 'utf8');
 assert.match(rootLayoutSource, /themeTransitioning \? \(/);
 assert.match(rootLayoutSource, />Применяем тему…</);
+assert.match(rootLayoutSource, /<BackgroundProvider>/);
+
+const backgroundContextSource = fs.readFileSync('src/context/BackgroundContext.tsx', 'utf8');
+assert.match(backgroundContextSource, /duet:background-pattern/);
+assert.match(backgroundContextSource, /'solid' \| 'hearts' \| 'stars' \| 'constellation' \| 'heartsSparkles'/);
+assert.match(backgroundContextSource, /AsyncStorage\.setItem\(BACKGROUND_PATTERN_STORAGE_KEY, pattern\)/);
+
+const appBackgroundSource = fs.readFileSync('src/components/AppBackground.tsx', 'utf8');
+assert.match(appBackgroundSource, /size: 44, opacity: 0\.06/);
+assert.match(appBackgroundSource, /activePattern === 'hearts' \|\| activePattern === 'heartsSparkles'/);
+assert.match(appBackgroundSource, /activePattern === 'stars' \|\| activePattern === 'heartsSparkles'/);
+assert.match(appBackgroundSource, /activePattern === 'constellation' \? <Constellation \/>/);
+
+assert.match(profileSource, />Фон приложения</);
+assert.match(profileSource, />Оформление<[\s\S]*?>Тема приложения<[\s\S]*?>Фон приложения</);
+assert.match(profileSource, /visible=\{backgroundPickerVisible\}/);
+assert.match(profileSource, /solid: 'Без узора'/);
+assert.match(profileSource, /hearts: 'Сердечки'/);
+assert.match(profileSource, /stars: 'Звёзды'/);
+assert.match(profileSource, /constellation: 'Созвездие'/);
+assert.match(profileSource, /heartsSparkles: 'Сердца и искры'/);
 
 const appConfig = JSON.parse(fs.readFileSync('app.json', 'utf8')).expo;
 const dynamicIconPlugin = appConfig.plugins.find(

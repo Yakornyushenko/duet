@@ -9,6 +9,7 @@ import { DesktopHeader } from '@/components/DesktopHeader';
 import { DialogProvider } from '@/context/DialogContext';
 import { ReminderProvider } from '@/context/ReminderContext';
 import { ThemeProvider, useTheme } from '@/context/ThemeContext';
+import { BackgroundProvider } from '@/context/BackgroundContext';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 
 const publicRoutes = new Set(['auth', 'privacy', 'delete-account', 'email-confirmed']);
@@ -57,13 +58,15 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <ThemeProvider>
-        <DialogProvider>
-          <AppProvider>
-            <ReminderProvider>
-              <RootNavigator />
-            </ReminderProvider>
-          </AppProvider>
-        </DialogProvider>
+        <BackgroundProvider>
+          <DialogProvider>
+            <AppProvider>
+              <ReminderProvider>
+                <RootNavigator />
+              </ReminderProvider>
+            </AppProvider>
+          </DialogProvider>
+        </BackgroundProvider>
       </ThemeProvider>
     </SafeAreaProvider>
   );
