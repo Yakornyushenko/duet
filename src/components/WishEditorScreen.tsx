@@ -7,7 +7,6 @@ import {
   Modal,
   Pressable,
   StyleSheet,
-  Switch,
   Text,
   useWindowDimensions,
   View,
@@ -435,13 +434,6 @@ export function WishEditorScreen() {
               {fulfilled ? 'Исполнено' : 'Не исполнено'}
             </Text>
           </View>
-          <Switch
-            value={fulfilled}
-            pointerEvents="none"
-            accessible={false}
-            trackColor={{ false: colors.border, true: colors.primary }}
-            thumbColor={colors.white}
-          />
         </Pressable>
       ) : null}
 

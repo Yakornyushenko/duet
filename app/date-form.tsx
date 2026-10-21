@@ -308,7 +308,7 @@ export default function DateFormScreen() {
                   </View>
                 ))}
                 {notifications.length < 4 ? (
-                  <AppButton label="Настроить день" variant="secondary" onPress={() => {
+                  <AppButton label="Добавить день" variant="secondary" onPress={() => {
                     setEditingReminder(notifications.length);
                     setNotifications((current) => [...current, { date: deadline, time: '10:00' }]);
                     setReminderDatePicker(true);

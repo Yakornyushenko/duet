@@ -4,6 +4,7 @@ import { AppState, Platform } from 'react-native';
 import { createContext, PropsWithChildren, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useApp } from '@/context/AppContext';
+import { DailyQuestionState, questionRequest } from '@/services/dailyQuestions';
 import {
   addNotificationResponseListener,
   addPushTokenListener,
@@ -49,12 +50,43 @@ function getStorageKey(userId: string): string {
 }
 
 export function ReminderProvider({ children }: PropsWithChildren) {
-  const { user, events } = useApp();
+  const { user, couple, events } = useApp();
   const [preferences, setPreferences] = useState<ReminderPreferences>(defaultReminderPreferences);
   const preferencesRef = useRef(defaultReminderPreferences);
   const syncQueueRef = useRef(Promise.resolve());
   const [permissionStatus, setPermissionStatus] = useState<ReminderPermissionStatus>('undetermined');
   const [initializing, setInitializing] = useState(true);
+
+  useEffect(() => {
+    if (initializing || !user || !couple || permissionStatus !== 'granted') return;
+    let active = true;
+    let running = false;
+    let completed = false;
+    const enableDailyQuestions = async () => {
+      if (!active || running || completed) return;
+      running = true;
+      try {
+        // Read from the server: a cached default must not override a user's choice.
+        const state = await questionRequest<DailyQuestionState>('daily_question_state');
+        if (!active) return;
+        if (!state.preferences.introduced) {
+          await questionRequest('set_question_preferences', {
+            p_patch: { enabled: true, push_enabled: true, introduced: true },
+          });
+        }
+        completed = true;
+      } catch (error) {
+        console.warn('Не удалось включить вопрос дня', error);
+      } finally {
+        running = false;
+      }
+    };
+    void enableDailyQuestions();
+    const subscription = AppState.addEventListener('change', state => {
+      if (state === 'active') void enableDailyQuestions();
+    });
+    return () => { active = false; subscription.remove(); };
+  }, [initializing, user?.id, couple?.id, permissionStatus]);
 
   const refreshPermissionStatus = useCallback(async () => {
     const status = await getReminderPermissionStatus();

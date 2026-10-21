@@ -267,6 +267,13 @@ export default function ProfileScreen() {
       </View>
 
       <View style={styles.coupleCard}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Настроить фото профиля"
+          accessibilityState={{ expanded: photoPickerVisible }}
+          onPress={() => setPhotoPickerVisible(true)}
+          style={({ pressed }) => pressed && styles.pressed}
+        >
         <PairAvatars
           firstName={user.displayName}
           secondName={couple.partnerName}
@@ -274,6 +281,7 @@ export default function ProfileScreen() {
           secondPhotoUrl={couple.partnerAvatarUrl}
           size={64}
         />
+        </Pressable>
         <View style={styles.centeredCopy}>
           <Text style={styles.coupleName}>{user.displayName}{couple.partnerName ? ` + ${couple.partnerName}` : ''}</Text>
           <View style={styles.connectedRow}>
