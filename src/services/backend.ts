@@ -67,7 +67,7 @@ export async function signUpRemote(displayName: string, email: string, password:
     email,
     password,
     options: {
-      data: { display_name: displayName },
+      data: { display_name: displayName, welcome_pending: true },
       emailRedirectTo,
     },
   });

@@ -12,6 +12,8 @@ import { PairAvatars } from '@/components/PairAvatars';
 import { ProfilePhotoModal } from '@/components/ProfilePhotoModal';
 import { RelationshipDateEditor } from '@/components/RelationshipDateEditor';
 import { useApp } from '@/context/AppContext';
+import { useDialog } from '@/context/DialogContext';
+import { quotedAppName } from '@/config/app';
 import { useReminders } from '@/context/ReminderContext';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { getPlannedReminderLabel } from '@/services/reminders';
@@ -19,9 +21,14 @@ import { useThemeImage } from '@/theme/images';
 import { colors, createThemedStyles, radii, shadow, spacing, typography } from '@/theme/tokens';
 import { formatRelationshipDate, getRelationshipDuration, getUpcomingEvents } from '@/utils/dates';
 
+// Temporary preview: disable after reviewing the welcome popup.
+const PREVIEW_WELCOME = true;
+
 export default function HomeScreen() {
   const wishesEnvelope = useThemeImage('wishesEnvelope');
-  const { user, couple, events } = useApp();
+  const { user, couple, events, welcomePending, dismissWelcome } = useApp();
+  const { showDialog } = useDialog();
+  const welcomeShown = useRef<string | null>(null);
   const { plannedReminders } = useReminders();
   const [relationshipDateEditorVisible, setRelationshipDateEditorVisible] = useState(false);
   const [photoPickerVisible, setPhotoPickerVisible] = useState(false);
@@ -30,6 +37,28 @@ export default function HomeScreen() {
   const reminderTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const focused = useIsFocused();
   const { isDesktop } = useResponsiveLayout();
+
+  useEffect(() => {
+    if (!focused || !user || !couple || (!PREVIEW_WELCOME && !welcomePending) || welcomeShown.current === user.id) return;
+    welcomeShown.current = user.id;
+    const finishWelcome = async () => {
+      if (PREVIEW_WELCOME) return;
+      try {
+        await dismissWelcome();
+      } catch (error) {
+        console.warn('Не удалось сохранить просмотр приветствия', error);
+      }
+    };
+    showDialog({
+      title: `Добро пожаловать в ${quotedAppName}!`,
+      message: 'Загляните в «Ещё» → «Профиль»: там можно добавить фото, настроить уведомления и их звук, выбрать оформление приложения.\n\nВ «Вопросе дня» есть личные вопросы 18+. Они включаются отдельно и доступны только с согласия обоих совершеннолетних партнёров.',
+      dismissible: false,
+      actions: [
+        { label: 'Открыть профиль', onPress: async () => { await finishWelcome(); router.push('/profile'); } },
+        { label: 'Понятно', variant: 'ghost', onPress: finishWelcome },
+      ],
+    });
+  }, [focused, user, couple, welcomePending, dismissWelcome, showDialog]);
 
   useEffect(() => {
     setOpeningReminders(false);

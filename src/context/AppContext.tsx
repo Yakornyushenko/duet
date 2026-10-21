@@ -38,6 +38,8 @@ type AppState = {
 };
 
 type AppContextValue = AppState & {
+  welcomePending: boolean;
+  dismissWelcome: () => Promise<void>;
   initializing: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (name: string, email: string, password: string) => Promise<boolean>;
@@ -310,6 +312,12 @@ export function AppProvider({ children }: PropsWithChildren) {
       events,
       categories,
       initializing,
+      welcomePending: session?.user.user_metadata.welcome_pending === true,
+      dismissWelcome: async () => {
+        if (!supabase) return;
+        const { error } = await supabase.auth.updateUser({ data: { welcome_pending: false } });
+        if (error) throw error;
+      },
       signIn: async (email, password) => {
         await signInRemote(email.trim(), password);
       },
@@ -390,7 +398,7 @@ export function AppProvider({ children }: PropsWithChildren) {
         setEvents((current) => current.filter((event) => event.id !== id));
       },
     }),
-    [couple, events, categories, initializing, refreshWorkspace, user, clearWorkspace],
+    [couple, events, categories, initializing, refreshWorkspace, user, clearWorkspace, session],
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

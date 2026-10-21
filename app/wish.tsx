@@ -22,7 +22,7 @@ import { entityIcons } from '@/utils/entityIcons';
 import { canManageWishlist, getWishlists } from '@/utils/wishlists';
 import { Href, router, useFocusEffect, useIsFocused, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Image, Modal, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
+import { ActivityIndicator, Image, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function WishScreen() {
@@ -279,8 +279,6 @@ export default function WishScreen() {
             {wish.fulfilled ? 'Исполнено' : 'Не исполнено'}
           </Text>
         </View>
-        {canEdit ? <Switch value={wish.fulfilled} pointerEvents="none" accessible={false}
-          trackColor={{ false: colors.border, true: colors.primary }} thumbColor={colors.white} /> : null}
       </Pressable>
 
       <View style={[styles.card, styles.commentsCard]}>
