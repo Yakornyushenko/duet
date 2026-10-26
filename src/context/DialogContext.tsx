@@ -20,6 +20,7 @@ type DialogOptions = {
   tone?: DialogTone;
   actions?: DialogAction[];
   dismissible?: boolean;
+  showIcon?: boolean;
 };
 
 type DialogContextValue = {
@@ -75,9 +76,9 @@ export function DialogProvider({ children }: PropsWithChildren) {
             />
           ) : null}
           <View style={[styles.card, { maxWidth: modalMaxWidth }]}>
-            <View style={[styles.icon, { backgroundColor: tone === 'warning' ? colors.soft : colors.softAccent }]}>
+            {dialog?.showIcon !== false ? <View style={[styles.icon, { backgroundColor: tone === 'warning' ? colors.soft : colors.softAccent }]}>
               <AppIcon name={toneIcons[tone]} size={32} color={toneColors[tone]} />
-            </View>
+            </View> : null}
             <View style={styles.copy}>
               <Text style={styles.title}>{dialog?.title}</Text>
               <Text style={styles.message}>{dialog?.message}</Text>

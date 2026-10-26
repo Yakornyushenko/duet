@@ -21,9 +21,6 @@ import { useThemeImage } from '@/theme/images';
 import { colors, createThemedStyles, radii, shadow, spacing, typography } from '@/theme/tokens';
 import { formatRelationshipDate, getRelationshipDuration, getUpcomingEvents } from '@/utils/dates';
 
-// Temporary preview: disable after reviewing the welcome popup.
-const PREVIEW_WELCOME = true;
-
 export default function HomeScreen() {
   const wishesEnvelope = useThemeImage('wishesEnvelope');
   const { user, couple, events, welcomePending, dismissWelcome } = useApp();
@@ -39,23 +36,27 @@ export default function HomeScreen() {
   const { isDesktop } = useResponsiveLayout();
 
   useEffect(() => {
-    if (!focused || !user || !couple || (!PREVIEW_WELCOME && !welcomePending) || welcomeShown.current === user.id) return;
+    if (!focused || !user || !couple || !welcomePending || welcomeShown.current === user.id) return;
     welcomeShown.current = user.id;
-    const finishWelcome = async () => {
-      if (PREVIEW_WELCOME) return;
-      try {
-        await dismissWelcome();
-      } catch (error) {
-        console.warn('Не удалось сохранить просмотр приветствия', error);
-      }
-    };
     showDialog({
       title: `Добро пожаловать в ${quotedAppName}!`,
+      showIcon: false,
       message: 'Загляните в «Ещё» → «Профиль»: там можно добавить фото, настроить уведомления и их звук, выбрать оформление приложения.\n\nВ «Вопросе дня» есть личные вопросы 18+. Они включаются отдельно и доступны только с согласия обоих совершеннолетних партнёров.',
       dismissible: false,
       actions: [
-        { label: 'Открыть профиль', onPress: async () => { await finishWelcome(); router.push('/profile'); } },
-        { label: 'Понятно', variant: 'ghost', onPress: finishWelcome },
+        { label: 'Открыть профиль', onPress: () => router.push('/profile') },
+        { label: 'Понятно', variant: 'ghost' },
+        { label: 'Больше не показывать', variant: 'ghost', onPress: async () => {
+          try {
+            await dismissWelcome();
+          } catch {
+            showDialog({
+              title: 'Не удалось сохранить настройку',
+              message: 'Проверьте подключение к интернету. При следующем входе подсказка может появиться снова.',
+              tone: 'warning',
+            });
+          }
+        } },
       ],
     });
   }, [focused, user, couple, welcomePending, dismissWelcome, showDialog]);
