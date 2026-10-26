@@ -312,7 +312,7 @@ export function AppProvider({ children }: PropsWithChildren) {
       events,
       categories,
       initializing,
-      welcomePending: session?.user.user_metadata.welcome_pending === true,
+      welcomePending: Boolean(session) && session?.user.user_metadata.welcome_pending !== false,
       dismissWelcome: async () => {
         if (!supabase) return;
         const { error } = await supabase.auth.updateUser({ data: { welcome_pending: false } });
