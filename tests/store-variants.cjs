@@ -28,6 +28,16 @@ function getRuntimeConfig(store) {
 }
 
 assert.equal(eas.build.production.env.EXPO_PUBLIC_STORE, 'google-play');
+assert.equal(eas.build['app-store'].env.EXPO_PUBLIC_STORE, 'app-store');
+assert.equal(eas.build['app-store'].distribution, 'store');
+assert.equal(eas.build['app-store'].autoIncrement, true);
+assert.equal(eas.build['app-store'].ios.simulator, false);
+const appleNative = getNativeConfig('app-store');
+assert.equal(appleNative.name, 'Duet');
+assert.equal(appleNative.ios.bundleIdentifier, 'app.duet.mobile');
+assert.equal(appleNative.ios.supportsTablet, false);
+assert.equal(getRuntimeConfig('app-store').appName, 'Duet');
+assert.equal(getRuntimeConfig('app-store').distributionStore, 'app-store');
 assert.equal(eas.build.rustore.env.EXPO_PUBLIC_STORE, 'rustore');
 assert.equal(eas.build.production.autoIncrement, true);
 assert.equal(eas.build.rustore.autoIncrement, true);

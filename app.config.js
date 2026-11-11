@@ -1,4 +1,7 @@
 const STORE_CONFIG = {
+  'app-store': {
+    name: 'Duet',
+  },
   'google-play': {
     name: 'Duet',
   },

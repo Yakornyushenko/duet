@@ -1,6 +1,9 @@
-export type DistributionStore = 'google-play' | 'rustore';
+export type DistributionStore = 'google-play' | 'rustore' | 'app-store';
 
 const STORE_CONFIG = {
+  'app-store': {
+    appName: 'Duet',
+  },
   'google-play': {
     appName: 'Duet',
   },
@@ -11,7 +14,7 @@ const STORE_CONFIG = {
 
 const selectedStore = process.env.EXPO_PUBLIC_STORE ?? 'google-play';
 
-if (selectedStore !== 'google-play' && selectedStore !== 'rustore') {
+if (selectedStore !== 'google-play' && selectedStore !== 'rustore' && selectedStore !== 'app-store') {
   throw new Error(`Unknown EXPO_PUBLIC_STORE: ${selectedStore}`);
 }
 

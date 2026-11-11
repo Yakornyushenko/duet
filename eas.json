@@ -4,6 +4,17 @@
     "appVersionSource": "remote"
   },
   "build": {
+    "app-store": {
+      "distribution": "store",
+      "autoIncrement": true,
+      "environment": "production",
+      "env": {
+        "EXPO_PUBLIC_STORE": "app-store"
+      },
+      "ios": {
+        "simulator": false
+      }
+    },
     "development": {
       "developmentClient": true,
       "distribution": "internal",
@@ -35,6 +46,7 @@
     }
   },
   "submit": {
+    "app-store": {},
     "production": {}
   }
 }
